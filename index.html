@@ -166,7 +166,7 @@
   .paywall-card { background: #fff; border-radius: 14px; padding: 32px; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
   .paywall-card h2 { font-family: 'Markazi Text', serif; font-size: 28px; color: var(--primary-color); margin: 0 0 8px; }
   .paywall-card p { color: var(--text-muted); font-size: 13.5px; line-height: 1.6; margin-bottom: 20px; }
-  .paywall-card input { width: 100%; padding: 10px 12px; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; }
+  .paywall-card input[type="email"], .paywall-card input[type="password"] { width: 100%; padding: 10px 12px; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; }
 
   .overlay{ position:fixed; inset:0; background:rgba(44,40,37,0.55); display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50; backdrop-filter: blur(3px); }
   .overlay.open{ display:flex; }
@@ -289,11 +289,11 @@
 
       <div class="auth-badge">
         <span id="userEmailLabel">يرجى تسجيل الدخول</span>
-        <button class="btn btn-outline-light" style="padding:4px 10px; font-size:11.5px;" onclick="handleAuthAction()" id="authActionBtn">خروج</button>
+        <button class="btn btn-outline-light" style="padding:4px 10px; font-size:11.5px;" onclick="handleAuthAction()" id="authActionBtn" data-ar="خروج" data-en="Logout">خروج</button>
       </div>
 
       <div class="location-container">
-        <div class="side-section-title">المناطق الرئيسية والفرعية</div>
+        <div class="side-section-title" data-ar="المناطق الرئيسية والفرعية" data-en="Main & Sub Locations">المناطق الرئيسية والفرعية</div>
         <div class="location-tree" id="locationTree"></div>
         <div class="add-loc-form" id="addMainLocWrap" style="display:none;">
           <input id="newMainLocInput" placeholder="+ منطقة رئيسية جديدة" onkeydown="if(event.key==='Enter') addMainLocation()">
@@ -302,37 +302,37 @@
       </div>
 
       <div class="side-actions" id="adminActions" style="display:none;">
-        <button class="btn btn-primary-style" onclick="openCompoundForm()">+ إضافة مشروع</button>
+        <button class="btn btn-primary-style" onclick="openCompoundForm()" data-ar="+ إضافة مشروع" data-en="+ Add Project">+ إضافة مشروع</button>
       </div>
       
       <div class="side-actions" style="padding-top:10px; border-top:none;">
-        <button class="btn btn-outline-light" onclick="openCalculator()">حاسبة الأقساط الشاملة</button>
+        <button class="btn btn-outline-light" onclick="openCalculator()" data-ar="حاسبة الأقساط الشاملة" data-en="Universal Calculator">حاسبة الأقساط الشاملة</button>
       </div>
     </aside>
 
     <main class="main">
       <div class="topbar">
         <div>
-          <h1 class="page-title" id="pageTitle">كل المشروعات</h1>
-          <div class="page-sub" id="pageSub">جاري التحميل...</div>
+          <h1 class="page-title" id="pageTitle" data-ar="كل المشروعات" data-en="All Projects">كل المشروعات</h1>
+          <div class="page-sub" id="pageSub" data-ar="جاري التحميل..." data-en="Loading...">جاري التحميل...</div>
         </div>
-        <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="backToLanding()">العودة للصفحة الرئيسية</button>
+        <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="backToLanding()" data-ar="العودة للصفحة الرئيسية" data-en="Back to Landing Page">العودة للصفحة الرئيسية</button>
       </div>
 
       <div class="filter-bar">
         <div class="filter-row-3">
           <div class="field">
-            <label>اسم المشروع أو المطور</label>
+            <label data-ar="اسم المشروع أو المطور" data-en="Project or Developer Name">اسم المشروع أو المطور</label>
             <input type="text" id="fSearchText" placeholder="ابحث باسم المشروع، المطور..." oninput="applyFilters()">
           </div>
           <div class="field">
-            <label>موعد التسليم</label>
-            <select id="fDeliveryTimeline" onchange="applyFilters()"><option value="">كل المواعيد</option></select>
+            <label data-ar="موعد التسليم" data-en="Delivery Timeline">موعد التسليم</label>
+            <select id="fDeliveryTimeline" onchange="applyFilters()"><option value="" data-ar="كل المواعيد" data-en="All Timelines">كل المواعيد</option></select>
           </div>
           <div class="field">
-            <label>نوع الوحدة (الغرف)</label>
+            <label data-ar="نوع الوحدة (الغرف)" data-en="Unit Type">نوع الوحدة (الغرف)</label>
             <select id="fBedroomType" onchange="applyFilters()">
-              <option value="">كل الأنواع</option>
+              <option value="" data-ar="كل الأنواع" data-en="All Types">كل الأنواع</option>
               <option value="studio">استوديو (Studio)</option>
               <option value="1br">1 غرفة نوم (1 Bedroom)</option>
               <option value="2br">2 غرفة نوم (2 Bedrooms)</option>
@@ -346,44 +346,44 @@
 
         <div class="filter-row-4">
           <div class="field">
-            <label>سعر المتر (جنيه)</label>
+            <label data-ar="سعر المتر (جنيه)" data-en="Meter Price (EGP)">سعر المتر (جنيه)</label>
             <input type="number" id="fMeterPrice" placeholder="مثال: 34000" oninput="applyFilters()">
           </div>
           <div class="field">
-            <label>إجمالي سعر الوحدة (جنيه)</label>
+            <label data-ar="إجمالي سعر الوحدة (جنيه)" data-en="Total Unit Price (EGP)">إجمالي سعر الوحدة (جنيه)</label>
             <input type="number" id="fTotalMin" placeholder="السعر الإجمالي" oninput="applyFilters()">
           </div>
           <div class="field">
-            <label>مبلغ المقدم (جنيه)</label>
+            <label data-ar="مبلغ المقدم (جنيه)" data-en="Down Payment (EGP)">مبلغ المقدم (جنيه)</label>
             <input type="number" id="fDownPayment" placeholder="مثال: 500000" oninput="applyFilters()">
           </div>
           <div class="field">
-            <label>القسط الشهري الأقصى (جنيه)</label>
+            <label data-ar="القسط الشهري الأقصى (جنيه)" data-en="Max Monthly Installment (EGP)">القسط الشهري الأقصى (جنيه)</label>
             <input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()">
           </div>
         </div>
 
         <div class="filter-actions">
-          <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="resetFilters()">مسح الفلاتر</button>
-          <button class="btn btn-primary-style" onclick="applyFilters()">بحث متقدم</button>
+          <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="resetFilters()" data-ar="مسح الفلاتر" data-en="Clear Filters">مسح الفلاتر</button>
+          <button class="btn btn-primary-style" onclick="applyFilters()" data-ar="بحث متقدم" data-en="Advanced Search">بحث متقدم</button>
         </div>
       </div>
 
       <div class="project-type-nav">
-        <span class="type-nav-label">تصنيف النشاط:</span>
-        <button class="type-nav-btn active" onclick="selectProjectType('all', this)">كل المشروعات</button>
-        <button class="type-nav-btn" onclick="selectProjectType('residential', this)">سكني (Residential)</button>
-        <button class="type-nav-btn" onclick="selectProjectType('commercial', this)">تجاري / إداري (Commercial)</button>
-        <button class="type-nav-btn" onclick="selectProjectType('hotel', this)">فندقي (Hotel Apartments)</button>
+        <span class="type-nav-label" data-ar="تصنيف النشاط:" data-en="Activity Type:">تصنيف النشاط:</span>
+        <button class="type-nav-btn active" onclick="selectProjectType('all', this)" data-ar="كل المشروعات" data-en="All Projects">كل المشروعات</button>
+        <button class="type-nav-btn" onclick="selectProjectType('residential', this)" data-ar="سكني (Residential)" data-en="Residential">سكني (Residential)</button>
+        <button class="type-nav-btn" onclick="selectProjectType('commercial', this)" data-ar="تجاري / إداري (Commercial)" data-en="Commercial">تجاري / إداري (Commercial)</button>
+        <button class="type-nav-btn" onclick="selectProjectType('hotel', this)" data-ar="فندقي (Hotel Apartments)" data-en="Hotel Apartments">فندقي (Hotel Apartments)</button>
       </div>
 
       <div class="sort-bar-container">
         <div class="sort-small-box">
-          <label>ترتيب حسب سعر المتر:</label>
+          <label data-ar="ترتيب حسب سعر المتر:" data-en="Sort by Meter Price:">ترتيب حسب سعر المتر:</label>
           <select id="fSortOrder" onchange="applyFilters()">
-            <option value="default">الافتراضي</option>
-            <option value="asc">من الأقل للأعلى 📈</option>
-            <option value="desc">من الأعلى للأقل 📉</option>
+            <option value="default" data-ar="الافتراضي" data-en="Default">الافتراضي</option>
+            <option value="asc" data-ar="من الأقل للأعلى 📈" data-en="Lowest to Highest 📈">من الأقل للأعلى 📈</option>
+            <option value="desc" data-ar="من الأعلى للأقل 📉" data-en="Highest to Lowest 📉">من الأعلى للأقل 📉</option>
           </select>
         </div>
       </div>
@@ -397,8 +397,16 @@
     <div class="paywall-card">
       <h2 data-ar="تسجيل الدخول للنظام" data-en="Login to System">تسجيل الدخول للنظام</h2>
       <p data-ar="برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم." data-en="Please enter your authorized account details to access the dashboard.">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
+      
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email">
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password">
+
+      <!-- زر حفظ بيانات الدخول -->
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px; text-align:right; justify-content:start;">
+          <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
+          <label for="rememberMe" style="font-size:13px; color:var(--text-muted); cursor:pointer;" data-ar="تذكر بيانات الدخول" data-en="Remember Me">تذكر بيانات الدخول</label>
+      </div>
+
       <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
       <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeModal('paywallModal')" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
     </div>
@@ -523,12 +531,8 @@ function toggleLanguage() {
 
 // --- App Navigation Logic ---
 function openSystemLogin() {
-    if(currentUser) {
-        document.getElementById('landingPage').style.display = 'none';
-        document.getElementById('systemApp').style.display = 'flex';
-    } else {
-        document.getElementById('paywallModal').style.display = 'flex';
-    }
+    // دايماً بنظهر الواجهة دي حتى لو في سيشن قديم، عشان نمنع الدخول التلقائي
+    document.getElementById('paywallModal').style.display = 'flex';
 }
 
 function backToLanding() {
@@ -549,6 +553,18 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// مسح أي تسجيل دخول قديم بمجرد فتح اللينك عشان السيستم ميفتحش لوحده!
+auth.signOut();
+
+// استرجاع الإيميل والباسورد لو كان معلم على "تذكر بيانات الدخول"
+window.addEventListener('load', () => {
+    if(localStorage.getItem('savedEmail')) {
+        document.getElementById('loginEmail').value = localStorage.getItem('savedEmail');
+        document.getElementById('loginPassword').value = localStorage.getItem('savedPassword');
+        document.getElementById('rememberMe').checked = true;
+    }
+});
 
 let currentUser = null;
 let isAdmin = false;
@@ -573,10 +589,6 @@ auth.onAuthStateChanged(async (user) => {
     isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
     document.getElementById('authActionBtn').textContent = 'خروج';
-    document.getElementById('paywallModal').style.display = 'none';
-    
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('systemApp').style.display = 'flex';
     
     if (isAdmin) {
       document.getElementById('addMainLocWrap').style.display = 'flex';
@@ -597,8 +609,24 @@ auth.onAuthStateChanged(async (user) => {
 function submitLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
+  const remember = document.getElementById('rememberMe').checked;
+
   if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; }
-  auth.signInWithEmailAndPassword(email, password).catch(err => {
+
+  // حفظ بيانات الدخول لو معلم على المربع
+  if (remember) {
+      localStorage.setItem('savedEmail', email);
+      localStorage.setItem('savedPassword', password);
+  } else {
+      localStorage.removeItem('savedEmail');
+      localStorage.removeItem('savedPassword');
+  }
+
+  auth.signInWithEmailAndPassword(email, password).then(() => {
+      document.getElementById('paywallModal').style.display = 'none';
+      document.getElementById('landingPage').style.display = 'none';
+      document.getElementById('systemApp').style.display = 'flex';
+  }).catch(err => {
     alert("بيانات الدخول غير صحيحة.");
   });
 }
