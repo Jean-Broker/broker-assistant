@@ -25,8 +25,8 @@
   body{ margin:0; background:var(--bg-app); color:var(--text-main); font-family:'IBM Plex Sans Arabic',sans-serif; min-height:100vh; }
   
   /* Landing Page Styling */
-  .landing-container { display: block; }
-  .app-container { display: none; min-height: 100vh; }
+  #landingPage { display: block; width: 100%; min-height: 100vh; }
+  #systemApp { display: none; min-height: 100vh; }
   
   header.landing-hero {
       background: linear-gradient(135deg, #2C2825, #3D5A45);
@@ -219,7 +219,7 @@
 <body>
 
   <!-- واجهة الترحيب (Landing Page) -->
-  <div class="landing-container" id="landingPage">
+  <div id="landingPage">
       <header class="landing-hero">
           <h1>Broker-Assistant</h1>
           <p>النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.</p>
@@ -267,7 +267,7 @@
   </div>
 
   <!-- نظام السيستم الأساسي (يظهر بعد تسجيل الدخول) -->
-  <div class="app-container app" id="systemApp">
+  <div class="app" id="systemApp">
     <aside class="sidebar">
       <div class="brand">Broker-Assistant<br><small>إدارة: Jean Hany</small></div>
 
