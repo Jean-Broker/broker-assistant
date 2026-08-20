@@ -131,8 +131,6 @@
   .filter-bar{ background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:14px; margin-bottom:16px; box-shadow: var(--shadow); }
   .filter-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
   .filter-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
-  
-  /* تم تصليح الحقول في الفورم لتأخذ العرض بالكامل وتظهر بشكل منسق */
   .field, .form-field { display:flex; flex-direction:column; gap:5px; }
   .field label, .form-field label { font-size:11.5px; color:var(--text-muted); font-weight:700; letter-spacing:0.3px; }
   .field input, .field select, .form-field input, .form-field select { border:1px solid var(--border-color); background:#FAFAFA; border-radius:8px; padding:9px 11px; font-size:13.5px; font-family:inherit; color:var(--text-main); width: 100%; outline: none; transition: all 0.2s ease; }
@@ -541,6 +539,7 @@ function toggleLanguage() {
 
 // --- App Navigation Logic ---
 function openSystemLogin() {
+    // لو مسجل دخول، يدخل السيستم على طول، لو لأ يفتح المودال
     if(currentUser) {
         document.getElementById('landingPage').style.display = 'none';
         document.getElementById('systemApp').style.display = 'flex';
@@ -571,6 +570,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// مسحت سطر auth.signOut() من هنا عشان ميطردكش مع كل ريفرش!
 
 // استرجاع الإيميل والباسورد لو كان معلم على "تذكر بيانات الدخول"
 window.addEventListener('load', () => {
@@ -606,7 +607,6 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
     document.getElementById('authActionBtn').textContent = 'خروج';
     
-    // مش بنخفي الـ Landing Page عشان ميفاجئش العميل
     document.getElementById('paywallModal').style.display = 'none';
     
     if (isAdmin) {
@@ -622,6 +622,8 @@ auth.onAuthStateChanged(async (user) => {
     isAdmin = false;
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
+    document.getElementById('systemApp').style.display = 'none';
+    document.getElementById('landingPage').style.display = 'block';
   }
 });
 
