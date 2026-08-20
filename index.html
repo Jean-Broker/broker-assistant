@@ -162,11 +162,17 @@
   .empty-state{ grid-column: 1 / -1; border:1px dashed var(--border-color); border-radius:12px; padding:60px 20px; text-align:center; color:var(--text-muted); background: #FFFFFF; }
   .empty-state .big{ font-family:'Cormorant Garamond',serif; font-size:26px; color:var(--text-main); margin-bottom:6px; }
 
+  /* Login Paywall Styling */
   .paywall-overlay { position: fixed; inset: 0; background: rgba(31, 36, 33, 0.85); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; }
-  .paywall-card { background: #fff; border-radius: 14px; padding: 32px; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+  .paywall-card { background: #fff; border-radius: 14px; padding: 32px; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; }
   .paywall-card h2 { font-family: 'Markazi Text', serif; font-size: 28px; color: var(--primary-color); margin: 0 0 8px; }
   .paywall-card p { color: var(--text-muted); font-size: 13.5px; line-height: 1.6; margin-bottom: 20px; }
   .paywall-card input[type="email"], .paywall-card input[type="password"] { width: 100%; padding: 10px 12px; margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; }
+  
+  .login-close-btn { position: absolute; top: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+  .login-close-btn:hover { color: var(--text-main); }
+  [lang="ar"] .login-close-btn { left: 15px; }
+  [lang="en"] .login-close-btn { right: 15px; }
 
   .overlay{ position:fixed; inset:0; background:rgba(44,40,37,0.55); display:none; align-items:flex-start; justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50; backdrop-filter: blur(3px); }
   .overlay.open{ display:flex; }
@@ -395,20 +401,23 @@
   <!-- Login Modal -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card">
+      <!-- زرار الإغلاق (X) فوق -->
+      <button class="login-close-btn" onclick="closeLoginModal()">✕</button>
+      
       <h2 data-ar="تسجيل الدخول للنظام" data-en="Login to System">تسجيل الدخول للنظام</h2>
       <p data-ar="برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم." data-en="Please enter your authorized account details to access the dashboard.">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
       
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email">
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password">
 
-      <!-- زر حفظ بيانات الدخول -->
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px; text-align:right; justify-content:start;">
           <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
           <label for="rememberMe" style="font-size:13px; color:var(--text-muted); cursor:pointer;" data-ar="تذكر بيانات الدخول" data-en="Remember Me">تذكر بيانات الدخول</label>
       </div>
 
       <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
-      <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeModal('paywallModal')" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
+      <!-- زرار الإلغاء تحت تم تصليحه -->
+      <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeLoginModal()" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
     </div>
   </div>
 
@@ -531,8 +540,11 @@ function toggleLanguage() {
 
 // --- App Navigation Logic ---
 function openSystemLogin() {
-    // دايماً بنظهر الواجهة دي حتى لو في سيشن قديم، عشان نمنع الدخول التلقائي
     document.getElementById('paywallModal').style.display = 'flex';
+}
+
+function closeLoginModal() {
+    document.getElementById('paywallModal').style.display = 'none';
 }
 
 function backToLanding() {
