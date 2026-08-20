@@ -241,7 +241,7 @@
   <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
 
   <!-- واجهة الترحيب (Landing Page) -->
-  <div id="landingPage" style="display:block;">
+  <div id="landingPage">
       <header class="landing-hero">
           <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
           <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy. Designed specifically for real estate brokers to organize clients and save time.">
@@ -291,7 +291,7 @@
   </div>
 
   <!-- نظام السيستم الأساسي (يظهر بعد تسجيل الدخول) -->
-  <div class="app" id="systemApp" style="display:none;">
+  <div class="app" id="systemApp">
     <aside class="sidebar">
       <div class="brand">Broker-Assistant<br><small data-ar="إدارة: جان هاني" data-en="Admin: Jean Hany">إدارة: جان هاني</small></div>
 
@@ -575,7 +575,7 @@ window.addEventListener('load', () => {
 });
 
 let currentUser = null;
-let isAdmin = true;
+let isAdmin = false;
 let mainLocations = [], compounds = [], activeSelection = 'all', activeProjectType = 'all';
 let editingCompoundId = null, viewingCompoundId = null;
 let tempUnits = [], tempPlans = [], tempDecrees = [], filters = {};
@@ -594,15 +594,25 @@ const DELIVERY_TIMELINES = [
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
-    document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + ' (الإدارة)';
+    isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
+    document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
     document.getElementById('authActionBtn').textContent = 'خروج';
+    document.getElementById('paywallModal').style.display = 'none';
     
-    document.getElementById('addMainLocWrap').style.display = 'flex';
-    document.getElementById('adminActions').style.display = 'flex';
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('systemApp').style.display = 'flex';
     
+    if (isAdmin) {
+      document.getElementById('addMainLocWrap').style.display = 'flex';
+      document.getElementById('adminActions').style.display = 'flex';
+    } else {
+      document.getElementById('addMainLocWrap').style.display = 'none';
+      document.getElementById('adminActions').style.display = 'none';
+    }
     await syncCloudData();
   } else {
     currentUser = null;
+    isAdmin = false;
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
   }
@@ -628,7 +638,7 @@ function submitLogin() {
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
   }).catch(err => {
-      alert("بيانات الدخول غير صحيحة.");
+    alert("بيانات الدخول غير صحيحة.");
   });
 }
 
@@ -656,14 +666,11 @@ async function syncCloudData() {
 }
 
 async function saveMainLocationsToCloud() {
-  try {
-      await db.collection('system').doc('locations').set({ mainLocations });
-  } catch (error) {
-      alert('خطأ في الحفظ! تأكد من إعدادات الـ Rules في الفايربيز.');
-  }
+  if(isAdmin) await db.collection('system').doc('locations').set({ mainLocations });
 }
 
 async function saveCompoundToCloud() {
+  if(!isAdmin) return;
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
   if(!document.getElementById('fldLocation').value){ showToast('اختر الفرع'); return; }
@@ -689,13 +696,9 @@ async function saveCompoundToCloud() {
   };
 
   const docId = editingCompoundId || uid();
-  try {
-      await db.collection('compounds').doc(docId).set(data, { merge: true });
-      closeModal('formOverlay');
-      showToast('تم حفظ المشروع بالفايربيز بنجاح');
-  } catch (error) {
-      alert('خطأ! الفايربيز رفض الحفظ. تأكد من إعدادات الـ Rules.');
-  }
+  await db.collection('compounds').doc(docId).set(data, { merge: true });
+  closeModal('formOverlay');
+  showToast('تم الحفظ بنجاح');
 }
 
 async function deleteCurrentCompoundFromCloud() {
@@ -719,7 +722,7 @@ function populateDeliverySelects(){
 
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
-// --- دالة الشجرة مع العدادات المضبوطة بدقة للمناطق الرئيسية والفروع الفرعية ---
+// --- دالة الشجرة مع العدادات المضبوطة للمناطق الرئيسية والفروع الفرعية ---
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree');
   let html = `<div class="sub-loc-tab ${activeSelection==='all'?'active':''}" onclick="selectLocationNode('all')">
@@ -728,10 +731,7 @@ function renderLocationTree(){
 
   mainLocations.forEach((mainLoc) => {
     let mainCount = 0;
-    mainLoc.subLocations.forEach(sub => {
-      mainCount += compounds.filter(c => c.locationId === sub.id).length;
-    });
-
+    mainLoc.subLocations.forEach(sub => mainCount += compounds.filter(c => c.locationId === sub.id).length);
     const isOpen = !!openMainLocIds[mainLoc.id];
     html += `<div class="loc-group">
       <div class="loc-group-header-row">
@@ -739,24 +739,22 @@ function renderLocationTree(){
           <span>📍 ${escapeHtml(mainLoc.name)}</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D9C5B2; font-weight:bold;">${mainCount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A39B90;">${mainCount}</span>
           <span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>
           ${isAdmin ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}
         </div>
       </div>
       <div class="sub-loc-list ${isOpen ? 'show' : ''}">`;
-    
     mainLoc.subLocations.forEach(sub => {
       const subCount = compounds.filter(c => c.locationId === sub.id).length;
       html += `<div class="sub-loc-tab ${activeSelection === sub.id?'active':''}" onclick="selectLocationNode('${sub.id}')">
         <span>↳ ${escapeHtml(sub.name)}</span>
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.8;">${subCount}</span>
           ${isAdmin ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}
         </div>
       </div>`;
     });
-
     html += `</div>
     ${isAdmin ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}
     </div>`;
