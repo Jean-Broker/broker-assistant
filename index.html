@@ -526,15 +526,6 @@
   <div class="toast" id="toast"></div>
 
 <script>
-// --- تحديد اللي بيظهر أول ما الصفحة تفتح من غير رعشة ---
-if (sessionStorage.getItem('isSystemOpen') === 'true') {
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('systemApp').style.display = 'flex';
-} else {
-    document.getElementById('landingPage').style.display = 'block';
-    document.getElementById('systemApp').style.display = 'none';
-}
-
 // --- Language Translation Logic ---
 let currentLang = 'ar';
 function toggleLanguage() {
@@ -602,11 +593,6 @@ const DELIVERY_TIMELINES = [
 
 auth.onAuthStateChanged(async (user) => {
   if (user) {
-    if (sessionStorage.getItem('isSystemOpen') !== 'true') {
-        auth.signOut();
-        return; 
-    }
-
     currentUser = user;
     isAdmin = true; 
     
@@ -625,7 +611,6 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     currentUser = null;
     isAdmin = false;
-    sessionStorage.removeItem('isSystemOpen');
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
     document.getElementById('systemApp').style.display = 'none';
@@ -648,14 +633,11 @@ function submitLogin() {
       localStorage.removeItem('savedPassword');
   }
 
-  sessionStorage.setItem('isSystemOpen', 'true');
-
   auth.signInWithEmailAndPassword(email, password).then(() => {
       document.getElementById('paywallModal').style.display = 'none';
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
   }).catch(err => {
-      sessionStorage.removeItem('isSystemOpen');
       alert("بيانات الدخول غير صحيحة.");
   });
 }
@@ -663,7 +645,6 @@ function submitLogin() {
 function handleAuthAction() {
   if (currentUser) {
     auth.signOut();
-    sessionStorage.removeItem('isSystemOpen'); 
     backToLanding();
   } else {
     document.getElementById('paywallModal').style.display = 'flex';
@@ -748,7 +729,7 @@ function populateDeliverySelects(){
 
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
-// --- تم تعديل دالة الشجرة لعرض إجمالي مشروعات المنطقة الرئيسية وعدد كل فرع فرعي ---
+// --- دالة الشجرة محدثة بالكامل لحساب وعرض مجموع مشروعات المنطقة الرئيسية والفرعية ---
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree');
   let html = `<div class="sub-loc-tab ${activeSelection==='all'?'active':''}" onclick="selectLocationNode('all')">
@@ -757,7 +738,6 @@ function renderLocationTree(){
 
   mainLocations.forEach((mainLoc) => {
     let mainCount = 0;
-    // حساب مجموع المشروعات لكل الفروع التابعة للممنطقة الرئيسية دي
     mainLoc.subLocations.forEach(sub => {
       mainCount += compounds.filter(c => c.locationId === sub.id).length;
     });
@@ -1036,7 +1016,7 @@ function renderPlanRows(){
     </div>`).join('') || '<div style="font-size:12.5px;color:var(--text-muted);">لا توجد خطط سداد</div>';
 }
 function updatePlan(id, field, val){ const p = tempPlans.find(x=>x.id===id); if(p) p[field] = (field==='name'||field==='notes'||field==='frequency')?val:(parseFloat(val)||0); }
-function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(f==='type')renderPlanRows();} }
+function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(field==='type')renderPlanRows();} }
 
 function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', description:'', date:''}); renderDecreeRows(); }
 function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
@@ -1167,7 +1147,10 @@ function runUniversalCalculator(){
   box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
 }
 
-(قوس إغلاق دالة الإغلاق والعرض)
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
+
+populateDeliverySelects();
 </script>
 </body>
 </html>
