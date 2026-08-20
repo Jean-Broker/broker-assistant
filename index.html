@@ -241,7 +241,7 @@
   <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
 
   <!-- واجهة الترحيب (Landing Page) -->
-  <div id="landingPage">
+  <div id="landingPage" style="display:block;">
       <header class="landing-hero">
           <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
           <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy. Designed specifically for real estate brokers to organize clients and save time.">
@@ -291,7 +291,7 @@
   </div>
 
   <!-- نظام السيستم الأساسي (يظهر بعد تسجيل الدخول) -->
-  <div class="app" id="systemApp">
+  <div class="app" id="systemApp" style="display:none;">
     <aside class="sidebar">
       <div class="brand">Broker-Assistant<br><small data-ar="إدارة: جان هاني" data-en="Admin: Jean Hany">إدارة: جان هاني</small></div>
 
@@ -575,7 +575,7 @@ window.addEventListener('load', () => {
 });
 
 let currentUser = null;
-let isAdmin = false;
+let isAdmin = true;
 let mainLocations = [], compounds = [], activeSelection = 'all', activeProjectType = 'all';
 let editingCompoundId = null, viewingCompoundId = null;
 let tempUnits = [], tempPlans = [], tempDecrees = [], filters = {};
@@ -594,8 +594,6 @@ const DELIVERY_TIMELINES = [
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
-    isAdmin = true; 
-    
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + ' (الإدارة)';
     document.getElementById('authActionBtn').textContent = 'خروج';
     
@@ -603,18 +601,10 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('adminActions').style.display = 'flex';
     
     await syncCloudData();
-
-    document.getElementById('paywallModal').style.display = 'none';
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('systemApp').style.display = 'flex';
-    
   } else {
     currentUser = null;
-    isAdmin = false;
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
-    document.getElementById('systemApp').style.display = 'none';
-    document.getElementById('landingPage').style.display = 'block';
   }
 });
 
@@ -729,7 +719,7 @@ function populateDeliverySelects(){
 
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
-// --- دالة الشجرة محدثة بالكامل لحساب وعرض مجموع مشروعات المنطقة الرئيسية والفرعية ---
+// --- دالة الشجرة مع العدادات المضبوطة بدقة للمناطق الرئيسية والفروع الفرعية ---
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree');
   let html = `<div class="sub-loc-tab ${activeSelection==='all'?'active':''}" onclick="selectLocationNode('all')">
