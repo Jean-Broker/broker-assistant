@@ -722,7 +722,6 @@ function populateDeliverySelects(){
 
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
-// --- دالة الشجرة مع العدادات المضبوطة للمناطق الرئيسية والفروع الفرعية ---
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree');
   let html = `<div class="sub-loc-tab ${activeSelection==='all'?'active':''}" onclick="selectLocationNode('all')">
@@ -1054,10 +1053,14 @@ function renderDetailModalContent(){
   let html = `<div class="detail-grid">
     <div class="detail-item"><b>النوع</b>${PROJECT_TYPES[c.projectType || 'residential']}</div>
     <div class="detail-item"><b>المطور</b>${escapeHtml(c.companyName)}</div>
+    <div class="detail-item"><b>المالك</b>${escapeHtml(c.ownerName || '-')}</div>
+    <div class="detail-item"><b>الاستشاري الهندسي</b>${escapeHtml(c.consultant || '-')}</div>
     <div class="detail-item"><b>المنطقة والفرع</b>${escapeHtml(findSubLocationName(c.locationId))}</div>
     <div class="detail-item"><b>التسليم والتشطيب</b>${deliveryLabel(c.deliveryDate)} | ${FINISHING_TYPES[c.finishingStatus]}</div>
     <div class="detail-item"><b>سعر المتر</b>${pText}</div>
-    <div class="detail-item full" style="border:none;"><b>الموقع بالتفصيل</b>${escapeHtml(c.compoundLocationDetail)}</div>
+    <div class="detail-item"><b>الصيانة والجراج</b>صيانة: ${c.maintenancePercent || 0}% | جراج: ${formatNum(c.parkingFee || 0)} ج</div>
+    <div class="detail-item"><b>المساحة الإجمالية</b>${c.projectSize ? c.projectSize + ' فدان' : '-'}</div>
+    <div class="detail-item full" style="border:none;"><b>الموقع بالتفصيل</b>${escapeHtml(c.compoundLocationDetail || '-')}</div>
   </div>`;
 
   const grouped = {}; (c.unitTypes||[]).forEach(u=>{ (grouped[u.bedroomType]=grouped[u.bedroomType]||[]).push(u); });
@@ -1120,8 +1123,8 @@ function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id
 function renderCalcBulletsRows(){
   document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`
     <div class="bullet-row"><div class="bullet-top">
-      <select style="flex:1;" onchange="updateBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
-      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateBullet('${b.id}','percent',this.value)">
+      <select style="flex:1;" onchange="updateCalcBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
+      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
       <button class="row-del" onclick="removeBulletRow('${b.id}')">✕</button>
     </div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>
   `).join('');
