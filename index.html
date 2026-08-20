@@ -210,9 +210,13 @@
   .size-chip.active { background: var(--bg-sidebar); color: #FAF7F2; border-color: var(--bg-sidebar); font-weight: 700; }
   .category-box { background: #FAFAFA; border: 1px solid var(--border-color); border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
   
-  .detail-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; margin-bottom:6px; }
-  .detail-item{ font-size:13.5px; padding:8px 0; border-bottom:1px dashed var(--border-color); color: var(--text-muted); }
-  .detail-item b{ display:block; font-size:11px; color:var(--primary-color); font-weight:600; margin-bottom:2px; }
+  /* --- الجزء اللي اتعدل عشان يخلي تفاصيل المشروع شكلها نضيف وكبير --- */
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; margin-bottom:16px; }
+  .detail-item { background:#FAFAFA; border:1px solid var(--border-color); border-radius:10px; padding:14px 16px; font-size:15px; color:var(--text-main); font-weight:600; text-align:right; box-shadow:0 2px 6px rgba(0,0,0,0.02); }
+  .detail-item b { display:block; font-size:12.5px; color:var(--primary-color); font-weight:700; margin-bottom:6px; opacity:0.9; }
+  .detail-item.full { grid-column: 1 / -1; }
+  /* ------------------------------------------------------------------ */
+
   table.spec-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
   table.spec-table th{ text-align:right; font-size:11px; color:var(--text-muted); border-bottom:1px solid var(--border-color); padding:8px 6px; }
   table.spec-table td{ padding:9px 6px; border-bottom:1px dashed var(--border-color); font-family:'IBM Plex Mono',monospace; }
@@ -231,7 +235,7 @@
   @media (max-width: 820px){
     .app{ flex-direction:column; }
     .sidebar{ width:100%; flex-direction:column; }
-    .grid, .filter-row-3, .filter-row-4, .form-grid, .calc-result { grid-template-columns: 1fr; }
+    .grid, .filter-row-3, .filter-row-4, .form-grid, .calc-result, .detail-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -526,6 +530,15 @@
   <div class="toast" id="toast"></div>
 
 <script>
+// --- تحديد اللي بيظهر أول ما الصفحة تفتح ---
+if (sessionStorage.getItem('isSystemOpen') === 'true') {
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('systemApp').style.display = 'flex';
+} else {
+    document.getElementById('landingPage').style.display = 'block';
+    document.getElementById('systemApp').style.display = 'none';
+}
+
 // --- Language Translation Logic ---
 let currentLang = 'ar';
 function toggleLanguage() {
@@ -566,7 +579,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// تفعيل استرجاع الإيميل والباسورد المخزنين تلقائياً
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) {
         document.getElementById('loginEmail').value = localStorage.getItem('savedEmail');
@@ -592,37 +604,32 @@ const DELIVERY_TIMELINES = [
   {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'},
 ];
 
-// التأكد من أن الزيارة الجديدة تبدأ دائماً من صفحة الترحيب وعدم الدخول التلقائي
-if (!sessionStorage.getItem('visitedBefore')) {
-    auth.signOut();
-    sessionStorage.setItem('visitedBefore', 'true');
-}
-
 auth.onAuthStateChanged(async (user) => {
-  // لو المستخدم فاتح لينك جديد ومش مسجل في السيشن دي، بنعمل تسجيل خروج ونظهر صفحة الترحيب
-  if (user && sessionStorage.getItem('isLoggedInSession') === 'true') {
+  if (user) {
+    if (sessionStorage.getItem('isSystemOpen') !== 'true') {
+        auth.signOut();
+        return; 
+    }
+
     currentUser = user;
-    isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
-    document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
+    isAdmin = true; 
+    
+    document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + ' (الإدارة)';
     document.getElementById('authActionBtn').textContent = 'خروج';
     
+    document.getElementById('addMainLocWrap').style.display = 'flex';
+    document.getElementById('adminActions').style.display = 'flex';
+    
+    await syncCloudData();
+
     document.getElementById('paywallModal').style.display = 'none';
     document.getElementById('landingPage').style.display = 'none';
     document.getElementById('systemApp').style.display = 'flex';
     
-    if (isAdmin) {
-      document.getElementById('addMainLocWrap').style.display = 'flex';
-      document.getElementById('adminActions').style.display = 'flex';
-    } else {
-      document.getElementById('addMainLocWrap').style.display = 'none';
-      document.getElementById('adminActions').style.display = 'none';
-    }
-    await syncCloudData();
   } else {
     currentUser = null;
     isAdmin = false;
-    auth.signOut();
-    sessionStorage.removeItem('isLoggedInSession');
+    sessionStorage.removeItem('isSystemOpen');
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
     document.getElementById('systemApp').style.display = 'none';
@@ -645,22 +652,23 @@ function submitLogin() {
       localStorage.removeItem('savedPassword');
   }
 
+  sessionStorage.setItem('isSystemOpen', 'true');
+
   auth.signInWithEmailAndPassword(email, password).then(() => {
-      sessionStorage.setItem('isLoggedInSession', 'true');
       document.getElementById('paywallModal').style.display = 'none';
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
   }).catch(err => {
-    alert("بيانات الدخول غير صحيحة.");
+      sessionStorage.removeItem('isSystemOpen');
+      alert("بيانات الدخول غير صحيحة.");
   });
 }
 
 function handleAuthAction() {
   if (currentUser) {
     auth.signOut();
-    sessionStorage.removeItem('isLoggedInSession');
-    document.getElementById('systemApp').style.display = 'none';
-    document.getElementById('landingPage').style.display = 'block';
+    sessionStorage.removeItem('isSystemOpen'); 
+    backToLanding();
   } else {
     document.getElementById('paywallModal').style.display = 'flex';
   }
@@ -681,11 +689,14 @@ async function syncCloudData() {
 }
 
 async function saveMainLocationsToCloud() {
-  if(isAdmin) await db.collection('system').doc('locations').set({ mainLocations });
+  try {
+      await db.collection('system').doc('locations').set({ mainLocations });
+  } catch (error) {
+      alert('خطأ في الحفظ! تأكد من إعدادات الـ Rules في الفايربيز.');
+  }
 }
 
 async function saveCompoundToCloud() {
-  if(!isAdmin) return;
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
   if(!document.getElementById('fldLocation').value){ showToast('اختر الفرع'); return; }
@@ -711,9 +722,13 @@ async function saveCompoundToCloud() {
   };
 
   const docId = editingCompoundId || uid();
-  await db.collection('compounds').doc(docId).set(data, { merge: true });
-  closeModal('formOverlay');
-  showToast('تم الحفظ بنجاح');
+  try {
+      await db.collection('compounds').doc(docId).set(data, { merge: true });
+      closeModal('formOverlay');
+      showToast('تم حفظ المشروع بالفايربيز بنجاح');
+  } catch (error) {
+      alert('خطأ! الفايربيز رفض الحفظ. تأكد من إعدادات الـ Rules.');
+  }
 }
 
 async function deleteCurrentCompoundFromCloud() {
@@ -745,7 +760,10 @@ function renderLocationTree(){
 
   mainLocations.forEach((mainLoc) => {
     let mainCount = 0;
-    mainLoc.subLocations.forEach(sub => mainCount += compounds.filter(c => c.locationId === sub.id).length);
+    mainLoc.subLocations.forEach(sub => {
+      mainCount += compounds.filter(c => c.locationId === sub.id).length;
+    });
+
     const isOpen = !!openMainLocIds[mainLoc.id];
     html += `<div class="loc-group">
       <div class="loc-group-header-row">
@@ -753,22 +771,24 @@ function renderLocationTree(){
           <span>📍 ${escapeHtml(mainLoc.name)}</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A39B90;">${mainCount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D9C5B2; font-weight:bold;">${mainCount}</span>
           <span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>
           ${isAdmin ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}
         </div>
       </div>
       <div class="sub-loc-list ${isOpen ? 'show' : ''}">`;
+    
     mainLoc.subLocations.forEach(sub => {
       const subCount = compounds.filter(c => c.locationId === sub.id).length;
       html += `<div class="sub-loc-tab ${activeSelection === sub.id?'active':''}" onclick="selectLocationNode('${sub.id}')">
         <span>↳ ${escapeHtml(sub.name)}</span>
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.8;">${subCount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>
           ${isAdmin ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}
         </div>
       </div>`;
     });
+
     html += `</div>
     ${isAdmin ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}
     </div>`;
@@ -1075,7 +1095,7 @@ function renderDetailModalContent(){
     <div class="detail-item"><b>سعر المتر</b>${pText}</div>
     <div class="detail-item"><b>الصيانة والجراج</b>صيانة: ${c.maintenancePercent || 0}% | جراج: ${formatNum(c.parkingFee || 0)} ج</div>
     <div class="detail-item"><b>المساحة الإجمالية</b>${c.projectSize ? c.projectSize + ' فدان' : '-'}</div>
-    <div class="detail-item full" style="border:none;"><b>الموقع بالتفصيل</b>${escapeHtml(c.compoundLocationDetail || '-')}</div>
+    <div class="detail-item full"><b>الموقع بالتفصيل</b>${escapeHtml(c.compoundLocationDetail || '-')}</div>
   </div>`;
 
   const grouped = {}; (c.unitTypes||[]).forEach(u=>{ (grouped[u.bedroomType]=grouped[u.bedroomType]||[]).push(u); });
@@ -1138,10 +1158,10 @@ function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id
 function renderCalcBulletsRows(){
   document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`
     <div class="bullet-row"><div class="bullet-top">
-      <select style="flex:1;" onchange="updateBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
-      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateBullet('${b.id}','percent',this.value)">
-      <button class="row-del" onclick="removeBulletRow('${b.id}')">✕</button>
-    </div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>
+      <select style="flex:1;" onchange="updateCalcBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
+      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
+      <button class="row-del" onclick="removeCalcBulletRow('${b.id}')">✕</button>
+    </div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>
   `).join('');
 }
 
