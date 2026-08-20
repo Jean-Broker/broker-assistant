@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>سجل المشروعات العقارية - Cloud Beta</title>
+<title>Broker-Assistant | النظام الذكي لإدارة العقارات</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Markazi+Text:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
@@ -178,7 +178,7 @@
 <div class="app">
 
   <aside class="sidebar">
-    <div class="brand">سجل المشروعات<br><small>CLOUD BETA SAAS</small></div>
+    <div class="brand">Broker-Assistant<br><small>إدارة: Jean Hany</small></div>
 
     <div class="auth-badge">
       <span id="userEmailLabel">يرجى تسجيل الدخول</span>
@@ -422,7 +422,7 @@ const db = firebase.firestore();
 
 // --- 2. SYSTEM VARIABLES ---
 let currentUser = null;
-let isAdmin = false; // المتغير السحري لمعرفة هل ده المدير ولا يوزر عادي
+let isAdmin = false;
 
 let mainLocations = []; 
 let compounds = [];
@@ -452,16 +452,12 @@ const DELIVERY_TIMELINES = [
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
-    
-    // التحقق من إيميل المدير (يجب أن يكتب بالحروف الصغيرة)
     isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
 
-    // إظهار الإيميل وكلمة (مدير) لو كان هو المالك
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
     document.getElementById('authActionBtn').textContent = 'خروج';
     document.getElementById('paywallModal').style.display = 'none';
     
-    // إظهار أو إخفاء زراير الإضافة حسب الصلاحية
     if (isAdmin) {
       document.getElementById('addMainLocWrap').style.display = 'flex';
       document.getElementById('adminActions').style.display = 'flex';
@@ -492,7 +488,6 @@ function submitLogin() {
     return;
   }
 
-  // تم إلغاء كود إنشاء الحساب. الدخول فقط للحسابات المسجلة.
   auth.signInWithEmailAndPassword(email, password).catch(err => {
     alert("هذا الحساب غير مسجل أو كلمة المرور خاطئة. برجاء التواصل مع الإدارة لإنشاء حسابك.");
   });
@@ -528,13 +523,13 @@ async function syncCloudData() {
 
 // --- 4. CLOUD SAVE FUNCTIONS ---
 async function saveMainLocationsToCloud() {
-  if(isAdmin) { // فقط المدير يحق له التعديل
+  if(isAdmin) {
     await db.collection('system').doc('locations').set({ mainLocations });
   }
 }
 
 async function saveCompoundToCloud() {
-  if(!isAdmin) return; // فقط المدير يحق له الإضافة/التعديل
+  if(!isAdmin) return;
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('من فضلك أدخل اسم المشروع'); return; }
   if(!document.getElementById('fldLocation').value){ showToast('اختر الفرع/المنطقة أولاً'); return; }
@@ -567,7 +562,7 @@ async function saveCompoundToCloud() {
 }
 
 async function deleteCurrentCompoundFromCloud() {
-  if(!isAdmin) return; // فقط المدير يحق له الحذف
+  if(!isAdmin) return;
   if(!confirm('هل أنت متأكد من حذف هذا المشروع نهائياً من السحابة؟')) return;
   
   await db.collection('compounds').doc(viewingCompoundId).delete();
@@ -809,6 +804,13 @@ function updatePriceMeterAvg(){
   document.getElementById('fldPriceMeterAvg').value = formatNum(Math.round(avg)) + ' جنيه';
 }
 
+function getAveragePricePerMeter(){
+  const min = parseFloat(document.getElementById('fldPriceMeterMin').value) || 0;
+  const max = parseFloat(document.getElementById('fldPriceMeterMax').value) || 0;
+  if(min > 0 && max > 0) return (min + max) / 2;
+  return min || max || 0;
+}
+
 function addUnitRow(){ tempUnits.push({id:uid(), bedroomType:'studio', area:'', price:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 function renderUnitRows(){
@@ -898,11 +900,17 @@ function openDetail(id){
 function setDetailCategory(catKey){ activeDetailCategory = catKey; activeDetailUnitId = compounds.find(x=>x.id===viewingCompoundId).unitTypes.filter(u=>u.bedroomType===catKey)[0]?.id; renderDetailModalContent(); }
 function setDetailUnit(uId){ activeDetailUnitId = uId; renderDetailModalContent(); }
 
+function editCurrentCompound(){
+  const c = compounds.find(x=>x.id===viewingCompoundId);
+  if(!c) return;
+  closeModal('detailOverlay');
+  openCompoundForm(c);
+}
+
 function renderDetailModalContent(){
   const c = compounds.find(x=>x.id===viewingCompoundId);
   document.getElementById('detailTitle').textContent = c.projectName;
   
-  // التحكم في زراير التعديل والحذف من داخل تفاصيل المشروع
   if (isAdmin) {
     document.getElementById('btnEditCompound').style.display = 'inline-block';
     document.getElementById('btnDeleteCompound').style.display = 'inline-block';
