@@ -131,10 +131,13 @@
   .filter-bar{ background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:14px; margin-bottom:16px; box-shadow: var(--shadow); }
   .filter-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
   .filter-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
-  .field{ display:flex; flex-direction:column; gap:5px; }
-  .field label{ font-size:11.5px; color:var(--text-muted); font-weight:700; letter-spacing:0.3px; }
-  .field input, .field select{ border:1px solid var(--border-color); background:#FAFAFA; border-radius:8px; padding:9px 11px; font-size:13.5px; font-family:inherit; color:var(--text-main); width: 100%; outline: none; transition: all 0.2s ease; }
-  .field input:focus, .field select:focus { border-color: var(--primary-color); background: #FFFFFF; box-shadow: 0 0 0 3px var(--primary-light); }
+  
+  /* هنا كان النقص اللي بوظ شكل الفورم.. اتظبط اهو */
+  .field, .form-field { display:flex; flex-direction:column; gap:5px; }
+  .field label, .form-field label { font-size:11.5px; color:var(--text-muted); font-weight:700; letter-spacing:0.3px; }
+  .field input, .field select, .form-field input, .form-field select { border:1px solid var(--border-color); background:#FAFAFA; border-radius:8px; padding:9px 11px; font-size:13.5px; font-family:inherit; color:var(--text-main); width: 100%; outline: none; transition: all 0.2s ease; }
+  .field input:focus, .field select:focus, .form-field input:focus, .form-field select:focus { border-color: var(--primary-color); background: #FFFFFF; box-shadow: 0 0 0 3px var(--primary-light); }
+  
   .filter-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; width: 100%; }
   .project-type-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; align-items: center; }
   .type-nav-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-left: 4px; }
@@ -416,7 +419,6 @@
       </div>
 
       <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
-      <!-- زرار الإلغاء تحت تم تصليحه -->
       <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeLoginModal()" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
     </div>
   </div>
@@ -566,10 +568,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// مسح أي تسجيل دخول قديم بمجرد فتح اللينك عشان السيستم ميفتحش لوحده!
 auth.signOut();
 
-// استرجاع الإيميل والباسورد لو كان معلم على "تذكر بيانات الدخول"
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) {
         document.getElementById('loginEmail').value = localStorage.getItem('savedEmail');
@@ -625,7 +625,6 @@ function submitLogin() {
 
   if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; }
 
-  // حفظ بيانات الدخول لو معلم على المربع
   if (remember) {
       localStorage.setItem('savedEmail', email);
       localStorage.setItem('savedPassword', password);
