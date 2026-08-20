@@ -526,13 +526,6 @@
   <div class="toast" id="toast"></div>
 
 <script>
-// --- السطر السحري لمنع رعشة الشاشة (Flicker) مع الـ Refresh ---
-// بيقرا السيشن قبل ما الصفحة ترسم أي حاجة، لو مفتوح بيدخل على طول!
-if (sessionStorage.getItem('isSystemOpen') === 'true') {
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('systemApp').style.display = 'flex';
-}
-
 // --- Language Translation Logic ---
 let currentLang = 'ar';
 function toggleLanguage() {
@@ -573,6 +566,17 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// --- السطر السحري للتحكم في الريفرش واللينك الجديد ---
+if (sessionStorage.getItem('isSystemOpen') === 'true') {
+    // لو بيعمل ريفرش، السيشن موجود، هنفتح السيستم على طول بدون رعشة
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('systemApp').style.display = 'flex';
+} else {
+    // لو فاتح لينك جديد (مش ريفرش)، بنجبر الفايربيز يعمل تسجيل خروج
+    // عشان يضطر يدوس "دخول" ويشوف صفحة الترحيب الأول
+    auth.signOut();
+}
+
 // استرجاع الإيميل والباسورد لو كان معلم على "تذكر بيانات الدخول"
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) {
@@ -603,7 +607,6 @@ auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
     
-    // شلت الشرط الصعب عشان لو بتدخل بأي إيميل يقدر يضيف مناطق ويحفظ!
     isAdmin = true; 
     
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + ' (الإدارة)';
@@ -614,7 +617,6 @@ auth.onAuthStateChanged(async (user) => {
     
     await syncCloudData();
 
-    // تأكيد إنك جوا السيستم طالما الفايربيز شافك مسجل
     sessionStorage.setItem('isSystemOpen', 'true');
     document.getElementById('paywallModal').style.display = 'none';
     document.getElementById('landingPage').style.display = 'none';
@@ -690,7 +692,6 @@ async function syncCloudData() {
   });
 }
 
-// تنبيهات الحفظ عشان نعرف المشكلة لو الداتا مرضيتش تتحفظ
 async function saveMainLocationsToCloud() {
   try {
       await db.collection('system').doc('locations').set({ mainLocations });
