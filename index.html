@@ -602,7 +602,6 @@ const DELIVERY_TIMELINES = [
 
 auth.onAuthStateChanged(async (user) => {
   if (user) {
-    // ⬅️ الحتة دي اللي بتمنع الرعشة لو إنت فاتح لينك جديد
     if (sessionStorage.getItem('isSystemOpen') !== 'true') {
         auth.signOut();
         return; 
@@ -649,7 +648,6 @@ function submitLogin() {
       localStorage.removeItem('savedPassword');
   }
 
-  // 🔴 الحل السحري: بنسجل إن السيستم اتفتح "قبل" ما نبعت للفايربيز
   sessionStorage.setItem('isSystemOpen', 'true');
 
   auth.signInWithEmailAndPassword(email, password).then(() => {
@@ -657,7 +655,7 @@ function submitLogin() {
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
   }).catch(err => {
-      sessionStorage.removeItem('isSystemOpen'); // لو الباسورد غلط نمسح السيشن
+      sessionStorage.removeItem('isSystemOpen');
       alert("بيانات الدخول غير صحيحة.");
   });
 }
@@ -750,6 +748,7 @@ function populateDeliverySelects(){
 
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
+// --- تم تعديل دالة الشجرة لعرض إجمالي مشروعات المنطقة الرئيسية وعدد كل فرع فرعي ---
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree');
   let html = `<div class="sub-loc-tab ${activeSelection==='all'?'active':''}" onclick="selectLocationNode('all')">
@@ -758,7 +757,11 @@ function renderLocationTree(){
 
   mainLocations.forEach((mainLoc) => {
     let mainCount = 0;
-    mainLoc.subLocations.forEach(sub => mainCount += compounds.filter(c => c.locationId === sub.id).length);
+    // حساب مجموع المشروعات لكل الفروع التابعة للممنطقة الرئيسية دي
+    mainLoc.subLocations.forEach(sub => {
+      mainCount += compounds.filter(c => c.locationId === sub.id).length;
+    });
+
     const isOpen = !!openMainLocIds[mainLoc.id];
     html += `<div class="loc-group">
       <div class="loc-group-header-row">
@@ -766,22 +769,24 @@ function renderLocationTree(){
           <span>📍 ${escapeHtml(mainLoc.name)}</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A39B90;">${mainCount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D9C5B2; font-weight:bold;">${mainCount}</span>
           <span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>
           ${isAdmin ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}
         </div>
       </div>
       <div class="sub-loc-list ${isOpen ? 'show' : ''}">`;
+    
     mainLoc.subLocations.forEach(sub => {
       const subCount = compounds.filter(c => c.locationId === sub.id).length;
       html += `<div class="sub-loc-tab ${activeSelection === sub.id?'active':''}" onclick="selectLocationNode('${sub.id}')">
         <span>↳ ${escapeHtml(sub.name)}</span>
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.8;">${subCount}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>
           ${isAdmin ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}
         </div>
       </div>`;
     });
+
     html += `</div>
     ${isAdmin ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}
     </div>`;
@@ -1031,7 +1036,7 @@ function renderPlanRows(){
     </div>`).join('') || '<div style="font-size:12.5px;color:var(--text-muted);">لا توجد خطط سداد</div>';
 }
 function updatePlan(id, field, val){ const p = tempPlans.find(x=>x.id===id); if(p) p[field] = (field==='name'||field==='notes'||field==='frequency')?val:(parseFloat(val)||0); }
-function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(field==='type')renderPlanRows();} }
+function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(f==='type')renderPlanRows();} }
 
 function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', description:'', date:''}); renderDecreeRows(); }
 function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
@@ -1147,10 +1152,10 @@ function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id
 function renderCalcBulletsRows(){
   document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`
     <div class="bullet-row"><div class="bullet-top">
-      <select style="flex:1;" onchange="updateCalcBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
-      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
-      <button class="row-del" onclick="removeCalcBulletRow('${b.id}')">✕</button>
-    </div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>
+      <select style="flex:1;" onchange="updateBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
+      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateBullet('${b.id}','percent',this.value)">
+      <button class="row-del" onclick="removeBulletRow('${b.id}')">✕</button>
+    </div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>
   `).join('');
 }
 
@@ -1162,10 +1167,7 @@ function runUniversalCalculator(){
   box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
 }
 
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
-
-populateDeliverySelects();
+(قوس إغلاق دالة الإغلاق والعرض)
 </script>
 </body>
 </html>
