@@ -526,6 +526,13 @@
   <div class="toast" id="toast"></div>
 
 <script>
+// --- السطر السحري لمنع رعشة الشاشة (Flicker) مع الـ Refresh ---
+// بيقرا السيشن قبل ما الصفحة ترسم أي حاجة، لو مفتوح بيدخل على طول!
+if (sessionStorage.getItem('isSystemOpen') === 'true') {
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('systemApp').style.display = 'flex';
+}
+
 // --- Language Translation Logic ---
 let currentLang = 'ar';
 function toggleLanguage() {
@@ -607,16 +614,16 @@ auth.onAuthStateChanged(async (user) => {
     
     await syncCloudData();
 
-    // السطر ده هو اللي بيحل مشكلة الريفرش: لو هو داس دخول بإيده والسيستم فتح، وفجأة عمل ريفرش، هيرجعوا للسيستم فوراً!
-    if (sessionStorage.getItem('isSystemOpen') === 'true') {
-        document.getElementById('paywallModal').style.display = 'none';
-        document.getElementById('landingPage').style.display = 'none';
-        document.getElementById('systemApp').style.display = 'flex';
-    }
+    // تأكيد إنك جوا السيستم طالما الفايربيز شافك مسجل
+    sessionStorage.setItem('isSystemOpen', 'true');
+    document.getElementById('paywallModal').style.display = 'none';
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('systemApp').style.display = 'flex';
     
   } else {
     currentUser = null;
     isAdmin = false;
+    sessionStorage.removeItem('isSystemOpen'); // إزالة السيشن لو مش مسجل
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
     document.getElementById('systemApp').style.display = 'none';
@@ -631,6 +638,7 @@ function submitLogin() {
 
   if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; }
 
+  // حفظ بيانات الدخول لو معلم على المربع
   if (remember) {
       localStorage.setItem('savedEmail', email);
       localStorage.setItem('savedPassword', password);
@@ -682,6 +690,7 @@ async function syncCloudData() {
   });
 }
 
+// تنبيهات الحفظ عشان نعرف المشكلة لو الداتا مرضيتش تتحفظ
 async function saveMainLocationsToCloud() {
   try {
       await db.collection('system').doc('locations').set({ mainLocations });
