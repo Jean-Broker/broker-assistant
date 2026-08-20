@@ -132,7 +132,7 @@
   .filter-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
   .filter-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
   
-  /* هنا كان النقص اللي بوظ شكل الفورم.. اتظبط اهو */
+  /* تم تصليح الحقول في الفورم لتأخذ العرض بالكامل وتظهر بشكل منسق */
   .field, .form-field { display:flex; flex-direction:column; gap:5px; }
   .field label, .form-field label { font-size:11.5px; color:var(--text-muted); font-weight:700; letter-spacing:0.3px; }
   .field input, .field select, .form-field input, .form-field select { border:1px solid var(--border-color); background:#FAFAFA; border-radius:8px; padding:9px 11px; font-size:13.5px; font-family:inherit; color:var(--text-main); width: 100%; outline: none; transition: all 0.2s ease; }
@@ -404,7 +404,6 @@
   <!-- Login Modal -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card">
-      <!-- زرار الإغلاق (X) فوق -->
       <button class="login-close-btn" onclick="closeLoginModal()">✕</button>
       
       <h2 data-ar="تسجيل الدخول للنظام" data-en="Login to System">تسجيل الدخول للنظام</h2>
@@ -542,7 +541,12 @@ function toggleLanguage() {
 
 // --- App Navigation Logic ---
 function openSystemLogin() {
-    document.getElementById('paywallModal').style.display = 'flex';
+    if(currentUser) {
+        document.getElementById('landingPage').style.display = 'none';
+        document.getElementById('systemApp').style.display = 'flex';
+    } else {
+        document.getElementById('paywallModal').style.display = 'flex';
+    }
 }
 
 function closeLoginModal() {
@@ -568,8 +572,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-auth.signOut();
-
+// استرجاع الإيميل والباسورد لو كان معلم على "تذكر بيانات الدخول"
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) {
         document.getElementById('loginEmail').value = localStorage.getItem('savedEmail');
@@ -598,9 +601,13 @@ const DELIVERY_TIMELINES = [
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
+    // لازم الإيميل ده بالظبط عشان الفايربيز يقبل الحفظ
     isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
     document.getElementById('authActionBtn').textContent = 'خروج';
+    
+    // مش بنخفي الـ Landing Page عشان ميفاجئش العميل
+    document.getElementById('paywallModal').style.display = 'none';
     
     if (isAdmin) {
       document.getElementById('addMainLocWrap').style.display = 'flex';
@@ -625,6 +632,7 @@ function submitLogin() {
 
   if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; }
 
+  // حفظ بيانات الدخول لو معلم على المربع
   if (remember) {
       localStorage.setItem('savedEmail', email);
       localStorage.setItem('savedPassword', password);
@@ -665,12 +673,25 @@ async function syncCloudData() {
   });
 }
 
+// تنبيهات الحفظ عشان نعرف المشكلة لو الداتا مرضيتش تتحفظ
 async function saveMainLocationsToCloud() {
-  if(isAdmin) await db.collection('system').doc('locations').set({ mainLocations });
+  if(isAdmin) {
+      try {
+          await db.collection('system').doc('locations').set({ mainLocations });
+          showToast('تم إضافة المنطقة للسحابة بنجاح');
+      } catch (error) {
+          alert('خطأ! الفايربيز رفض الحفظ. تأكد من إعدادات الـ Rules.');
+      }
+  } else {
+      alert('ليس لديك صلاحية الإدارة (البريد الخاص بجان هاني فقط) لحفظ البيانات في السحابة.');
+  }
 }
 
 async function saveCompoundToCloud() {
-  if(!isAdmin) return;
+  if(!isAdmin) {
+      alert('عفواً، حساب الإدارة فقط من يمكنه إضافة مشروعات للسحابة.');
+      return;
+  }
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
   if(!document.getElementById('fldLocation').value){ showToast('اختر الفرع'); return; }
@@ -696,9 +717,13 @@ async function saveCompoundToCloud() {
   };
 
   const docId = editingCompoundId || uid();
-  await db.collection('compounds').doc(docId).set(data, { merge: true });
-  closeModal('formOverlay');
-  showToast('تم الحفظ بنجاح');
+  try {
+      await db.collection('compounds').doc(docId).set(data, { merge: true });
+      closeModal('formOverlay');
+      showToast('تم حفظ المشروع بالفايربيز بنجاح');
+  } catch (error) {
+      alert('خطأ! الفايربيز رفض الحفظ. تأكد من إعدادات الـ Rules.');
+  }
 }
 
 async function deleteCurrentCompoundFromCloud() {
