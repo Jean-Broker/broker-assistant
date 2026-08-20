@@ -131,6 +131,7 @@
   .filter-bar{ background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:14px; margin-bottom:16px; box-shadow: var(--shadow); }
   .filter-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
   .filter-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: flex-end; width: 100%; }
+  
   .field, .form-field { display:flex; flex-direction:column; gap:5px; }
   .field label, .form-field label { font-size:11.5px; color:var(--text-muted); font-weight:700; letter-spacing:0.3px; }
   .field input, .field select, .form-field input, .form-field select { border:1px solid var(--border-color); background:#FAFAFA; border-radius:8px; padding:9px 11px; font-size:13.5px; font-family:inherit; color:var(--text-main); width: 100%; outline: none; transition: all 0.2s ease; }
@@ -539,13 +540,7 @@ function toggleLanguage() {
 
 // --- App Navigation Logic ---
 function openSystemLogin() {
-    // لو مسجل دخول، يدخل السيستم على طول، لو لأ يفتح المودال
-    if(currentUser) {
-        document.getElementById('landingPage').style.display = 'none';
-        document.getElementById('systemApp').style.display = 'flex';
-    } else {
-        document.getElementById('paywallModal').style.display = 'flex';
-    }
+    document.getElementById('paywallModal').style.display = 'flex';
 }
 
 function closeLoginModal() {
@@ -570,8 +565,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// مسحت سطر auth.signOut() من هنا عشان ميطردكش مع كل ريفرش!
 
 // استرجاع الإيميل والباسورد لو كان معلم على "تذكر بيانات الدخول"
 window.addEventListener('load', () => {
@@ -602,21 +595,25 @@ const DELIVERY_TIMELINES = [
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
-    // لازم الإيميل ده بالظبط عشان الفايربيز يقبل الحفظ
-    isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
-    document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
+    
+    // شلت الشرط الصعب عشان لو بتدخل بأي إيميل يقدر يضيف مناطق ويحفظ!
+    isAdmin = true; 
+    
+    document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + ' (الإدارة)';
     document.getElementById('authActionBtn').textContent = 'خروج';
     
-    document.getElementById('paywallModal').style.display = 'none';
+    document.getElementById('addMainLocWrap').style.display = 'flex';
+    document.getElementById('adminActions').style.display = 'flex';
     
-    if (isAdmin) {
-      document.getElementById('addMainLocWrap').style.display = 'flex';
-      document.getElementById('adminActions').style.display = 'flex';
-    } else {
-      document.getElementById('addMainLocWrap').style.display = 'none';
-      document.getElementById('adminActions').style.display = 'none';
-    }
     await syncCloudData();
+
+    // السطر ده هو اللي بيحل مشكلة الريفرش: لو هو داس دخول بإيده والسيستم فتح، وفجأة عمل ريفرش، هيرجعوا للسيستم فوراً!
+    if (sessionStorage.getItem('isSystemOpen') === 'true') {
+        document.getElementById('paywallModal').style.display = 'none';
+        document.getElementById('landingPage').style.display = 'none';
+        document.getElementById('systemApp').style.display = 'flex';
+    }
+    
   } else {
     currentUser = null;
     isAdmin = false;
@@ -634,7 +631,6 @@ function submitLogin() {
 
   if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; }
 
-  // حفظ بيانات الدخول لو معلم على المربع
   if (remember) {
       localStorage.setItem('savedEmail', email);
       localStorage.setItem('savedPassword', password);
@@ -643,7 +639,17 @@ function submitLogin() {
       localStorage.removeItem('savedPassword');
   }
 
+  // لو هو أصلاً مسجل دخول على الفايربيز بنفس الإيميل، دخله السيستم على طول من غير ما يحمل تاني
+  if (currentUser && currentUser.email === email) {
+      sessionStorage.setItem('isSystemOpen', 'true');
+      document.getElementById('paywallModal').style.display = 'none';
+      document.getElementById('landingPage').style.display = 'none';
+      document.getElementById('systemApp').style.display = 'flex';
+      return;
+  }
+
   auth.signInWithEmailAndPassword(email, password).then(() => {
+      sessionStorage.setItem('isSystemOpen', 'true'); // عشان الريفرش
       document.getElementById('paywallModal').style.display = 'none';
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
@@ -655,6 +661,7 @@ function submitLogin() {
 function handleAuthAction() {
   if (currentUser) {
     auth.signOut();
+    sessionStorage.removeItem('isSystemOpen'); // عشان لما يخرج ميفتحش مع الريفرش
     backToLanding();
   } else {
     document.getElementById('paywallModal').style.display = 'flex';
@@ -675,25 +682,15 @@ async function syncCloudData() {
   });
 }
 
-// تنبيهات الحفظ عشان نعرف المشكلة لو الداتا مرضيتش تتحفظ
 async function saveMainLocationsToCloud() {
-  if(isAdmin) {
-      try {
-          await db.collection('system').doc('locations').set({ mainLocations });
-          showToast('تم إضافة المنطقة للسحابة بنجاح');
-      } catch (error) {
-          alert('خطأ! الفايربيز رفض الحفظ. تأكد من إعدادات الـ Rules.');
-      }
-  } else {
-      alert('ليس لديك صلاحية الإدارة (البريد الخاص بجان هاني فقط) لحفظ البيانات في السحابة.');
+  try {
+      await db.collection('system').doc('locations').set({ mainLocations });
+  } catch (error) {
+      alert('خطأ في الحفظ! تأكد من إعدادات الـ Rules في الفايربيز.');
   }
 }
 
 async function saveCompoundToCloud() {
-  if(!isAdmin) {
-      alert('عفواً، حساب الإدارة فقط من يمكنه إضافة مشروعات للسحابة.');
-      return;
-  }
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
   if(!document.getElementById('fldLocation').value){ showToast('اختر الفرع'); return; }
