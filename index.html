@@ -526,6 +526,15 @@
   <div class="toast" id="toast"></div>
 
 <script>
+// --- تحديد اللي بيظهر أول ما الصفحة تفتح من غير رعشة ---
+if (sessionStorage.getItem('isSystemOpen') === 'true') {
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('systemApp').style.display = 'flex';
+} else {
+    document.getElementById('landingPage').style.display = 'block';
+    document.getElementById('systemApp').style.display = 'none';
+}
+
 // --- Language Translation Logic ---
 let currentLang = 'ar';
 function toggleLanguage() {
@@ -566,18 +575,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- السطر السحري للتحكم في الريفرش واللينك الجديد ---
-if (sessionStorage.getItem('isSystemOpen') === 'true') {
-    // لو بيعمل ريفرش، السيشن موجود، هنفتح السيستم على طول بدون رعشة
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('systemApp').style.display = 'flex';
-} else {
-    // لو فاتح لينك جديد (مش ريفرش)، بنجبر الفايربيز يعمل تسجيل خروج
-    // عشان يضطر يدوس "دخول" ويشوف صفحة الترحيب الأول
-    auth.signOut();
-}
-
-// استرجاع الإيميل والباسورد لو كان معلم على "تذكر بيانات الدخول"
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) {
         document.getElementById('loginEmail').value = localStorage.getItem('savedEmail');
@@ -605,8 +602,13 @@ const DELIVERY_TIMELINES = [
 
 auth.onAuthStateChanged(async (user) => {
   if (user) {
+    // ⬅️ الحتة دي اللي بتمنع الرعشة لو إنت فاتح لينك جديد
+    if (sessionStorage.getItem('isSystemOpen') !== 'true') {
+        auth.signOut();
+        return; 
+    }
+
     currentUser = user;
-    
     isAdmin = true; 
     
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + ' (الإدارة)';
@@ -617,7 +619,6 @@ auth.onAuthStateChanged(async (user) => {
     
     await syncCloudData();
 
-    sessionStorage.setItem('isSystemOpen', 'true');
     document.getElementById('paywallModal').style.display = 'none';
     document.getElementById('landingPage').style.display = 'none';
     document.getElementById('systemApp').style.display = 'flex';
@@ -625,7 +626,7 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     currentUser = null;
     isAdmin = false;
-    sessionStorage.removeItem('isSystemOpen'); // إزالة السيشن لو مش مسجل
+    sessionStorage.removeItem('isSystemOpen');
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
     document.getElementById('systemApp').style.display = 'none';
@@ -640,7 +641,6 @@ function submitLogin() {
 
   if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; }
 
-  // حفظ بيانات الدخول لو معلم على المربع
   if (remember) {
       localStorage.setItem('savedEmail', email);
       localStorage.setItem('savedPassword', password);
@@ -649,17 +649,8 @@ function submitLogin() {
       localStorage.removeItem('savedPassword');
   }
 
-  // لو هو أصلاً مسجل دخول على الفايربيز بنفس الإيميل، دخله السيستم على طول من غير ما يحمل تاني
-  if (currentUser && currentUser.email === email) {
-      sessionStorage.setItem('isSystemOpen', 'true');
-      document.getElementById('paywallModal').style.display = 'none';
-      document.getElementById('landingPage').style.display = 'none';
-      document.getElementById('systemApp').style.display = 'flex';
-      return;
-  }
-
   auth.signInWithEmailAndPassword(email, password).then(() => {
-      sessionStorage.setItem('isSystemOpen', 'true'); // عشان الريفرش
+      sessionStorage.setItem('isSystemOpen', 'true'); // السيشن اتفتح
       document.getElementById('paywallModal').style.display = 'none';
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
@@ -671,7 +662,7 @@ function submitLogin() {
 function handleAuthAction() {
   if (currentUser) {
     auth.signOut();
-    sessionStorage.removeItem('isSystemOpen'); // عشان لما يخرج ميفتحش مع الريفرش
+    sessionStorage.removeItem('isSystemOpen'); 
     backToLanding();
   } else {
     document.getElementById('paywallModal').style.display = 'flex';
