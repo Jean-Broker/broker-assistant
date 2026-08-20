@@ -22,8 +22,19 @@
     --shadow: 0 8px 24px rgba(44, 40, 37, 0.05);
   }
   *{box-sizing:border-box;}
-  body{ margin:0; background:var(--bg-app); color:var(--text-main); font-family:'IBM Plex Sans Arabic',sans-serif; min-height:100vh; }
+  body{ margin:0; background:var(--bg-app); color:var(--text-main); font-family:'IBM Plex Sans Arabic',sans-serif; min-height:100vh; transition: 0.3s; }
   
+  [lang="en"] { direction: ltr; text-align: left; }
+  
+  /* Language Switcher Button */
+  .lang-switcher {
+      position: fixed; top: 15px; right: 15px; z-index: 9999;
+      background: #1F2421; color: #D4AF37; border: 1px solid #D4AF37;
+      padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;
+      font-family: inherit; transition: 0.3s;
+  }
+  [lang="en"] .lang-switcher { right: auto; left: 15px; }
+
   /* Landing Page Styling */
   #landingPage { display: block; width: 100%; min-height: 100vh; }
   #systemApp { display: none; min-height: 100vh; }
@@ -31,10 +42,10 @@
   header.landing-hero {
       background: linear-gradient(135deg, #2C2825, #3D5A45);
       color: white;
-      padding: 60px 20px;
+      padding: 80px 20px;
       text-align: center;
   }
-  header.landing-hero h1 { font-size: 42px; margin: 0 0 10px 0; color: #D4AF37; font-family:'Markazi Text', serif; }
+  header.landing-hero h1 { font-size: 48px; margin: 0 0 10px 0; color: #D4AF37; font-family:'Markazi Text', serif; }
   header.landing-hero p { font-size: 18px; max-width: 700px; margin: auto; opacity: 0.9; line-height: 1.6; }
   
   .landing-content { max-width: 1000px; margin: auto; padding: 40px 20px; }
@@ -74,7 +85,7 @@
   .price-val { font-size: 26px; font-weight: bold; margin: 15px 0; color: #3D5A45; }
 
   /* System App Styles */
-  .app{ display:flex; min-height:100vh; }
+  .app{ display:none; min-height:100vh; }
   .sidebar{ width:300px; flex-shrink:0; background:var(--bg-sidebar); color:#FAF7F2; padding:32px 20px; display:flex; flex-direction:column; gap:20px; }
   .brand{ font-family:'Markazi Text', serif; font-size:30px; font-weight:700; letter-spacing:0.5px; color:#D9C5B2; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; }
   .brand small{ display:block; margin-top:4px; font-family:'IBM Plex Sans Arabic',sans-serif; font-size:11px; font-weight:400; color:#9E968D; letter-spacing:1px; }
@@ -218,48 +229,53 @@
 </head>
 <body>
 
+  <!-- Language Switcher Button -->
+  <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
+
   <!-- واجهة الترحيب (Landing Page) -->
   <div id="landingPage">
       <header class="landing-hero">
-          <h1>Broker-Assistant</h1>
-          <p>النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.</p>
-          <button class="btn" style="background:#D4AF37; color:#2C2825; margin-top:25px; padding:12px 30px; font-size:16px;" onclick="openSystemLogin()">دخول للنظام</button>
+          <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
+          <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy. Designed specifically for real estate brokers to organize clients and save time.">
+            النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.
+          </p>
+          <button class="btn" style="background:#D4AF37; color:#2C2825; margin-top:25px; padding:12px 30px; font-size:16px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;" onclick="openSystemLogin()" data-ar="دخول للنظام" data-en="Login to System">دخول للنظام</button>
       </header>
 
       <div class="landing-content">
           <div class="features-grid">
               <div class="feature-card">
-                  <h3>🏢 إدارة المشروعات والوحدات</h3>
-                  <p>سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة.</p>
+                  <h3 data-ar="🏢 إدارة المشروعات والوحدات" data-en="🏢 Projects & Units Management">🏢 إدارة المشروعات والوحدات</h3>
+                  <p data-ar="سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة." data-en="Register your real estate projects, track available and sold units, and monitor prices per meter and delivery dates with ease and flexibility.">سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة.</p>
               </div>
               <div class="feature-card">
-                  <h3>💰 حاسبة دقيقة للأقساط</h3>
-                  <p>احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية.</p>
+                  <h3 data-ar="💰 حاسبة دقيقة للأقساط" data-en="💰 Accurate Installments Calculator">💰 حاسبة دقيقة للأقساط</h3>
+                  <p data-ar="احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية." data-en="Calculate monthly, quarterly, and custom payments accurately without any calculation errors.">احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية.</p>
               </div>
               <div class="feature-card">
-                  <h3>⚡ سرعة واحترافية</h3>
-                  <p>واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
+                  <h3 data-ar="⚡ سرعة واحترافية" data-en="⚡ Speed & Professionalism">⚡ سرعة واحترافية</h3>
+                  <p data-ar="واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك." data-en="A modern, organized interface that ensures you accomplish your daily tasks efficiently with the highest level of security.">واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
               </div>
           </div>
 
           <div class="pricing-section">
-              <h2>باقات الاشتراكات المتاحة</h2>
-              <p style="color: var(--text-muted); margin-bottom: 30px;">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
+              <h2 data-ar="باقات الاشتراكات المتاحة" data-en="Available Subscription Plans">باقات الاشتراكات المتاحة</h2>
+              <p style="color: var(--text-muted); margin-bottom: 30px;" data-ar="اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة." data-en="Choose the right plan for your business and activate your system now by contacting us directly.">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
               <div class="pricing-cards">
-                  <a href="https://wa.me/201060205362?text=أهلاً جين، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه) لسيستم Broker-Assistant" class="price-card">
-                      <h3>باقة شهر واحد</h3>
-                      <div class="price-val">500 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه) لسيستم Broker-Assistant" class="price-card">
+                      <h3 data-ar="باقة شهر واحد" data-en="1 Month Plan">باقة شهر واحد</h3>
+                      <div class="price-val" data-ar="500 جنيه" data-en="500 EGP">500 جنيه</div>
+                      <p style="color:var(--text-muted); font-size:13px;" data-ar="مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته." data-en="Perfect for experiencing the system fully and benefiting from all its features.">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
                   </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جين، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه) لسيستم Broker-Assistant" class="price-card" style="border: 2px solid var(--primary-color);">
-                      <h3>باقة 3 شهور</h3>
-                      <div class="price-val">1200 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه) لسيستم Broker-Assistant" class="price-card" style="border: 2px solid var(--primary-color);">
+                      <h3 data-ar="باقة 3 شهور" data-en="3 Months Plan">باقة 3 شهور</h3>
+                      <div class="price-val" data-ar="1200 جنيه" data-en="1200 EGP">1200 جنيه</div>
+                      <p style="color:var(--text-muted); font-size:13px;" data-ar="توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف." data-en="Bigger savings for continuous follow-up and non-stop workflow.">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
                   </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جين، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه) لسيستم Broker-Assistant" class="price-card">
-                      <h3>باقة 6 شهور</h3>
-                      <div class="price-val">2000 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه) لسيستم Broker-Assistant" class="price-card">
+                      <h3 data-ar="باقة 6 شهور" data-en="6 Months Plan">باقة 6 شهور</h3>
+                      <div class="price-val" data-ar="2000 جنيه" data-en="2000 EGP">2000 جنيه</div>
+                      <p style="color:var(--text-muted); font-size:13px;" data-ar="القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين." data-en="The best value for real estate agencies and professional brokers.">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
                   </a>
               </div>
           </div>
@@ -269,7 +285,7 @@
   <!-- نظام السيستم الأساسي (يظهر بعد تسجيل الدخول) -->
   <div class="app" id="systemApp">
     <aside class="sidebar">
-      <div class="brand">Broker-Assistant<br><small>إدارة: Jean Hany</small></div>
+      <div class="brand">Broker-Assistant<br><small data-ar="إدارة: جان هاني" data-en="Admin: Jean Hany">إدارة: جان هاني</small></div>
 
       <div class="auth-badge">
         <span id="userEmailLabel">يرجى تسجيل الدخول</span>
@@ -300,7 +316,7 @@
           <h1 class="page-title" id="pageTitle">كل المشروعات</h1>
           <div class="page-sub" id="pageSub">جاري التحميل...</div>
         </div>
-        <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="backToLanding()">العودة لصفحة الرئيسية</button>
+        <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="backToLanding()">العودة للصفحة الرئيسية</button>
       </div>
 
       <div class="filter-bar">
@@ -379,12 +395,12 @@
   <!-- Login Modal -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card">
-      <h2>تسجيل الدخول للنظام</h2>
-      <p>برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
-      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني">
-      <input type="password" id="loginPassword" placeholder="كلمة المرور">
-      <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()">دخول</button>
-      <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeModal('paywallModal')">إلغاء</button>
+      <h2 data-ar="تسجيل الدخول للنظام" data-en="Login to System">تسجيل الدخول للنظام</h2>
+      <p data-ar="برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم." data-en="Please enter your authorized account details to access the dashboard.">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
+      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email">
+      <input type="password" id="loginPassword" placeholder="كلمة المرور / Password">
+      <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
+      <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeModal('paywallModal')" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
     </div>
   </div>
 
@@ -493,6 +509,34 @@
   <div class="toast" id="toast"></div>
 
 <script>
+// --- Language Translation Logic ---
+let currentLang = 'ar';
+function toggleLanguage() {
+    currentLang = currentLang === 'ar' ? 'en' : 'ar';
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+    
+    document.querySelectorAll('[data-ar]').forEach(el => {
+        el.innerHTML = el.getAttribute('data-' + currentLang);
+    });
+}
+
+// --- App Navigation Logic ---
+function openSystemLogin() {
+    if(currentUser) {
+        document.getElementById('landingPage').style.display = 'none';
+        document.getElementById('systemApp').style.display = 'flex';
+    } else {
+        document.getElementById('paywallModal').style.display = 'flex';
+    }
+}
+
+function backToLanding() {
+    document.getElementById('systemApp').style.display = 'none';
+    document.getElementById('landingPage').style.display = 'block';
+}
+
+// --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE",
   authDomain: "broker-assistant-63277.firebaseapp.com",
@@ -522,20 +566,6 @@ const DELIVERY_TIMELINES = [
   {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'},
   {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'},
 ];
-
-function openSystemLogin() {
-    if(currentUser) {
-        document.getElementById('landingPage').style.display = 'none';
-        document.getElementById('systemApp').style.display = 'flex';
-    } else {
-        document.getElementById('paywallModal').style.display = 'flex';
-    }
-}
-
-function backToLanding() {
-    document.getElementById('systemApp').style.display = 'none';
-    document.getElementById('landingPage').style.display = 'block';
-}
 
 auth.onAuthStateChanged(async (user) => {
   if (user) {
