@@ -649,13 +649,16 @@ function submitLogin() {
       localStorage.removeItem('savedPassword');
   }
 
+  // 🔴 الحل السحري: بنسجل إن السيستم اتفتح "قبل" ما نبعت للفايربيز
+  sessionStorage.setItem('isSystemOpen', 'true');
+
   auth.signInWithEmailAndPassword(email, password).then(() => {
-      sessionStorage.setItem('isSystemOpen', 'true'); // السيشن اتفتح
       document.getElementById('paywallModal').style.display = 'none';
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
   }).catch(err => {
-    alert("بيانات الدخول غير صحيحة.");
+      sessionStorage.removeItem('isSystemOpen'); // لو الباسورد غلط نمسح السيشن
+      alert("بيانات الدخول غير صحيحة.");
   });
 }
 
