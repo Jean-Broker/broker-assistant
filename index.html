@@ -566,6 +566,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// تفعيل استرجاع الإيميل والباسورد المخزنين تلقائياً
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) {
         document.getElementById('loginEmail').value = localStorage.getItem('savedEmail');
@@ -591,16 +592,23 @@ const DELIVERY_TIMELINES = [
   {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'},
 ];
 
-// التأكد من بدء التطبيق على صفحة الترحيب دائماً للينكات الجديدة
-document.getElementById('landingPage').style.display = 'block';
-document.getElementById('systemApp').style.display = 'none';
+// التأكد من أن الزيارة الجديدة تبدأ دائماً من صفحة الترحيب وعدم الدخول التلقائي
+if (!sessionStorage.getItem('visitedBefore')) {
+    auth.signOut();
+    sessionStorage.setItem('visitedBefore', 'true');
+}
 
 auth.onAuthStateChanged(async (user) => {
-  if (user) {
+  // لو المستخدم فاتح لينك جديد ومش مسجل في السيشن دي، بنعمل تسجيل خروج ونظهر صفحة الترحيب
+  if (user && sessionStorage.getItem('isLoggedInSession') === 'true') {
     currentUser = user;
     isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
     document.getElementById('authActionBtn').textContent = 'خروج';
+    
+    document.getElementById('paywallModal').style.display = 'none';
+    document.getElementById('landingPage').style.display = 'none';
+    document.getElementById('systemApp').style.display = 'flex';
     
     if (isAdmin) {
       document.getElementById('addMainLocWrap').style.display = 'flex';
@@ -613,8 +621,12 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     currentUser = null;
     isAdmin = false;
+    auth.signOut();
+    sessionStorage.removeItem('isLoggedInSession');
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
     document.getElementById('authActionBtn').textContent = 'دخول';
+    document.getElementById('systemApp').style.display = 'none';
+    document.getElementById('landingPage').style.display = 'block';
   }
 });
 
@@ -634,6 +646,7 @@ function submitLogin() {
   }
 
   auth.signInWithEmailAndPassword(email, password).then(() => {
+      sessionStorage.setItem('isLoggedInSession', 'true');
       document.getElementById('paywallModal').style.display = 'none';
       document.getElementById('landingPage').style.display = 'none';
       document.getElementById('systemApp').style.display = 'flex';
@@ -645,6 +658,7 @@ function submitLogin() {
 function handleAuthAction() {
   if (currentUser) {
     auth.signOut();
+    sessionStorage.removeItem('isLoggedInSession');
     document.getElementById('systemApp').style.display = 'none';
     document.getElementById('landingPage').style.display = 'block';
   } else {
@@ -1124,8 +1138,8 @@ function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id
 function renderCalcBulletsRows(){
   document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`
     <div class="bullet-row"><div class="bullet-top">
-      <select style="flex:1;" onchange="updateCalcBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
-      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
+      <select style="flex:1;" onchange="updateBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
+      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateBullet('${b.id}','percent',this.value)">
       <button class="row-del" onclick="removeBulletRow('${b.id}')">✕</button>
     </div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>
   `).join('');
