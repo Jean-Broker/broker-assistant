@@ -311,7 +311,12 @@
         </div>
       </div>
 
-      <div class="side-actions" id="adminActions" style="display:none;">
+      <!-- زرار لوحة تحكم المشتركين (يظهر للمدير فقط) -->
+      <div class="side-actions" id="superAdminActions" style="display:none; padding-bottom:0;">
+        <button class="btn btn-outline-light" style="border-color: #D4AF37; color: #D4AF37;" onclick="openUsersManager()">👥 إدارة المشتركين</button>
+      </div>
+
+      <div class="side-actions" id="adminActions" style="display:none; border-top:none; padding-top:10px;">
         <button class="btn btn-primary-style" onclick="openCompoundForm()" data-ar="+ إضافة مشروع" data-en="+ Add Project">+ إضافة مشروع</button>
       </div>
       
@@ -420,6 +425,50 @@
 
       <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
       <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeLoginModal()" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
+    </div>
+  </div>
+
+  <!-- Users Management Modal (Admin Only) -->
+  <div class="overlay" id="usersOverlay">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>إضافة مشترك جديد</h3>
+        <button class="modal-close" onclick="closeModal('usersOverlay')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-field">
+              <label>إيميل المشترك (يجب أن يكون إيميل صحيح)</label>
+              <input type="email" id="newAccEmail" placeholder="client@example.com">
+          </div>
+          <div class="form-field">
+              <label>مدة الاشتراك</label>
+              <select id="newAccDuration">
+                  <option value="30">شهر واحد</option>
+                  <option value="90">3 شهور</option>
+                  <option value="180">6 شهور</option>
+                  <option value="365">سنة كاملة</option>
+              </select>
+          </div>
+          <div class="form-field">
+              <label>صلاحيات الحساب</label>
+              <select id="newAccRole">
+                  <option value="viewer">متفرج (تصفح المشروعات وحساب الأقساط فقط)</option>
+                  <option value="editor">محرر (إضافة وتعديل المشروعات مسموح)</option>
+              </select>
+          </div>
+        </div>
+        <button class="btn btn-primary-style" style="width: 100%; margin-top: 20px;" onclick="createNewSubscriber()">إنشاء الحساب الآن</button>
+        
+        <div id="newAccResult" style="display:none; margin-top: 15px; padding: 15px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px;">
+            <b style="color: #2e7d32; display:block; margin-bottom:5px;">✅ تم إنشاء الحساب وتفعيله بنجاح! انسخ البيانات:</b>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.6;">
+                الإيميل: <span id="resEmail" style="font-weight:bold; color:var(--text-main);"></span><br>
+                الباسورد: <span id="resPass" style="font-weight:bold; color:#d32f2f;"></span><br>
+                ينتهي في: <span id="resDate" style="font-weight:bold; color:var(--text-main);"></span>
+            </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -577,6 +626,9 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// --- تهيئة تطبيق فايربيز تاني مخصوص للوحة التحكم عشان ميطردكش وإنت بتعمل حساب للعميل ---
+const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
+
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) {
         document.getElementById('loginEmail').value = localStorage.getItem('savedEmail');
@@ -614,23 +666,19 @@ auth.onAuthStateChanged(async (user) => {
     try {
         userDoc = await db.collection('users').doc(user.email.toLowerCase()).get();
     } catch(e) {
-        console.log("Error", e);
+        console.log("Error fetching user data");
     }
 
     let role = 'viewer';
-    let expiryDate = '2024-01-01'; // Default expired
+    let expiryDate = '2024-01-01'; 
 
     if (userDoc && userDoc.exists) {
         role = userDoc.data().role || 'viewer';
         expiryDate = userDoc.data().expiryDate || '2024-01-01';
     } else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') {
-        // حماية ليك إنت شخصياً عشان متتقفلش بره
         role = 'admin';
         expiryDate = '2099-12-31';
-        await db.collection('users').doc(user.email.toLowerCase()).set({
-            role: 'admin',
-            expiryDate: '2099-12-31'
-        });
+        await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' });
     } else {
         auth.signOut();
         alert("هذا الحساب غير مسجل في قاعدة البيانات. يرجى الرجوع للإدارة.");
@@ -649,10 +697,17 @@ auth.onAuthStateChanged(async (user) => {
     isAdmin = (role === 'admin');
     isEditor = (role === 'admin' || role === 'editor');
     
-    let roleText = isAdmin ? ' (مدير)' : (isEditor ? ' (محرر)' : ' (مشاهد)');
+    let roleText = isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + roleText;
     document.getElementById('authActionBtn').textContent = 'خروج';
     
+    // إظهار لوحة التحكم للمدير فقط
+    if (isAdmin) {
+        document.getElementById('superAdminActions').style.display = 'flex';
+    } else {
+        document.getElementById('superAdminActions').style.display = 'none';
+    }
+
     if (isEditor) {
       document.getElementById('addMainLocWrap').style.display = 'flex';
       document.getElementById('adminActions').style.display = 'flex';
@@ -716,6 +771,58 @@ function handleAuthAction() {
   }
 }
 
+// --- لوحة تحكم إنشاء المشتركين (بتشتغل من غير ما تطردك بره) ---
+function openUsersManager() {
+    document.getElementById('newAccEmail').value = '';
+    document.getElementById('newAccResult').style.display = 'none';
+    document.getElementById('usersOverlay').classList.add('open');
+}
+
+async function createNewSubscriber() {
+    const email = document.getElementById('newAccEmail').value.trim().toLowerCase();
+    const duration = parseInt(document.getElementById('newAccDuration').value);
+    const role = document.getElementById('newAccRole').value;
+
+    if(!email) { showToast('يرجى كتابة الإيميل!'); return; }
+
+    // تأليف باسورد عشوائي مكون من حروف وأرقام
+    const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100);
+    
+    // حساب تاريخ الانتهاء
+    const expDate = new Date();
+    expDate.setDate(expDate.getDate() + duration);
+    const expString = expDate.toISOString().split('T')[0];
+
+    try {
+        // بنعمل اليوزر الجديد بالـ Secondary App عشان المين ميقفلش
+        await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
+        
+        // بنحفظ بياناته في الداتا بيز
+        await db.collection('users').doc(email).set({
+            role: role,
+            expiryDate: expString
+        });
+        
+        await secondaryApp.auth().signOut();
+
+        document.getElementById('resEmail').textContent = email;
+        document.getElementById('resPass').textContent = password;
+        document.getElementById('resDate').textContent = expString;
+        document.getElementById('newAccResult').style.display = 'block';
+
+        showToast('تم تسجيل الحساب بنجاح!');
+    } catch (error) {
+        if(error.code === 'auth/email-already-in-use') {
+            alert('هذا الإيميل مسجل بالفعل في السيستم.');
+        } else if (error.code === 'auth/invalid-email') {
+            alert('صيغة الإيميل غير صحيحة.');
+        } else {
+            alert('حدث خطأ: ' + error.message);
+        }
+    }
+}
+// -----------------------------------------------------------
+
 async function syncCloudData() {
   document.getElementById('pageSub').textContent = "جاري تحميل البيانات...";
   db.collection('system').doc('locations').onSnapshot(doc => {
@@ -770,9 +877,9 @@ async function saveCompoundToCloud() {
   try {
       await db.collection('compounds').doc(docId).set(data, { merge: true });
       closeModal('formOverlay');
-      showToast('تم حفظ المشروع بالفايربيز بنجاح');
+      showToast('تم حفظ المشروع بنجاح');
   } catch (error) {
-      alert('خطأ! الفايربيز رفض الحفظ. تأكد من إعدادات الـ Rules.');
+      alert('خطأ! الفايربيز رفض الحفظ. تأكد من الصلاحيات.');
   }
 }
 
@@ -1207,9 +1314,9 @@ function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id
 function renderCalcBulletsRows(){
   document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`
     <div class="bullet-row"><div class="bullet-top">
-      <select style="flex:1;" onchange="updateBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
-      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateBullet('${b.id}','percent',this.value)">
-      <button class="row-del" onclick="removeBulletRow('${b.id}')">✕</button>
+      <select style="flex:1;" onchange="updateCalcBullet('${b.id}','type',this.value)"><option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option><option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option><option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option></select>
+      <input type="number" placeholder="%" style="width:80px;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
+      <button class="row-del" onclick="removeCalcBulletRow('${b.id}')">✕</button>
     </div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>
   `).join('');
 }
