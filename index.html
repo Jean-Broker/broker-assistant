@@ -583,7 +583,7 @@ let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = 
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
 const BEDROOM_TYPES = { studio: 'استوديو', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس' };
-const FINISHING_TYPES = { core_shell: 'Core & Shell (خرسانة)', semi: 'Semi-finished (نصف تشطيب)', full: 'Fully finished (تشطيب كامل)' };
+const FINISHING_TYPES = { core_shell: 'Core & Shell (خرسانة وبناء)', semi: 'Semi-finished (نصف تشطيب)', full: 'Fully finished (تشطيب كامل)' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [
   {value:'immediate', label:'تسليم فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'},
@@ -591,16 +591,16 @@ const DELIVERY_TIMELINES = [
   {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'},
 ];
 
+// التأكد من بدء التطبيق على صفحة الترحيب دائماً للينكات الجديدة
+document.getElementById('landingPage').style.display = 'block';
+document.getElementById('systemApp').style.display = 'none';
+
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
     isAdmin = (user.email.toLowerCase() === 'jeanhany04@gmail.com');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : '');
     document.getElementById('authActionBtn').textContent = 'خروج';
-    document.getElementById('paywallModal').style.display = 'none';
-    
-    document.getElementById('landingPage').style.display = 'none';
-    document.getElementById('systemApp').style.display = 'flex';
     
     if (isAdmin) {
       document.getElementById('addMainLocWrap').style.display = 'flex';
@@ -645,7 +645,8 @@ function submitLogin() {
 function handleAuthAction() {
   if (currentUser) {
     auth.signOut();
-    backToLanding();
+    document.getElementById('systemApp').style.display = 'none';
+    document.getElementById('landingPage').style.display = 'block';
   } else {
     document.getElementById('paywallModal').style.display = 'flex';
   }
@@ -1056,7 +1057,7 @@ function renderDetailModalContent(){
     <div class="detail-item"><b>المالك</b>${escapeHtml(c.ownerName || '-')}</div>
     <div class="detail-item"><b>الاستشاري الهندسي</b>${escapeHtml(c.consultant || '-')}</div>
     <div class="detail-item"><b>المنطقة والفرع</b>${escapeHtml(findSubLocationName(c.locationId))}</div>
-    <div class="detail-item"><b>التسليم والتشطيب</b>${deliveryLabel(c.deliveryDate)} | ${FINISHING_TYPES[c.finishingStatus]}</div>
+    <div class="detail-item"><b>التسليم والتشطيب</b>${deliveryLabel(c.deliveryDate)} | ${FINISHING_TYPES[c.finishingStatus] || '-'}</div>
     <div class="detail-item"><b>سعر المتر</b>${pText}</div>
     <div class="detail-item"><b>الصيانة والجراج</b>صيانة: ${c.maintenancePercent || 0}% | جراج: ${formatNum(c.parkingFee || 0)} ج</div>
     <div class="detail-item"><b>المساحة الإجمالية</b>${c.projectSize ? c.projectSize + ' فدان' : '-'}</div>
