@@ -56,6 +56,10 @@ window.addEventListener('load', () => {
         document.getElementById('loginPassword').value = localStorage.getItem('savedPassword');
         document.getElementById('rememberMe').checked = true;
     }
+    
+    // ربط الحساب الأوتوماتيكي بسعر المتر بمجرد تغييره
+    document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg);
+    document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg);
 });
 
 let currentUser = null;
@@ -278,7 +282,7 @@ async function saveCompoundToCloud() {
     locationId: document.getElementById('fldLocation').value,
     projectType: document.getElementById('fldProjectType').value,
     companyName: document.getElementById('fldCompany').value.trim(),
-    projectName,
+    projectName: projectName,
     ownerName: document.getElementById('fldOwner').value.trim(),
     consultant: document.getElementById('fldConsultant').value.trim(),
     pricePerMeterMin: parseFloat(document.getElementById('fldPriceMeterMin').value) || 0,
@@ -289,8 +293,8 @@ async function saveCompoundToCloud() {
     deliveryDate: document.getElementById('fldDeliveryDate').value.trim(),
     finishingStatus: document.getElementById('fldFinishingStatus').value,
     compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(),
-    unitTypes: tempUnits.filter(u=>u.bedroomType),
-    paymentPlans: tempPlans.filter(p=>p.name),
+    unitTypes: tempUnits,
+    paymentPlans: tempPlans,
     ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
 
@@ -528,10 +532,26 @@ function openCompoundForm(existing){
   if(existing) document.getElementById('fldLocation').value = existing.locationId;
   else if(activeSelection !== 'all' && !mainLocations.find(m=>m.id===activeSelection)) document.getElementById('fldLocation').value = activeSelection;
   
-  ['fldProjectType','fldCompany','fldProject','fldOwner','fldConsultant','fldPriceMeterMin','fldPriceMeterMax','fldMaintenancePercent','fldParkingFee','fldProjectSize','fldDeliveryDate','fldFinishingStatus','fldLocationDetail'].forEach(id => {
-    document.getElementById(id).value = existing ? existing[id.replace('fld','').charAt(0).toLowerCase() + id.replace('fld','').slice(1)] || '' : '';
-  });
-  if(existing) document.getElementById('fldFinishingStatus').value = existing.finishingStatus || 'core_shell';
+  // تصليح أسماء الخانات عشان الداتا تظهر صح لما نفتح التعديل
+  if (existing) {
+      document.getElementById('fldProjectType').value = existing.projectType || 'residential';
+      document.getElementById('fldCompany').value = existing.companyName || '';
+      document.getElementById('fldProject').value = existing.projectName || '';
+      document.getElementById('fldOwner').value = existing.ownerName || '';
+      document.getElementById('fldConsultant').value = existing.consultant || '';
+      document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin || '';
+      document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax || '';
+      document.getElementById('fldMaintenancePercent').value = existing.maintenancePercent || '';
+      document.getElementById('fldParkingFee').value = existing.parkingFee || '';
+      document.getElementById('fldProjectSize').value = existing.projectSize || '';
+      document.getElementById('fldDeliveryDate').value = existing.deliveryDate || '';
+      document.getElementById('fldFinishingStatus').value = existing.finishingStatus || 'core_shell';
+      document.getElementById('fldLocationDetail').value = existing.compoundLocationDetail || '';
+  } else {
+      ['fldProjectType','fldCompany','fldProject','fldOwner','fldConsultant','fldPriceMeterMin','fldPriceMeterMax','fldMaintenancePercent','fldParkingFee','fldProjectSize','fldDeliveryDate','fldFinishingStatus','fldLocationDetail'].forEach(id => {
+          document.getElementById(id).value = '';
+      });
+  }
   
   tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : [];
   tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : [];
@@ -542,8 +562,19 @@ function openCompoundForm(existing){
 
 function updatePriceMeterAvg(){
   const avg = getAveragePricePerMeter();
-  document.getElementById('priceMeterAvgWrap').style.display = avg > 0 ? 'block' : 'none';
-  document.getElementById('fldPriceMeterAvg').value = formatNum(Math.round(avg)) + ' جنيه';
+  const wrap = document.getElementById('priceMeterAvgWrap');
+  if (wrap) wrap.style.display = avg > 0 ? 'block' : 'none';
+  const avgInput = document.getElementById('fldPriceMeterAvg');
+  if (avgInput) avgInput.value = formatNum(Math.round(avg)) + ' جنيه';
+
+  // تحديث أسعار الوحدات أوتوماتيك بناء على المساحة ومتوسط سعر المتر
+  tempUnits.forEach(u => {
+    if (u.area > 0 && avg > 0) {
+      u.price = Math.round(u.area * avg);
+      const priceInput = document.getElementById(`price-input-${u.id}`);
+      if(priceInput) priceInput.value = u.price;
+    }
+  });
 }
 
 function getAveragePricePerMeter(){
@@ -564,15 +595,19 @@ function renderUnitRows(){
       <button class="row-del" onclick="removeUnitRow('${u.id}')">✕</button>
     </div>`).join('') || '<div style="font-size:12.5px;color:var(--text-muted);">لا يوجد وحدات مضافة</div>';
 }
+
 function updateUnitArea(id, val){
   const u = tempUnits.find(x=>x.id===id);
   if(u){
     u.area = parseFloat(val) || 0;
     const avg = getAveragePricePerMeter();
-    if(avg > 0 && u.area > 0) u.price = Math.round(u.area * avg);
+    if(avg > 0 && u.area > 0) {
+      u.price = Math.round(u.area * avg);
+    }
     document.getElementById(`price-input-${u.id}`).value = u.price || '';
   }
 }
+
 function updateUnit(id, field, val){ const u = tempUnits.find(x=>x.id===id); if(u) u[field] = field==='bedroomType'?val:(parseFloat(val)||0); }
 
 function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', notes:'', customBullets:[]}); renderPlanRows(); }
@@ -640,14 +675,6 @@ function openDetail(id){
   document.getElementById('detailOverlay').classList.add('open');
 }
 
-function editCurrentCompound(){
-  const c = compounds.find(x=>x.id===viewingCompoundId);
-  if(!c) return;
-  closeModal('detailOverlay');
-  openCompoundForm(c);
-}
-
-// الدوال المحدثة بالكامل لضمان تشغيل الأقساط والمربعات الاحترافية
 function setDetailCategory(catKey) {
   activeDetailCategory = catKey;
   const c = compounds.find(x => x.id === viewingCompoundId);
@@ -663,6 +690,13 @@ function setDetailCategory(catKey) {
 function setDetailUnit(unitId) {
   activeDetailUnitId = unitId;
   renderDetailModalContent();
+}
+
+function editCurrentCompound(){
+  const c = compounds.find(x=>x.id===viewingCompoundId);
+  if(!c) return;
+  closeModal('detailOverlay');
+  openCompoundForm(c);
 }
 
 function renderDetailModalContent() {
