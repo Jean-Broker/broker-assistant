@@ -639,8 +639,6 @@ function openDetail(id){
   renderDetailModalContent();
   document.getElementById('detailOverlay').classList.add('open');
 }
-function setDetailCategory(catKey){ activeDetailCategory = catKey; activeDetailUnitId = compounds.find(x=>x.id===viewingCompoundId).unitTypes.filter(u=>u.bedroomType===catKey)[0]?.id; renderDetailModalContent(); }
-function setDetailUnit(uId){ activeDetailUnitId = uId; renderDetailModalContent(); }
 
 function editCurrentCompound(){
   const c = compounds.find(x=>x.id===viewingCompoundId);
@@ -649,9 +647,30 @@ function editCurrentCompound(){
   openCompoundForm(c);
 }
 
-function renderDetailModalContent(){
-  const c = compounds.find(x=>x.id===viewingCompoundId);
+// الدوال المحدثة بالكامل لضمان تشغيل الأقساط والمربعات الاحترافية
+function setDetailCategory(catKey) {
+  activeDetailCategory = catKey;
+  const c = compounds.find(x => x.id === viewingCompoundId);
+  if (c && c.unitTypes) {
+    const matched = c.unitTypes.filter(u => u.bedroomType === catKey);
+    if (matched.length > 0) {
+      activeDetailUnitId = matched[0].id;
+    }
+  }
+  renderDetailModalContent();
+}
+
+function setDetailUnit(unitId) {
+  activeDetailUnitId = unitId;
+  renderDetailModalContent();
+}
+
+function renderDetailModalContent() {
+  const c = compounds.find(x => x.id === viewingCompoundId);
+  if (!c) return;
+  
   document.getElementById('detailTitle').textContent = c.projectName;
+  
   if (isEditor) {
     document.getElementById('btnEditCompound').style.display = 'inline-block';
     document.getElementById('btnDeleteCompound').style.display = 'inline-block';
@@ -663,31 +682,43 @@ function renderDetailModalContent(){
   let pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)} ج`;
 
   let html = `<div class="detail-grid">
-    <div class="detail-item"><b>النوع</b>${PROJECT_TYPES[c.projectType || 'residential']}</div>
-    <div class="detail-item"><b>المطور</b>${escapeHtml(c.companyName)}</div>
-    <div class="detail-item"><b>المالك</b>${escapeHtml(c.ownerName || '-')}</div>
-    <div class="detail-item"><b>الاستشاري الهندسي</b>${escapeHtml(c.consultant || '-')}</div>
-    <div class="detail-item"><b>المنطقة والفرع</b>${escapeHtml(findSubLocationName(c.locationId))}</div>
-    <div class="detail-item"><b>التسليم والتشطيب</b>${deliveryLabel(c.deliveryDate)} | ${FINISHING_TYPES[c.finishingStatus] || '-'}</div>
-    <div class="detail-item"><b>سعر المتر</b>${pText}</div>
-    <div class="detail-item"><b>الصيانة والجراج</b>صيانة: ${c.maintenancePercent || 0}% | جراج: ${formatNum(c.parkingFee || 0)} ج</div>
-    <div class="detail-item"><b>المساحة الإجمالية</b>${c.projectSize ? c.projectSize + ' فدان' : '-'}</div>
-    <div class="detail-item full"><b>الموقع بالتفصيل</b>${escapeHtml(c.compoundLocationDetail || '-')}</div>
+    <div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div>
+    <div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div>
+    <div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div>
+    <div class="detail-item"><b>الاستشاري الهندسي</b><span>${escapeHtml(c.consultant || '-')}</span></div>
+    <div class="detail-item"><b>المنطقة والفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div>
+    <div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${FINISHING_TYPES[c.finishingStatus] || '-'}</span></div>
+    <div class="detail-item"><b>سعر المتر</b><span>${pText}</span></div>
+    <div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: ${c.maintenancePercent || 0}% | جراج: ${formatNum(c.parkingFee || 0)} ج</span></div>
+    <div class="detail-item"><b>المساحة الإجمالية</b><span>${c.projectSize ? c.projectSize + ' فدان' : '-'}</span></div>
+    <div class="detail-item full"><b>الموقع بالتفصيل</b><span>${escapeHtml(c.compoundLocationDetail || '-')}</span></div>
   </div>`;
 
-  const grouped = {}; (c.unitTypes||[]).forEach(u=>{ (grouped[u.bedroomType]=grouped[u.bedroomType]||[]).push(u); });
+  const grouped = {}; 
+  (c.unitTypes||[]).forEach(u => { 
+    (grouped[u.bedroomType] = grouped[u.bedroomType] || []).push(u); 
+  });
   const cats = Object.keys(BEDROOM_TYPES).filter(k => grouped[k]);
   
   if(cats.length){
-    html += `<div class="section-label">حساب الأقساط</div><div class="unit-cat-tabs">` + cats.map(k=>`<button class="unit-cat-btn ${k===activeDetailCategory?'active':''}" onclick="setDetailCategory('${k}')">${BEDROOM_TYPES[k]}</button>`).join('') + `</div>`;
-    html += `<div class="size-picker-container">` + (grouped[activeDetailCategory]||[]).map(u=>`<div class="size-chip ${u.id===activeDetailUnitId?'active':''}" onclick="setDetailUnit('${u.id}')">${u.area} م² | ${formatNum(u.price)} ج</div>`).join('') + `</div>`;
+    if(!activeDetailCategory || !grouped[activeDetailCategory]) {
+      activeDetailCategory = cats[0];
+    }
+    if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) {
+      activeDetailUnitId = grouped[activeDetailCategory][0].id;
+    }
     
-    const sUnit = (c.unitTypes||[]).find(u=>u.id===activeDetailUnitId);
-    if(sUnit && c.paymentPlans?.length){
+    html += `<div class="section-label">حساب الأقساط</div><div class="unit-cat-tabs">` + cats.map(k => `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${BEDROOM_TYPES[k]}</button>`).join('') + `</div>`;
+    
+    html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area} م² | ${formatNum(u.price)} ج</div>`).join('') + `</div>`;
+    
+    const sUnit = (c.unitTypes || []).find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
+    
+    if(sUnit && c.paymentPlans && c.paymentPlans.length > 0){
       html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>خصم</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
       c.paymentPlans.forEach(p => {
-        const r = calcInstallmentWithDiscount(sUnit.price||0, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12);
-        html += `<tr><td class="txt"><b>${escapeHtml(p.name)}</b></td><td>${p.discountPercent?p.discountPercent+'%':'-'}</td><td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent||0})</small></td><td class="txt">${r.bulletsSummary.map(b=>b.label).join('<br>')||'-'}</td><td><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td><td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td></tr>`;
+        const r = calcInstallmentWithDiscount(sUnit.price || 0, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12);
+        html += `<tr><td class="txt"><b>${escapeHtml(p.name)}</b></td><td>${p.discountPercent ? p.discountPercent + '%' : '-'}</td><td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent || 0})</small></td><td class="txt">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td><td><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td><td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td></tr>`;
       });
       html += `</table></div>`;
     }
