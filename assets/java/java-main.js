@@ -46,6 +46,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// --- تهيئة تطبيق فايربيز تاني مخصوص للوحة التحكم عشان ميطردكش وإنت بتعمل حساب للعميل ---
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
 window.addEventListener('load', () => {
@@ -55,6 +57,7 @@ window.addEventListener('load', () => {
         document.getElementById('rememberMe').checked = true;
     }
     
+    // ربط الحساب الأوتوماتيكي بسعر المتر بمجرد تغييره
     document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg);
     document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg);
     document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
@@ -833,8 +836,6 @@ function runUniversalCalculator(){
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
 
-populateDeliverySelects();
-
 function handleJSONUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -859,7 +860,7 @@ function handleJSONUpload(event) {
             const db = firebase.firestore();
             let batch = db.batch();
             let count = 0;
-            let totalUploaded =, totalUploaded = 0; // Fixed syntax
+            let totalUploaded = 0;
 
             for (let i = 0; i < data.length; i++) {
                 let proj = data[i];
@@ -892,3 +893,5 @@ function handleJSONUpload(event) {
     };
     reader.readAsText(file);
 }
+
+populateDeliverySelects();
