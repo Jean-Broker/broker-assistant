@@ -46,8 +46,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// --- تهيئة تطبيق فايربيز تاني مخصوص للوحة التحكم عشان ميطردكش وإنت بتعمل حساب للعميل ---
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
 window.addEventListener('load', () => {
@@ -57,7 +55,6 @@ window.addEventListener('load', () => {
         document.getElementById('rememberMe').checked = true;
     }
     
-    // ربط الحساب الأوتوماتيكي بسعر المتر بمجرد تغييره
     document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg);
     document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg);
     document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
@@ -606,7 +603,7 @@ function renderUnitRows(){
   document.getElementById('unitRows').innerHTML = tempUnits.map(u=>`
     <div class="repeat-row">
       <select style="flex:1.4;" onchange="updateUnit('${u.id}','bedroomType',this.value)">
-        ${optionsHtml.replace(`value="${u.bedroomType}"`, `value="${u.bedroomType}" selected`)}
+        ${optionsHtml.includes(`value="${u.bedroomType}"`) ? optionsHtml.replace(`value="${u.bedroomType}"`, `value="${u.bedroomType}" selected`) : optionsHtml}
       </select>
       <input type="number" placeholder="المساحة (م²)" style="flex:1;" value="${u.area}" oninput="updateUnitArea('${u.id}', this.value)">
       <input type="number" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.2;" value="${u.price}" oninput="updateUnit('${u.id}','price',this.value)">
