@@ -246,6 +246,7 @@ async function createNewSubscriber() {
         }
     }
 }
+// -----------------------------------------------------------
 
 async function syncCloudData() {
   document.getElementById('pageSub').textContent = "جاري تحميل البيانات...";
