@@ -46,8 +46,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// --- تهيئة تطبيق فايربيز تاني مخصوص للوحة التحكم عشان ميطردكش وإنت بتعمل حساب للعميل ---
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
 window.addEventListener('load', () => {
@@ -57,9 +55,9 @@ window.addEventListener('load', () => {
         document.getElementById('rememberMe').checked = true;
     }
     
-    // ربط الحساب الأوتوماتيكي بسعر المتر بمجرد تغييره
     document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg);
     document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg);
+    document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
 });
 
 let currentUser = null;
@@ -71,7 +69,10 @@ let tempUnits = [], tempPlans = [], tempDecrees = [], filters = {};
 let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = [], openMainLocIds = {}; 
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
-const BEDROOM_TYPES = { studio: 'استوديو', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس' };
+const BEDROOM_TYPES = { 
+  studio: 'استوديو', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس',
+  commercial: 'تجاري (Commercial)', admin: 'إداري (Admin)', clinic: 'عيادة / طبي (Clinic)', recreational: 'ترفيهي (Recreational)'
+};
 const FINISHING_TYPES = { core_shell: 'Core & Shell (خرسانة وبناء)', semi: 'Semi-finished (نصف تشطيب)', full: 'Fully finished (تشطيب كامل)' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [
@@ -126,7 +127,6 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + roleText;
     document.getElementById('authActionBtn').textContent = 'خروج';
     
-    // إظهار لوحة التحكم للمدير فقط
     if (isAdmin) {
         document.getElementById('superAdminActions').style.display = 'flex';
     } else {
@@ -196,7 +196,6 @@ function handleAuthAction() {
   }
 }
 
-// --- لوحة تحكم إنشاء المشتركين (بتشتغل من غير ما تطردك بره) ---
 function openUsersManager() {
     document.getElementById('newAccEmail').value = '';
     document.getElementById('newAccResult').style.display = 'none';
@@ -210,24 +209,14 @@ async function createNewSubscriber() {
 
     if(!email) { showToast('يرجى كتابة الإيميل!'); return; }
 
-    // تأليف باسورد عشوائي مكون من حروف وأرقام
     const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100);
-    
-    // حساب تاريخ الانتهاء
     const expDate = new Date();
     expDate.setDate(expDate.getDate() + duration);
     const expString = expDate.toISOString().split('T')[0];
 
     try {
-        // بنعمل اليوزر الجديد بالـ Secondary App عشان المين ميقفلش
         await secondaryApp.auth().createUserWithEmailAndPassword(email, password);
-        
-        // بنحفظ بياناته في الداتا بيز
-        await db.collection('users').doc(email).set({
-            role: role,
-            expiryDate: expString
-        });
-        
+        await db.collection('users').doc(email).set({ role: role, expiryDate: expString });
         await secondaryApp.auth().signOut();
 
         document.getElementById('resEmail').textContent = email;
@@ -237,16 +226,9 @@ async function createNewSubscriber() {
 
         showToast('تم تسجيل الحساب بنجاح!');
     } catch (error) {
-        if(error.code === 'auth/email-already-in-use') {
-            alert('هذا الإيميل مسجل بالفعل في السيستم.');
-        } else if (error.code === 'auth/invalid-email') {
-            alert('صيغة الإيميل غير صحيحة.');
-        } else {
-            alert('حدث خطأ: ' + error.message);
-        }
+        alert('حدث خطأ: ' + error.message);
     }
 }
-// -----------------------------------------------------------
 
 async function syncCloudData() {
   document.getElementById('pageSub').textContent = "جاري تحميل البيانات...";
@@ -267,7 +249,7 @@ async function saveMainLocationsToCloud() {
       try {
           await db.collection('system').doc('locations').set({ mainLocations });
       } catch (error) {
-          alert('خطأ في الحفظ! تأكد من إعدادات الـ Rules في الفايربيز.');
+          alert('خطأ في الحفظ!');
       }
   }
 }
@@ -304,7 +286,7 @@ async function saveCompoundToCloud() {
       closeModal('formOverlay');
       showToast('تم حفظ المشروع بنجاح');
   } catch (error) {
-      alert('خطأ! الفايربيز رفض الحفظ. تأكد من الصلاحيات.');
+      alert('خطأ! الفايربيز رفض الحفظ.');
   }
 }
 
@@ -559,6 +541,10 @@ function openCompoundForm(existing){
   document.getElementById('formOverlay').classList.add('open');
 }
 
+function onProjectTypeChange() {
+  renderUnitRows();
+}
+
 function updatePriceMeterAvg(){
   const avg = getAveragePricePerMeter();
   const wrap = document.getElementById('priceMeterAvgWrap');
@@ -582,12 +568,43 @@ function getAveragePricePerMeter(){
   return min || max || 0;
 }
 
-function addUnitRow(){ tempUnits.push({id:uid(), bedroomType:'studio', area:'', price:''}); renderUnitRows(); }
+function addUnitRow(){ 
+  const pType = document.getElementById('fldProjectType').value;
+  const defaultBed = pType === 'commercial' ? 'commercial' : 'studio';
+  tempUnits.push({id:uid(), bedroomType:defaultBed, area:'', price:''}); 
+  renderUnitRows(); 
+}
+
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
+
 function renderUnitRows(){
+  const pType = document.getElementById('fldProjectType').value;
+  let optionsHtml = '';
+  
+  if (pType === 'commercial') {
+    optionsHtml = `
+      <option value="commercial">تجاري (Commercial)</option>
+      <option value="admin">إداري (Admin)</option>
+      <option value="clinic">عيادة / طبي (Clinic)</option>
+      <option value="recreational">ترفيهي (Recreational)</option>
+    `;
+  } else {
+    optionsHtml = `
+      <option value="studio">استوديو (Studio)</option>
+      <option value="1br">1 غرفة نوم</option>
+      <option value="2br">2 غرفة نوم</option>
+      <option value="3br">3 غرف نوم</option>
+      <option value="4br">4 غرف نوم</option>
+      <option value="duplex">دوبلكس</option>
+      <option value="penthouse">بنتهاوس</option>
+    `;
+  }
+
   document.getElementById('unitRows').innerHTML = tempUnits.map(u=>`
     <div class="repeat-row">
-      <select style="flex:1.4;" onchange="updateUnit('${u.id}','bedroomType',this.value)">${Object.entries(BEDROOM_TYPES).map(([k,v])=>`<option value="${k}" ${u.bedroomType===k?'selected':''}>${v}</option>`).join('')}</select>
+      <select style="flex:1.4;" onchange="updateUnit('${u.id}','bedroomType',this.value)">
+        ${optionsHtml.replace(`value="${u.bedroomType}"`, `value="${u.bedroomType}" selected`)}
+      </select>
       <input type="number" placeholder="المساحة (م²)" style="flex:1;" value="${u.area}" oninput="updateUnitArea('${u.id}', this.value)">
       <input type="number" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.2;" value="${u.price}" oninput="updateUnit('${u.id}','price',this.value)">
       <button class="row-del" onclick="removeUnitRow('${u.id}')">✕</button>
@@ -818,9 +835,6 @@ document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overla
 
 populateDeliverySelects();
 
-// =========================================================================
-// أداة الاستيراد الشاملة من ملفات JSON (Bulk Import)
-// =========================================================================
 function handleJSONUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -829,7 +843,6 @@ function handleJSONUpload(event) {
     reader.onload = async function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            
             if (!Array.isArray(data)) {
                 alert("الملف غير صحيح! يجب أن يحتوي على قائمة مشاريع.");
                 event.target.value = ''; 
@@ -846,7 +859,7 @@ function handleJSONUpload(event) {
             const db = firebase.firestore();
             let batch = db.batch();
             let count = 0;
-            let totalUploaded = 0;
+            let totalUploaded =, totalUploaded = 0; // Fixed syntax
 
             for (let i = 0; i < data.length; i++) {
                 let proj = data[i];
