@@ -275,7 +275,12 @@ async function saveCompoundToCloud() {
     deliveryDate: document.getElementById('fldDeliveryDate').value.trim(),
     finishingStatus: document.getElementById('fldFinishingStatus').value,
     compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(),
-    unitTypes: tempUnits,
+    unitTypes: tempUnits.map(u => ({
+        id: u.id || uid(),
+        bedroomType: u.bedroomType || 'commercial',
+        area: parseFloat(u.area) || 0,
+        price: parseFloat(u.price) || 0
+    })),
     paymentPlans: tempPlans,
     ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
@@ -623,7 +628,12 @@ function updateUnitArea(id, val){
   }
 }
 
-function updateUnit(id, field, val){ const u = tempUnits.find(x=>x.id===id); if(u) u[field] = field==='bedroomType'?val:(parseFloat(val)||0); }
+function updateUnit(id, field, val){ 
+  const u = tempUnits.find(x=>x.id===id); 
+  if(u) {
+    u[field] = field==='bedroomType'?val:(parseFloat(val)||0);
+  } 
+}
 
 function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', notes:'', customBullets:[]}); renderPlanRows(); }
 function removePlanRow(id){ tempPlans = tempPlans.filter(p=>p.id!==id); renderPlanRows(); }
@@ -683,23 +693,9 @@ function openDetail(id){
   const c = compounds.find(x=>x.id===id);
   if(!c) return;
   viewingCompoundId = id;
-  const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => {
-    let t = u.bedroomType;
-    if (c.projectType === 'commercial') {
-      if (t === '1br') return 'admin';
-      if (t === '2br' || t === 'studio') return 'commercial';
-    }
-    return t;
-  })));
+  const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => u.bedroomType)));
   activeDetailCategory = availTypes.length ? availTypes[0] : null;
-  activeDetailUnitId = (c.unitTypes||[]).filter(u => {
-    let t = u.bedroomType;
-    if (c.projectType === 'commercial') {
-      if (t === '1br') t = 'admin';
-      else if (t === '2br' || t === 'studio') t = 'commercial';
-    }
-    return t === activeDetailCategory;
-  })[0]?.id || null;
+  activeDetailUnitId = (c.unitTypes||[]).filter(u => u.bedroomType === activeDetailCategory)[0]?.id || null;
   renderDetailModalContent();
   document.getElementById('detailOverlay').classList.add('open');
 }
@@ -708,14 +704,7 @@ function setDetailCategory(catKey) {
   activeDetailCategory = catKey;
   const c = compounds.find(x => x.id === viewingCompoundId);
   if (c && c.unitTypes) {
-    const matched = c.unitTypes.filter(u => {
-      let t = u.bedroomType;
-      if (c.projectType === 'commercial') {
-        if (t === '1br') t = 'admin';
-        else if (t === '2br' || t === 'studio') t = 'commercial';
-      }
-      return t === catKey;
-    });
+    const matched = c.unitTypes.filter(u => u.bedroomType === catKey);
     if (matched.length > 0) {
       activeDetailUnitId = matched[0].id;
     }
@@ -766,11 +755,7 @@ function renderDetailModalContent() {
 
   const grouped = {}; 
   (c.unitTypes||[]).forEach(u => { 
-    let t = u.bedroomType;
-    if (c.projectType === 'commercial') {
-      if (t === '1br') t = 'admin';
-      else if (t === '2br' || t === 'studio') t = 'commercial';
-    }
+    let t = u.bedroomType || 'commercial';
     (grouped[t] = grouped[t] || []).push(u); 
   });
   const cats = Object.keys(BEDROOM_TYPES).filter(k => grouped[k]);
@@ -783,7 +768,7 @@ function renderDetailModalContent() {
       activeDetailUnitId = grouped[activeDetailCategory][0].id;
     }
     
-    html += `<div class="section-label">حساب الأقساط</div><div class="unit-cat-tabs">` + cats.map(k => `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${BEDROOM_TYPES[k]}</button>`).join('') + `</div>`;
+    html += `<div class="section-label">حساب الأقساط</div><div class="unit-cat-tabs">` + cats.map(k => `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${BEDROOM_TYPES[k] || k}</button>`).join('') + `</div>`;
     
     html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area} م² | ${formatNum(u.price)} ج</div>`).join('') + `</div>`;
     
@@ -853,7 +838,7 @@ function runUniversalCalculator(){
   if(!t) return showToast('أدخل إجمالي السعر');
   const r = calcInstallmentWithDiscount(t, parseFloat(document.getElementById('calcDiscountPct').value)||0, parseFloat(document.getElementById('calcDownPct').value)||0, calcCustomBullets, parseFloat(document.getElementById('calcYears').value)||0, 12);
   const box = document.getElementById('calcResult'); box.style.display='grid';
-  box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTestl||r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
+  box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
 }
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
@@ -904,7 +889,6 @@ function handleJSONUpload(event) {
             showToast(`✅ تم إضافة ${totalUploaded} مشروع بنجاح!`);
             event.target.value = ''; 
             
-            databases = {};
             setTimeout(() => {
                 location.reload();
             }, 2000);
