@@ -285,6 +285,7 @@ async function saveCompoundToCloud() {
     ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
 
+  // التأكد إن التعديل بيتحفظ على نفس الـ ID القديم لو موجود
   const docId = editingCompoundId || uid();
   try {
       await db.collection('compounds').doc(docId).set(data, { merge: true });
@@ -445,6 +446,15 @@ function findSubLocationName(subId){
   return '-';
 }
 
+function getCorrectedUnitType(typeStr, projectType) {
+    if (projectType === 'commercial') {
+        if (typeStr === '1br') return 'admin';
+        if (typeStr === '2br' || typeStr === 'studio') return 'commercial';
+        if (!BEDROOM_TYPES[typeStr]) return 'commercial'; 
+    }
+    return typeStr || 'studio';
+}
+
 function renderGrid(){
   let targetSubIds = [];
   if(activeSelection !== 'all'){
@@ -514,9 +524,11 @@ function renderGrid(){
 }
 
 function openCompoundForm(existing){
+  // لازم نحتفظ بالـ ID القديم عشان التعديل يحصل على نفس المشروع
   editingCompoundId = existing ? existing.id : null;
   document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
-  if(existing) document.getElementById('fldLocation').value = existing.locationId;
+  
+  if(existing) document.getElementById('fldLocation').value = existing.locationId || '';
   else if(activeSelection !== 'all' && !mainLocations.find(m=>m.id===activeSelection)) document.getElementById('fldLocation').value = activeSelection;
   
   if (existing) {
@@ -539,13 +551,11 @@ function openCompoundForm(existing){
       });
   }
   
+  // تحويل الأكواد القديمة جوا نموذج التعديل عشان المستخدم يشوفها صح ويعدل عليها صح
   tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : [];
-  
-  // دالة ذكية لتصحيح الأكواد القديمة جوا نموذج التعديل
   if (existing && existing.projectType === 'commercial') {
       tempUnits.forEach(u => {
-          if (u.bedroomType === '1br') u.bedroomType = 'admin';
-          else if (u.bedroomType === '2br' || u.bedroomType === 'studio') u.bedroomType = 'commercial';
+          u.bedroomType = getCorrectedUnitType(u.bedroomType, 'commercial');
       });
   }
 
@@ -698,15 +708,6 @@ function renderDecreeRows(){
     </div>`).join('');
 }
 
-function getCorrectedUnitType(typeStr, projectType) {
-    if (projectType === 'commercial') {
-        if (typeStr === '1br') return 'admin';
-        if (typeStr === '2br' || typeStr === 'studio') return 'commercial';
-        if (!BEDROOM_TYPES[typeStr]) return 'commercial'; // default fallback for unknown keys
-    }
-    return typeStr || 'studio';
-}
-
 function openDetail(id){
   const c = compounds.find(x=>x.id===id);
   if(!c) return;
@@ -736,13 +737,6 @@ function setDetailCategory(catKey) {
 function setDetailUnit(unitId) {
   activeDetailUnitId = unitId;
   renderDetailModalContent();
-}
-
-function editCurrentCompound(){
-  const c = compounds.find(x=>x.id===viewingCompoundId);
-  if(!c) return;
-  closeModal('detailOverlay');
-  openCompoundForm(c);
 }
 
 function renderDetailModalContent() {
