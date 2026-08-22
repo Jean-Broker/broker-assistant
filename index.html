@@ -90,7 +90,6 @@
 
       <div class="side-actions" id="adminActions" style="display:none; border-top:none; padding-top:10px;">
         <button class="btn btn-primary-style" onclick="openCompoundForm()" data-ar="+ إضافة مشروع" data-en="+ Add Project">+ إضافة مشروع</button>
-        <!-- التعديل اهو: زرار استيراد المشاريع من ملف JSON -->
         <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="handleJSONUpload(event)">
         <button class="btn btn-primary-style" style="margin-top: 10px; background: #D4AF37; color: #111; border: none;" onclick="document.getElementById('jsonFileInput').click()">📥 استيراد مشاريع (JSON)</button>
       </div>
@@ -110,61 +109,60 @@
       </div>
 
       <div class="filter-bar">
-        
-        <div class="field main-search-field">
+        <div class="filter-row-3">
+          <div class="field">
+            <label data-ar="اسم المشروع أو المطور" data-en="Project or Developer Name">اسم المشروع أو المطور</label>
             <input type="text" id="fSearchText" placeholder="ابحث باسم المشروع، المطور..." oninput="applyFilters()">
+          </div>
+          <div class="field">
+            <label data-ar="موعد التسليم" data-en="Delivery Timeline">موعد التسليم</label>
+            <select id="fDeliveryTimeline" onchange="applyFilters()"><option value="" data-ar="كل المواعيد" data-en="All Timelines">كل المواعيد</option></select>
+          </div>
+          <div class="field">
+            <label data-ar="نوع الوحدة" data-en="Unit Type">نوع الوحدة</label>
+            <select id="fBedroomType" onchange="applyFilters()">
+              <option value="" data-ar="كل الأنواع" data-en="All Types">كل الأنواع</option>
+              <optgroup label="سكني">
+                <option value="studio">استوديو (Studio)</option>
+                <option value="1br">1 غرفة نوم</option>
+                <option value="2br">2 غرفة نوم</option>
+                <option value="3br">3 غرف نوم</option>
+                <option value="4br">4 غرف نوم</option>
+                <option value="duplex">دوبلكس</option>
+                <option value="penthouse">بنتهاوس</option>
+              </optgroup>
+              <optgroup label="تجاري / إداري / طبي / ترفيهي">
+                <option value="commercial">تجاري (Commercial)</option>
+                <option value="admin">إداري (Admin)</option>
+                <option value="clinic">ععيادة / طبي (Clinic)</option>
+                <option value="recreational">ترفيهي (Recreational)</option>
+              </optgroup>
+            </select>
+          </div>
         </div>
 
-        <input type="checkbox" id="toggleFilters" class="toggle-checkbox">
-        <label for="toggleFilters" class="toggle-label">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path></svg>
-            <span data-ar="انقر لاستخدام الفلاتر اليدوية" data-en="Click to use manual filters">انقر لاستخدام الفلاتر اليدوية</span>
-        </label>
+        <div class="filter-row-4">
+          <div class="field">
+            <label data-ar="سعر المتر (جنيه)" data-en="Meter Price (EGP)">سعر المتر (جنيه)</label>
+            <input type="number" id="fMeterPrice" placeholder="مثال: 34000" oninput="applyFilters()">
+          </div>
+          <div class="field">
+            <label data-ar="إجمالي سعر الوحدة (جنيه)" data-en="Total Unit Price (EGP)">إجمالي سعر الوحدة (جنيه)</label>
+            <input type="number" id="fTotalMin" placeholder="السعر الإجمالي" oninput="applyFilters()">
+          </div>
+          <div class="field">
+            <label data-ar="مبلغ المقدم (جنيه)" data-en="Down Payment (EGP)">مبلغ المقدم (جنيه)</label>
+            <input type="number" id="fDownPayment" placeholder="مثال: 500000" oninput="applyFilters()">
+          </div>
+          <div class="field">
+            <label data-ar="القسط الشهري الأقصى (جنيه)" data-en="Max Monthly Installment (EGP)">القسط الشهري الأقصى (جنيه)</label>
+            <input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()">
+          </div>
+        </div>
 
-        <div class="advanced-filters">
-            <div class="filter-row-3">
-              <div class="field">
-                <label data-ar="موعد التسليم" data-en="Delivery Timeline">موعد التسليم</label>
-                <select id="fDeliveryTimeline" onchange="applyFilters()"><option value="" data-ar="كل المواعيد" data-en="All Timelines">كل المواعيد</option></select>
-              </div>
-              <div class="field">
-                <label data-ar="نوع الوحدة (الغرف)" data-en="Unit Type">نوع الوحدة (الغرف)</label>
-                <select id="fBedroomType" onchange="applyFilters()">
-                  <option value="" data-ar="كل الأنواع" data-en="All Types">كل الأنواع</option>
-                  <option value="studio">استوديو (Studio)</option>
-                  <option value="1br">1 غرفة نوم (1 Bedroom)</option>
-                  <option value="2br">2 غرفة نوم (2 Bedrooms)</option>
-                  <option value="3br">3 غرف نوم (3 Bedrooms)</option>
-                  <option value="4br">4 غرف نوم (4 Bedrooms)</option>
-                  <option value="duplex">دوبلكس (Duplex)</option>
-                  <option value="penthouse">بنتهاوس (Penthouse)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="filter-row-4">
-              <div class="field">
-                <label data-ar="سعر المتر (جنيه)" data-en="Meter Price (EGP)">سعر المتر (جنيه)</label>
-                <input type="number" id="fMeterPrice" placeholder="مثال: 34000" oninput="applyFilters()">
-              </div>
-              <div class="field">
-                <label data-ar="إجمالي سعر الوحدة (جنيه)" data-en="Total Unit Price (EGP)">إجمالي سعر الوحدة (جنيه)</label>
-                <input type="number" id="fTotalMin" placeholder="السعر الإجمالي" oninput="applyFilters()">
-              </div>
-              <div class="field">
-                <label data-ar="مبلغ المقدم (جنيه)" data-en="Down Payment (EGP)">مبلغ المقدم (جنيه)</label>
-                <input type="number" id="fDownPayment" placeholder="مثال: 500000" oninput="applyFilters()">
-              </div>
-              <div class="field">
-                <label data-ar="القسط الشهري الأقصى (جنيه)" data-en="Max Monthly Installment (EGP)">القسط الشهري الأقصى (جنيه)</label>
-                <input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()">
-              </div>
-            </div>
-
-            <div class="filter-actions">
-              <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="resetFilters()" data-ar="مسح الفلاتر" data-en="Clear Filters">مسح الفلاتر</button>
-              <button class="btn btn-primary-style" onclick="applyFilters()" data-ar="بحث متقدم" data-en="Advanced Search">بحث متقدم</button>
-            </div>
+        <div class="filter-actions">
+          <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="resetFilters()" data-ar="مسح الفلاتر" data-en="Clear Filters">مسح الفلاتر</button>
+          <button class="btn btn-primary-style" onclick="applyFilters()" data-ar="بحث متقدم" data-en="Advanced Search">بحث متقدم</button>
         </div>
       </div>
 
@@ -259,7 +257,7 @@
         <div class="form-grid">
           <div class="form-field"><label>المنطقة الفرعية / الفرع</label><select id="fldLocation"></select></div>
           <div class="form-field"><label>نوع النشاط / المشروع</label>
-            <select id="fldProjectType">
+            <select id="fldProjectType" onchange="onProjectTypeChange()">
               <option value="residential">سكني (Residential)</option>
               <option value="commercial">تجاري / إداري / طبي (Commercial)</option>
               <option value="hotel">شقق فندقية (Hotel Apartments)</option>
