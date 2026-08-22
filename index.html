@@ -7,20 +7,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Markazi+Text:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
-<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-<!-- ربط ملف الـ CSS الخارجي -->
-<link rel="stylesheet" href="assets/css/css-main.css?v=9">
+<!-- رجعت اللينك لطبيعته خالص بدون إضافات عشان ميضربش -->
+<link rel="stylesheet" href="assets/css/css-main.css">
 </head>
 <body>
 
-  <!-- Language Switcher Button -->
   <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
 
-  <!-- واجهة الترحيب (Landing Page) -->
   <div id="landingPage">
       <header class="landing-hero">
           <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
@@ -70,7 +67,6 @@
       </div>
   </div>
 
-  <!-- نظام السيستم الأساسي (يظهر بعد تسجيل الدخول) -->
   <div class="app" id="systemApp">
     <aside class="sidebar">
       <div class="brand">Broker-Assistant<br><small data-ar="إدارة: جان هاني" data-en="Admin: Jean Hany">إدارة: جان هاني</small></div>
@@ -89,7 +85,6 @@
         </div>
       </div>
 
-      <!-- زرار لوحة تحكم المشتركين (يظهر للمدير فقط) -->
       <div class="side-actions" id="superAdminActions" style="display:none; padding-bottom:0;">
         <button class="btn btn-outline-light" style="border-color: #D4AF37; color: #D4AF37;" onclick="openUsersManager()">👥 إدارة المشتركين</button>
       </div>
@@ -112,24 +107,18 @@
         <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="backToLanding()" data-ar="العودة للصفحة الرئيسية" data-en="Back to Landing Page">العودة للصفحة الرئيسية</button>
       </div>
 
-      <!-- ========================================== -->
-      <!-- التعديل هنا: شريط البحث الجديد اللي بيفتح ويقفل -->
-      <!-- ========================================== -->
       <div class="filter-bar">
         
-        <!-- 1. خانة البحث الأساسية (تظهر دائماً) -->
         <div class="field main-search-field">
             <input type="text" id="fSearchText" placeholder="ابحث باسم المشروع، المطور..." oninput="applyFilters()">
         </div>
 
-        <!-- 2. زر الفتح والقفل (مخفي برمجياً، يشتغل بالـ CSS) -->
         <input type="checkbox" id="toggleFilters" class="toggle-checkbox">
         <label for="toggleFilters" class="toggle-label">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path></svg>
             <span data-ar="انقر لاستخدام الفلاتر اليدوية" data-en="Click to use manual filters">انقر لاستخدام الفلاتر اليدوية</span>
         </label>
 
-        <!-- 3. باقي الفلاتر (تظهر عند النقر على الزر أعلاه) -->
         <div class="advanced-filters">
             <div class="filter-row-3">
               <div class="field">
@@ -176,7 +165,6 @@
             </div>
         </div>
       </div>
-      <!-- ========================================== -->
 
       <div class="project-type-nav">
         <span class="type-nav-label" data-ar="تصنيف النشاط:" data-en="Activity Type:">تصنيف النشاط:</span>
@@ -201,28 +189,22 @@
     </main>
   </div>
 
-  <!-- Login Modal -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card">
       <button class="login-close-btn" onclick="closeLoginModal()">✕</button>
-      
       <h2 data-ar="تسجيل الدخول للنظام" data-en="Login to System">تسجيل الدخول للنظام</h2>
       <p data-ar="برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم." data-en="Please enter your authorized account details to access the dashboard.">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
-      
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email">
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password">
-
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px; text-align:right; justify-content:start;">
           <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
           <label for="rememberMe" style="font-size:13px; color:var(--text-muted); cursor:pointer;" data-ar="تذكر بيانات الدخول" data-en="Remember Me">تذكر بيانات الدخول</label>
       </div>
-
       <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
       <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeLoginModal()" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
     </div>
   </div>
 
-  <!-- Users Management Modal (Admin Only) -->
   <div class="overlay" id="usersOverlay">
     <div class="modal" style="max-width: 500px;">
       <div class="modal-header">
@@ -253,7 +235,6 @@
           </div>
         </div>
         <button class="btn btn-primary-style" style="width: 100%; margin-top: 20px;" onclick="createNewSubscriber()">إنشاء الحساب الآن</button>
-        
         <div id="newAccResult" style="display:none; margin-top: 15px; padding: 15px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px;">
             <b style="color: #2e7d32; display:block; margin-bottom:5px;">✅ تم إنشاء الحساب وتفعيله بنجاح! انسخ البيانات:</b>
             <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.6;">
@@ -266,7 +247,6 @@
     </div>
   </div>
 
-  <!-- Compound Form Modal -->
   <div class="overlay" id="formOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -324,7 +304,6 @@
     </div>
   </div>
 
-  <!-- Detail View Modal -->
   <div class="overlay" id="detailOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -340,7 +319,6 @@
     </div>
   </div>
 
-  <!-- Standalone Universal Calculator Modal -->
   <div class="overlay" id="calcOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -370,7 +348,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- ربط ملف الـ JS الخارجي (مهم جداً يتحط هنا قبل قفلة الـ body) -->
   <script src="assets/java/java-main.js"></script>
 
 </body>
