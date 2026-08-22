@@ -683,9 +683,23 @@ function openDetail(id){
   const c = compounds.find(x=>x.id===id);
   if(!c) return;
   viewingCompoundId = id;
-  const availTypes = Array.from(new Set((c.unitTypes||[]).map(u=>u.bedroomType)));
+  const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => {
+    let t = u.bedroomType;
+    if (c.projectType === 'commercial') {
+      if (t === '1br') return 'admin';
+      if (t === '2br' || t === 'studio') return 'commercial';
+    }
+    return t;
+  })));
   activeDetailCategory = availTypes.length ? availTypes[0] : null;
-  activeDetailUnitId = (c.unitTypes||[]).filter(u=>u.bedroomType===activeDetailCategory)[0]?.id || null;
+  activeDetailUnitId = (c.unitTypes||[]).filter(u => {
+    let t = u.bedroomType;
+    if (c.projectType === 'commercial') {
+      if (t === '1br') t = 'admin';
+      else if (t === '2br' || t === 'studio') t = 'commercial';
+    }
+    return t === activeDetailCategory;
+  })[0]?.id || null;
   renderDetailModalContent();
   document.getElementById('detailOverlay').classList.add('open');
 }
@@ -694,7 +708,14 @@ function setDetailCategory(catKey) {
   activeDetailCategory = catKey;
   const c = compounds.find(x => x.id === viewingCompoundId);
   if (c && c.unitTypes) {
-    const matched = c.unitTypes.filter(u => u.bedroomType === catKey);
+    const matched = c.unitTypes.filter(u => {
+      let t = u.bedroomType;
+      if (c.projectType === 'commercial') {
+        if (t === '1br') t = 'admin';
+        else if (t === '2br' || t === 'studio') t = 'commercial';
+      }
+      return t === catKey;
+    });
     if (matched.length > 0) {
       activeDetailUnitId = matched[0].id;
     }
@@ -745,7 +766,12 @@ function renderDetailModalContent() {
 
   const grouped = {}; 
   (c.unitTypes||[]).forEach(u => { 
-    (grouped[u.bedroomType] = grouped[u.bedroomType] || []).push(u); 
+    let t = u.bedroomType;
+    if (c.projectType === 'commercial') {
+      if (t === '1br') t = 'admin';
+      else if (t === '2br' || t === 'studio') t = 'commercial';
+    }
+    (grouped[t] = grouped[t] || []).push(u); 
   });
   const cats = Object.keys(BEDROOM_TYPES).filter(k => grouped[k]);
   
@@ -827,7 +853,7 @@ function runUniversalCalculator(){
   if(!t) return showToast('أدخل إجمالي السعر');
   const r = calcInstallmentWithDiscount(t, parseFloat(document.getElementById('calcDiscountPct').value)||0, parseFloat(document.getElementById('calcDownPct').value)||0, calcCustomBullets, parseFloat(document.getElementById('calcYears').value)||0, 12);
   const box = document.getElementById('calcResult'); box.style.display='grid';
-  box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
+  box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTestl||r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
 }
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
@@ -878,6 +904,7 @@ function handleJSONUpload(event) {
             showToast(`✅ تم إضافة ${totalUploaded} مشروع بنجاح!`);
             event.target.value = ''; 
             
+            databases = {};
             setTimeout(() => {
                 location.reload();
             }, 2000);
