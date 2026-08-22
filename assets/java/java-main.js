@@ -258,10 +258,12 @@ async function saveCompoundToCloud() {
   if(!isEditor) return;
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
-  if(!document.getElementById('fldLocation').value){ showToast('اختر الفرع'); return; }
+  
+  // مش هنوقف الحفظ لو المنطقة فاضية، لأن مشاريع الإكسيل ممكن متكونش مربوطة بمنطقة لسه
+  const locId = document.getElementById('fldLocation').value || '';
 
   const data = {
-    locationId: document.getElementById('fldLocation').value,
+    locationId: locId,
     projectType: document.getElementById('fldProjectType').value,
     companyName: document.getElementById('fldCompany').value.trim(),
     projectName: projectName,
@@ -285,7 +287,6 @@ async function saveCompoundToCloud() {
     ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
 
-  // التأكد إن التعديل بيتحفظ على نفس الـ ID القديم لو موجود
   const docId = editingCompoundId || uid();
   try {
       await db.collection('compounds').doc(docId).set(data, { merge: true });
@@ -362,7 +363,7 @@ function renderLocationTree(){
 
   const sel = document.getElementById('fldLocation');
   if(sel) {
-    sel.innerHTML = mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
+    sel.innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
   }
 }
 
@@ -524,12 +525,12 @@ function renderGrid(){
 }
 
 function openCompoundForm(existing){
-  // لازم نحتفظ بالـ ID القديم عشان التعديل يحصل على نفس المشروع
   editingCompoundId = existing ? existing.id : null;
   document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
   
-  if(existing) document.getElementById('fldLocation').value = existing.locationId || '';
+  if(existing && existing.locationId) document.getElementById('fldLocation').value = existing.locationId;
   else if(activeSelection !== 'all' && !mainLocations.find(m=>m.id===activeSelection)) document.getElementById('fldLocation').value = activeSelection;
+  else document.getElementById('fldLocation').value = '';
   
   if (existing) {
       document.getElementById('fldProjectType').value = existing.projectType || 'residential';
@@ -551,7 +552,6 @@ function openCompoundForm(existing){
       });
   }
   
-  // تحويل الأكواد القديمة جوا نموذج التعديل عشان المستخدم يشوفها صح ويعدل عليها صح
   tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : [];
   if (existing && existing.projectType === 'commercial') {
       tempUnits.forEach(u => {
