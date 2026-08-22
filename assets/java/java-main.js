@@ -540,6 +540,15 @@ function openCompoundForm(existing){
   }
   
   tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : [];
+  
+  // دالة ذكية لتصحيح الأكواد القديمة جوا نموذج التعديل
+  if (existing && existing.projectType === 'commercial') {
+      tempUnits.forEach(u => {
+          if (u.bedroomType === '1br') u.bedroomType = 'admin';
+          else if (u.bedroomType === '2br' || u.bedroomType === 'studio') u.bedroomType = 'commercial';
+      });
+  }
+
   tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : [];
   tempDecrees = existing ? JSON.parse(JSON.stringify(existing.ministerialDecrees||[])) : [];
   updatePriceMeterAvg(); renderUnitRows(); renderPlanRows(); renderDecreeRows();
@@ -689,13 +698,25 @@ function renderDecreeRows(){
     </div>`).join('');
 }
 
+function getCorrectedUnitType(typeStr, projectType) {
+    if (projectType === 'commercial') {
+        if (typeStr === '1br') return 'admin';
+        if (typeStr === '2br' || typeStr === 'studio') return 'commercial';
+        if (!BEDROOM_TYPES[typeStr]) return 'commercial'; // default fallback for unknown keys
+    }
+    return typeStr || 'studio';
+}
+
 function openDetail(id){
   const c = compounds.find(x=>x.id===id);
   if(!c) return;
   viewingCompoundId = id;
-  const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => u.bedroomType)));
+  
+  const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => getCorrectedUnitType(u.bedroomType, c.projectType))));
   activeDetailCategory = availTypes.length ? availTypes[0] : null;
-  activeDetailUnitId = (c.unitTypes||[]).filter(u => u.bedroomType === activeDetailCategory)[0]?.id || null;
+  
+  activeDetailUnitId = (c.unitTypes||[]).filter(u => getCorrectedUnitType(u.bedroomType, c.projectType) === activeDetailCategory)[0]?.id || null;
+  
   renderDetailModalContent();
   document.getElementById('detailOverlay').classList.add('open');
 }
@@ -704,7 +725,7 @@ function setDetailCategory(catKey) {
   activeDetailCategory = catKey;
   const c = compounds.find(x => x.id === viewingCompoundId);
   if (c && c.unitTypes) {
-    const matched = c.unitTypes.filter(u => u.bedroomType === catKey);
+    const matched = c.unitTypes.filter(u => getCorrectedUnitType(u.bedroomType, c.projectType) === catKey);
     if (matched.length > 0) {
       activeDetailUnitId = matched[0].id;
     }
@@ -755,7 +776,7 @@ function renderDetailModalContent() {
 
   const grouped = {}; 
   (c.unitTypes||[]).forEach(u => { 
-    let t = u.bedroomType || 'commercial';
+    let t = getCorrectedUnitType(u.bedroomType, c.projectType);
     (grouped[t] = grouped[t] || []).push(u); 
   });
   const cats = Object.keys(BEDROOM_TYPES).filter(k => grouped[k]);
@@ -821,7 +842,7 @@ function openCalculator(){
 
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
 function removeCalcBulletRow(id){ calcCustomBullets=calcCustomBullets.filter(b=>b.id!==id); renderCalcBulletsRows(); }
-function toggleYearSelection(bId, y){ const b=calcCustomBullets.find(x=>x.id===bId); if(b){ const i=b.selectedYears.indexOf(y); i>-1?b.selectedYears.splice(i,1):b.selectedYears.push(y); renderCalcBulletsRows(); } }
+function toggleCalcYearSelection(bId, y){ const b=calcCustomBullets.find(x=>x.id===bId); if(b){ const i=b.selectedYears.indexOf(y); i>-1?b.selectedYears.splice(i,1):b.selectedYears.push(y); renderCalcBulletsRows(); } }
 function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id); if(b){ b[f]=f==='type'?v:(parseFloat(v)||0); if(f==='type')renderCalcBulletsRows(); } }
 function renderCalcBulletsRows(){
   document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`
