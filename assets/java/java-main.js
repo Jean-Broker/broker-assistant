@@ -821,7 +821,7 @@ function openCalculator(){
 
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
 function removeCalcBulletRow(id){ calcCustomBullets=calcCustomBullets.filter(b=>b.id!==id); renderCalcBulletsRows(); }
-function toggleCalcYearSelection(bId, y){ const b=calcCustomBullets.find(x=>x.id===bId); if(b){ const i=b.selectedYears.indexOf(y); i>-1?b.selectedYears.splice(i,1):b.selectedYears.push(y); renderCalcBulletsRows(); } }
+function toggleYearSelection(bId, y){ const b=calcCustomBullets.find(x=>x.id===bId); if(b){ const i=b.selectedYears.indexOf(y); i>-1?b.selectedYears.splice(i,1):b.selectedYears.push(y); renderCalcBulletsRows(); } }
 function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id); if(b){ b[f]=f==='type'?v:(parseFloat(v)||0); if(f==='type')renderCalcBulletsRows(); } }
 function renderCalcBulletsRows(){
   document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`
