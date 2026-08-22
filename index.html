@@ -41,28 +41,6 @@
                   <p data-ar="واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك." data-en="A modern, organized interface that ensures you accomplish your daily tasks efficiently with the highest level of security.">واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
               </div>
           </div>
-
-          <div class="pricing-section">
-              <h2 data-ar="باقات الاشتراكات المتاحة" data-en="Available Subscription Plans">باقات الاشتراكات المتاحة</h2>
-              <p style="color: var(--text-muted); margin-bottom: 30px;" data-ar="اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة." data-en="Choose the right plan for your business and activate your system now by contacting us directly.">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
-              <div class="pricing-cards">
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه) لسيستم Broker-Assistant" class="price-card">
-                      <h3 data-ar="باقة شهر واحد" data-en="1 Month Plan">باقة شهر واحد</h3>
-                      <div class="price-val" data-ar="500 جنيه" data-en="500 EGP">500 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;" data-ar="مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته." data-en="Perfect for experiencing the system fully and benefiting from all its features.">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
-                  </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه) لسيستم Broker-Assistant" class="price-card" style="border: 2px solid var(--primary-color);">
-                      <h3 data-ar="باقة 3 شهور" data-en="3 Months Plan">باقة 3 شهور</h3>
-                      <div class="price-val" data-ar="1200 جنيه" data-en="1200 EGP">1200 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;" data-ar="توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف." data-en="Bigger savings for continuous follow-up and non-stop workflow.">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
-                  </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه) لسيستم Broker-Assistant" class="price-card">
-                      <h3 data-ar="باقة 6 شهور" data-en="6 Months Plan">باقة 6 شهور</h3>
-                      <div class="price-val" data-ar="2000 جنيه" data-en="2000 EGP">2000 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;" data-ar="القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين." data-en="The best value for real estate agencies and professional brokers.">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
-                  </a>
-              </div>
-          </div>
       </div>
   </div>
 
@@ -134,7 +112,7 @@
               <optgroup label="تجاري / إداري / طبي / ترفيهي">
                 <option value="commercial">تجاري (Commercial)</option>
                 <option value="admin">إداري (Admin)</option>
-                <option value="clinic">ععيادة / طبي (Clinic)</option>
+                <option value="clinic">عيادة / طبي (Clinic)</option>
                 <option value="recreational">ترفيهي (Recreational)</option>
               </optgroup>
             </select>
@@ -267,9 +245,25 @@
           <div class="form-field"><label>اسم المشروع / الكمبوند</label><input id="fldProject" placeholder="مثال: تاج سيتي"></div>
           <div class="form-field"><label>اسم مالك الشركة / رئيس المجلس</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي"></div>
           <div class="form-field"><label>الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر"></div>
-          <div class="form-field"><label>سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="number" oninput="updatePriceMeterAvg();"></div>
-          <div class="form-field"><label>سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="number" oninput="updatePriceMeterAvg();"></div>
-          <div class="form-field full" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:#F2ECE1; color:var(--primary-color);"></div>
+          
+          <div class="form-field res-price-field"><label>سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="number" oninput="updatePriceMeterAvg();"></div>
+          <div class="form-field res-price-field"><label>سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="number" oninput="updatePriceMeterAvg();"></div>
+          <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:#F2ECE1; color:var(--primary-color);"></div>
+
+          <div id="commercialPriceWrap" class="full" style="display:none;">
+             <div style="font-weight:bold; font-size:14.5px; margin-bottom:10px; color:var(--primary-color);">أسعار المتر المقسمة للأنشطة التجارية (اختياري)</div>
+             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; background:#fafafa; padding:15px; border-radius:8px; border:1px solid #ddd;">
+                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="number" class="comm-price-input"></div>
+             </div>
+          </div>
+
           <div class="form-field"><label>نسبة الصيانة (% Maintenance)</label><input id="fldMaintenancePercent" type="number" placeholder="مثال: 8"></div>
           <div class="form-field"><label>سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="number" placeholder="مثال: 150000"></div>
           <div class="form-field"><label>مساحة المشروع الإجمالية (فدان)</label><input id="fldProjectSize" type="number" step="0.1"></div>
@@ -299,7 +293,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="closeModal('formOverlay')">إلغاء</button>
-        <button class="btn btn-primary-style" onclick="saveCompoundToCloud()">حفظ المشروع</button>
+        <button class="btn btn-primary-style" onclick="saveCompoundToCloud()">حفظ التعديلات</button>
       </div>
     </div>
   </div>
