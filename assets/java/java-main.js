@@ -70,7 +70,7 @@ let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = 
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
 const BEDROOM_TYPES = { 
-  studio: 'استوديو', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس',
+  studio: 'استوديو (Studio)', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس',
   commercial: 'تجاري (Commercial)', admin: 'إداري (Admin)', clinic: 'عيادة / طبي (Clinic)', recreational: 'ترفيهي (Recreational)'
 };
 const FINISHING_TYPES = { core_shell: 'Core & Shell (خرسانة وبناء)', semi: 'Semi-finished (نصف تشطيب)', full: 'Fully finished (تشطيب كامل)' };
@@ -254,14 +254,29 @@ async function saveMainLocationsToCloud() {
   }
 }
 
+// دالة ذكية لفصل السكني عن التجاري في قراءة البيانات
+function getCorrectedUnitType(typeStr, projectType) {
+    if (projectType === 'commercial') {
+        if (typeStr === '1br') return 'admin';
+        if (typeStr === '2br' || typeStr === 'studio') return 'commercial';
+        if (!['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'commercial';
+    } else {
+        if (['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'studio';
+    }
+    return typeStr || (projectType === 'commercial' ? 'commercial' : 'studio');
+}
+
 async function saveCompoundToCloud() {
   if(!isEditor) return;
   const projectName = document.getElementById('fldProject').value.trim();
-  if(!projectName){ showToast('أدخل اسم المشروع'); return; }
-  if(!document.getElementById('fldLocation').value){ showToast('اختر الفرع'); return; }
+  
+  if(!projectName){ alert('أدخل اسم المشروع أولاً!'); return; }
+  
+  // لغينا الـ Return لو المنطقة فاضية عشان مشاريع الإكسيل تتحفظ عادي
+  const locId = document.getElementById('fldLocation').value || '';
 
   const data = {
-    locationId: document.getElementById('fldLocation').value,
+    locationId: locId,
     projectType: document.getElementById('fldProjectType').value,
     companyName: document.getElementById('fldCompany').value.trim(),
     projectName: projectName,
@@ -277,7 +292,7 @@ async function saveCompoundToCloud() {
     compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(),
     unitTypes: tempUnits.map(u => ({
         id: u.id || uid(),
-        bedroomType: u.bedroomType || 'commercial',
+        bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value),
         area: parseFloat(u.area) || 0,
         price: parseFloat(u.price) || 0
     })),
@@ -285,12 +300,11 @@ async function saveCompoundToCloud() {
     ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
 
-  // التأكد إن التعديل بيتحفظ على نفس الـ ID القديم لو موجود
   const docId = editingCompoundId || uid();
   try {
       await db.collection('compounds').doc(docId).set(data, { merge: true });
       closeModal('formOverlay');
-      showToast('تم حفظ المشروع بنجاح');
+      showToast('تم حفظ التعديلات بنجاح');
   } catch (error) {
       alert('خطأ! الفايربيز رفض الحفظ.');
   }
@@ -362,7 +376,7 @@ function renderLocationTree(){
 
   const sel = document.getElementById('fldLocation');
   if(sel) {
-    sel.innerHTML = mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
+    sel.innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
   }
 }
 
@@ -446,15 +460,6 @@ function findSubLocationName(subId){
   return '-';
 }
 
-function getCorrectedUnitType(typeStr, projectType) {
-    if (projectType === 'commercial') {
-        if (typeStr === '1br') return 'admin';
-        if (typeStr === '2br' || typeStr === 'studio') return 'commercial';
-        if (!BEDROOM_TYPES[typeStr]) return 'commercial'; 
-    }
-    return typeStr || 'studio';
-}
-
 function renderGrid(){
   let targetSubIds = [];
   if(activeSelection !== 'all'){
@@ -469,7 +474,9 @@ function renderGrid(){
     if(filters.deliveryTimeline && c.deliveryDate!==filters.deliveryTimeline) return false;
 
     let cUnits = c.unitTypes||[];
-    if(filters.bedroomType) cUnits = cUnits.filter(u=>u.bedroomType===filters.bedroomType);
+    if(filters.bedroomType) {
+        cUnits = cUnits.filter(u => getCorrectedUnitType(u.bedroomType, c.projectType) === filters.bedroomType);
+    }
     if(filters.bedroomType && cUnits.length===0) return false;
     
     if(filters.totalTarget != null && !cUnits.some(u => Math.abs((u.price||0) - filters.totalTarget) <= filters.totalTarget * 0.15)) return false;
@@ -524,12 +531,12 @@ function renderGrid(){
 }
 
 function openCompoundForm(existing){
-  // لازم نحتفظ بالـ ID القديم عشان التعديل يحصل على نفس المشروع
   editingCompoundId = existing ? existing.id : null;
   document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
   
-  if(existing) document.getElementById('fldLocation').value = existing.locationId || '';
+  if(existing && existing.locationId) document.getElementById('fldLocation').value = existing.locationId;
   else if(activeSelection !== 'all' && !mainLocations.find(m=>m.id===activeSelection)) document.getElementById('fldLocation').value = activeSelection;
+  else document.getElementById('fldLocation').value = '';
   
   if (existing) {
       document.getElementById('fldProjectType').value = existing.projectType || 'residential';
@@ -551,11 +558,10 @@ function openCompoundForm(existing){
       });
   }
   
-  // تحويل الأكواد القديمة جوا نموذج التعديل عشان المستخدم يشوفها صح ويعدل عليها صح
   tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : [];
-  if (existing && existing.projectType === 'commercial') {
+  if (existing) {
       tempUnits.forEach(u => {
-          u.bedroomType = getCorrectedUnitType(u.bedroomType, 'commercial');
+          u.bedroomType = getCorrectedUnitType(u.bedroomType, existing.projectType);
       });
   }
 
@@ -624,15 +630,18 @@ function renderUnitRows(){
     `;
   }
 
-  document.getElementById('unitRows').innerHTML = tempUnits.map(u=>`
+  document.getElementById('unitRows').innerHTML = tempUnits.map(u=> {
+      let bType = getCorrectedUnitType(u.bedroomType, pType);
+      return `
     <div class="repeat-row">
       <select style="flex:1.4;" onchange="updateUnit('${u.id}','bedroomType',this.value)">
-        ${optionsHtml.includes(`value="${u.bedroomType}"`) ? optionsHtml.replace(`value="${u.bedroomType}"`, `value="${u.bedroomType}" selected`) : optionsHtml}
+        ${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}
       </select>
       <input type="number" placeholder="المساحة (م²)" style="flex:1;" value="${u.area}" oninput="updateUnitArea('${u.id}', this.value)">
       <input type="number" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.2;" value="${u.price}" oninput="updateUnit('${u.id}','price',this.value)">
       <button class="row-del" onclick="removeUnitRow('${u.id}')">✕</button>
-    </div>`).join('') || '<div style="font-size:12.5px;color:var(--text-muted);">لا يوجد وحدات مضافة</div>';
+    </div>`
+  }).join('') || '<div style="font-size:12.5px;color:var(--text-muted);">لا يوجد وحدات مضافة</div>';
 }
 
 function updateUnitArea(id, val){
@@ -739,6 +748,13 @@ function setDetailUnit(unitId) {
   renderDetailModalContent();
 }
 
+function editCurrentCompound(){
+  const c = compounds.find(x=>x.id===viewingCompoundId);
+  if(!c) return;
+  closeModal('detailOverlay');
+  openCompoundForm(c);
+}
+
 function renderDetailModalContent() {
   const c = compounds.find(x => x.id === viewingCompoundId);
   if (!c) return;
@@ -773,7 +789,7 @@ function renderDetailModalContent() {
     let t = getCorrectedUnitType(u.bedroomType, c.projectType);
     (grouped[t] = grouped[t] || []).push(u); 
   });
-  const cats = Object.keys(BEDROOM_TYPES).filter(k => grouped[k]);
+  const cats = Object.keys(grouped);
   
   if(cats.length){
     if(!activeDetailCategory || !grouped[activeDetailCategory]) {
