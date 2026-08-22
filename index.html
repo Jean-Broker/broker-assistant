@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-<!-- رجعت اللينك لطبيعته خالص بدون إضافات عشان ميضربش -->
 <link rel="stylesheet" href="assets/css/css-main.css">
 </head>
 <body>
@@ -91,6 +90,9 @@
 
       <div class="side-actions" id="adminActions" style="display:none; border-top:none; padding-top:10px;">
         <button class="btn btn-primary-style" onclick="openCompoundForm()" data-ar="+ إضافة مشروع" data-en="+ Add Project">+ إضافة مشروع</button>
+        <!-- التعديل اهو: زرار استيراد المشاريع من ملف JSON -->
+        <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="handleJSONUpload(event)">
+        <button class="btn btn-primary-style" style="margin-top: 10px; background: #D4AF37; color: #111; border: none;" onclick="document.getElementById('jsonFileInput').click()">📥 استيراد مشاريع (JSON)</button>
       </div>
       
       <div class="side-actions" style="padding-top:10px; border-top:none;">
