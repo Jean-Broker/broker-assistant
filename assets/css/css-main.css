@@ -1,67 +1,129 @@
-/* --- شكل شريط البحث والزرار المخفي الجديد --- */
+/* =========================================
+   تعديلات شريط البحث والكروت (فقط)
+   ========================================= */
+
+/* شريط البحث الكبير */
 .filter-bar {
-    background: #FFFFFF;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    margin-bottom: 24px;
+    background: #FFFFFF !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+    margin-bottom: 30px !important;
 }
-/* تكبير خانة البحث الأساسية */
+
 .main-search-field input {
-    width: 100%;
-    padding: 18px 24px;
-    font-size: 16px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: #F9FAFB;
-    outline: none;
-    transition: 0.2s;
-    text-align: right;
-    font-weight: 700;
+    width: 100% !important;
+    padding: 18px 24px !important;
+    font-size: 16px !important;
+    border: 1px solid #E5E7EB !important;
+    border-radius: 8px !important;
+    background: #F9FAFB !important;
+    outline: none !important;
+    transition: 0.2s !important;
+    text-align: right !important;
+    font-weight: 700 !important;
 }
+
 .main-search-field input:focus {
-    border-color: var(--primary-color);
-    background: #FFFFFF;
-    box-shadow: 0 0 0 3px rgba(11, 27, 61, 0.1);
+    border-color: #0B1B3D !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 0 0 3px rgba(11, 27, 61, 0.1) !important;
 }
-/* خدعة الزرار اللي بيفتح ويقفل */
-.toggle-checkbox { display: none; }
+
+/* زرار الفلاتر اليدوية المخفي */
+.toggle-checkbox { display: none !important; }
 .toggle-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: transparent;
-    border: 1px dashed var(--border-color);
-    color: var(--text-muted);
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 16px;
-    transition: 0.2s;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    background: transparent !important;
+    border: 1px dashed #D1D5DB !important;
+    color: #6B7280 !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    margin-top: 16px !important;
+    transition: 0.2s !important;
 }
+
 .toggle-label:hover {
-    background: #F9FAFB;
-    color: var(--primary-color);
-    border-color: var(--border-hover);
+    background: #F9FAFB !important;
+    color: #0B1B3D !important;
+    border-color: #0B1B3D !important;
 }
-/* إخفاء صندوق الفلاتر وإظهاره عند النقر */
+
 .advanced-filters {
-    display: none; /* مخفي في البداية */
-    flex-direction: column;
-    gap: 16px;
-    margin-top: 16px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
+    display: none; 
+    flex-direction: column !important;
+    gap: 16px !important;
+    margin-top: 16px !important;
+    padding-top: 20px !important;
+    border-top: 1px solid #E5E7EB !important;
 }
+
 .toggle-checkbox:checked ~ .advanced-filters {
-    display: flex; /* بيظهر لما تدوس على الزرار */
+    display: flex !important; 
 }
+
 .toggle-checkbox:checked ~ .toggle-label {
-    background: var(--bg-sidebar); /* لون الزرار بيتغير لما يتفتح */
-    color: #FFFFFF;
-    border: 1px solid var(--bg-sidebar);
+    background: #0B1B3D !important; 
+    color: #FFFFFF !important;
+    border: 1px solid #0B1B3D !important;
+}
+
+/* شكل الكروت (المشاريع) */
+.dossier { 
+    background: #FFFFFF !important; 
+    border: 1px solid #E5E7EB !important; 
+    border-radius: 12px !important; 
+    padding: 24px !important; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important; 
+    transition: 0.3s ease !important; 
+}
+
+.dossier:hover { 
+    transform: translateY(-4px) !important; 
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08) !important; 
+    border-color: #0B1B3D !important; 
+}
+
+.dossier-company { 
+    font-size: 13px !important; 
+    color: #6B7280 !important; 
+    font-weight: 600 !important; 
+    text-align: right !important; 
+}
+
+.dossier-title { 
+    font-size: 20px !important; 
+    font-weight: 800 !important; 
+    margin: 6px 0 16px 0 !important; 
+    color: #0B1B3D !important; 
+    text-align: right !important;
+}
+
+.dossier-badge { 
+    background: transparent !important; 
+    color: #6B7280 !important; 
+    border: 1px solid #E5E7EB !important; 
+    padding: 6px 16px !important; 
+    border-radius: 50px !important; 
+    font-weight: 600 !important; 
+}
+
+.meta-chip { 
+    font-size: 22px !important; 
+    font-weight: 800 !important; 
+    color: #4A1E5C !important; /* اللون الموف */
+    text-align: right !important; 
+}
+
+.meta-chip span { 
+    font-size: 12px !important; 
+    color: #6B7280 !important; 
+    font-weight: 600 !important; 
 }
