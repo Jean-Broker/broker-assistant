@@ -7,7 +7,6 @@ if (sessionStorage.getItem('isSystemOpen') === 'true') {
     document.getElementById('systemApp').style.display = 'none';
 }
 
-// --- Language Translation Logic ---
 let currentLang = 'ar';
 function toggleLanguage() {
     currentLang = currentLang === 'ar' ? 'en' : 'ar';
@@ -46,6 +45,19 @@ window.addEventListener('load', () => {
     document.querySelectorAll('.comm-price-input').forEach(el => {
         el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitArea(u.id, u.area)); });
     });
+
+    // برمجة زرار الفلتر الذكي عشان يفتح ويقفل
+    const filterBtn = document.getElementById('toggleFilterBtn');
+    if(filterBtn) {
+        filterBtn.addEventListener('click', function() {
+            const filtersDiv = document.getElementById('advancedFilters');
+            if (filtersDiv.style.display === 'none' || filtersDiv.style.display === '') {
+                filtersDiv.style.display = 'block';
+            } else {
+                filtersDiv.style.display = 'none';
+            }
+        });
+    }
 });
 
 let currentUser = null, isAdmin = false, isEditor = false;
@@ -79,7 +91,6 @@ auth.onAuthStateChanged(async (user) => {
 
     currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
-    document.getElementById('authActionBtn').textContent = 'خروج';
     document.getElementById('superAdminActions').style.display = isAdmin ? 'flex' : 'none';
     document.getElementById('addMainLocWrap').style.display = isEditor ? 'flex' : 'none';
     document.getElementById('adminActions').style.display = isEditor ? 'flex' : 'none';
@@ -91,7 +102,6 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen');
     document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول';
-    document.getElementById('authActionBtn').textContent = 'دخول';
     document.getElementById('systemApp').style.display = 'none';
     document.getElementById('landingPage').style.display = 'block';
   }
@@ -195,12 +205,12 @@ function renderLocationTree(){
   mainLocations.forEach((mainLoc) => {
     let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; });
     const isOpen = !!openMainLocIds[mainLoc.id];
-    html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${activeSelection === mainLoc.id ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D9C5B2; font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`;
+    html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${activeSelection === mainLoc.id ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`;
     mainLoc.subLocations.forEach(sub => {
       const subCount = compounds.filter(c => c.locationId === sub.id).length;
       html += `<div class="sub-loc-tab ${activeSelection === sub.id?'active':''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`;
     });
-    html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`;
+    html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`;
   });
   wrap.innerHTML = html;
   if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
@@ -213,6 +223,7 @@ async function addSubLocation(mainId){ if(!isEditor) return; const input = docum
 async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); if(activeSelection === subId) activeSelection = 'all'; await saveMainLocationsToCloud(); }
 
 function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
+
 function applyFilters(){ filters = { searchText: (document.getElementById('fSearchText').value || '').trim().toLowerCase(), meterPrice: parseFloat(document.getElementById('fMeterPrice').value) || null, totalTarget: parseFloat(document.getElementById('fTotalMin').value) || null, downPaymentTarget: parseFloat(document.getElementById('fDownPayment').value) || null, bedroomType: document.getElementById('fBedroomType').value || null, deliveryTimeline: document.getElementById('fDeliveryTimeline').value || null, sortOrder: document.getElementById('fSortOrder').value || 'default', maxMonthlyInstallment: parseFloat(document.getElementById('fMonthlyInstallment').value) || null }; renderGrid(); }
 function resetFilters(){ ['fSearchText','fMeterPrice','fTotalMin','fDownPayment','fBedroomType','fDeliveryTimeline','fSortOrder','fMonthlyInstallment'].forEach(id => document.getElementById(id).value=''); filters = {}; renderGrid(); }
 function findSubLocationName(subId){ for(const m of mainLocations){ const s = m.subLocations.find(x => x.id === subId); if(s) return `${m.name} ⬅️ ${s.name}`; } return '-'; }
@@ -245,7 +256,7 @@ function renderGrid(){
   document.getElementById('pageTitle').textContent = activeSelection === 'all' ? 'كل المشروعات' : (mainLocations.find(m => m.id === activeSelection)?.name + ' (الكل)' || findSubLocationName(activeSelection));
   document.getElementById('pageSub').textContent = `${list.length} مشروع مسجل بالسحابة`;
   const grid = document.getElementById('compoundGrid');
-  if(!list.length) return grid.innerHTML = `<div class="empty-state"><div class="big">لا توجد مشروعات مطابقة</div></div>`;
+  if(!list.length) return grid.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted); font-size:18px; font-weight:bold;">لا توجد مشروعات مطابقة</div>`;
   
   grid.innerHTML = list.map(c=>{
     const minPrice = (c.unitTypes||[]).length ? Math.min(...c.unitTypes.map(u=>u.price||Infinity)) : null;
@@ -256,7 +267,7 @@ function renderGrid(){
         pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
     } else { pDisplay = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}` : formatNum(c.pricePerMeterMin||0); }
     
-    return `<div class="dossier" onclick="openDetail('${c.id}')">${c.ministerialDecrees?.length ? '<div class="stamp">معتمد<br>وزارياً</div>' : ''}<div class="dossier-header-row"><div class="dossier-company">${escapeHtml(c.companyName||'')}</div></div><div class="dossier-title">${escapeHtml(c.projectName||'بدون اسم')}</div><span class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</span><div class="dossier-row" style="margin-top:6px;"><b>الفرع:</b> <span style="font-size:12px;color:var(--primary-color);">${findSubLocationName(c.locationId)}</span></div><div class="dossier-row"><b>المساحة:</b> ${c.projectSize ? c.projectSize+' فدان':'-'}</div><div class="dossier-row"><b>التسليم:</b> ${deliveryLabel(c.deliveryDate)}</div><div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> ${c.projectType === 'commercial' ? 'حسب النشاط' : (FINISHING_TYPES[c.finishingStatus]||'-')}</div><div class="dossier-meta"><div class="meta-chip">${pDisplay}<span>سعر المتر</span></div><div class="meta-chip">${minPrice!==Infinity ? formatNum(minPrice):'-'}<span>أقل سعر وحدة</span></div></div></div>`;
+    return `<div class="dossier" onclick="openDetail('${c.id}')">${c.ministerialDecrees?.length ? '<div class="stamp">معتمد</div>' : ''}<div class="dossier-company">${escapeHtml(c.companyName||'')}</div><div class="dossier-title">${escapeHtml(c.projectName||'بدون اسم')}</div><div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div><div class="dossier-row"><b>الفرع:</b> <span>${findSubLocationName(c.locationId)}</span></div><div class="dossier-row"><b>المساحة:</b> <span>${c.projectSize ? c.projectSize+' فدان':'-'}</span></div><div class="dossier-row"><b>التسليم:</b> <span>${deliveryLabel(c.deliveryDate)}</span></div><div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${c.projectType === 'commercial' ? 'حسب النشاط' : (FINISHING_TYPES[c.finishingStatus]||'-')}</span></div><div class="dossier-meta"><div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div><div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice!==Infinity ? formatNum(minPrice):'-'}</div></div></div></div>`;
   }).join('');
 }
 
@@ -324,7 +335,7 @@ function renderUnitRows(){
   document.getElementById('unitRows').innerHTML = tempUnits.map(u=> {
       let bType = getCorrectedUnitType(u.bedroomType, pType);
       return `<div class="repeat-row"><select style="flex:1.4;" onchange="updateUnit('${u.id}','bedroomType',this.value)">${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}</select><input type="number" placeholder="المساحة (م²)" style="flex:1;" value="${u.area}" oninput="updateUnitArea('${u.id}', this.value)"><input type="number" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.2;" value="${u.price}" oninput="updateUnit('${u.id}','price',this.value)"><button class="row-del" onclick="removeUnitRow('${u.id}')">✕</button></div>`
-  }).join('') || '<div style="font-size:12.5px;color:var(--text-muted);">لا يوجد وحدات مضافة</div>';
+  }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا يوجد وحدات مضافة</div>';
 }
 function updateUnitArea(id, val){ const u = tempUnits.find(x=>x.id===id); if(u){ u.area = parseFloat(val) || 0; const pType = document.getElementById('fldProjectType').value; let avg = pType === 'commercial' ? getAverageCommercialPrice(u.bedroomType) : getAveragePricePerMeter(); if(avg > 0 && u.area > 0) u.price = Math.round(u.area * avg); document.getElementById(`price-input-${u.id}`).value = u.price || ''; } }
 function updateUnit(id, field, val){ const u = tempUnits.find(x=>x.id===id); if(u) { u[field] = field==='bedroomType'?val:(parseFloat(val)||0); if (field === 'bedroomType') updateUnitArea(id, u.area); } }
@@ -335,7 +346,7 @@ function addBulletRow(pId){ tempPlans.find(p=>p.id===pId)?.customBullets.push({i
 function removeBulletRow(pId, bId){ const p=tempPlans.find(x=>x.id===pId); if(p) p.customBullets=p.customBullets.filter(b=>b.id!==bId); renderPlanRows(); }
 function toggleYearSelection(pId, bId, y){ const b = tempPlans.find(p=>p.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ const i=b.selectedYears.indexOf(y); i>-1?b.selectedYears.splice(i,1):b.selectedYears.push(y); renderPlanRows(); } }
 function renderPlanRows(){
-  document.getElementById('planRows').innerHTML = tempPlans.map(p=>`<div class="plan-card"><div class="plan-card-header"><input placeholder="اسم الخطة" style="flex:2;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)"><input type="number" placeholder="% خصم" style="width:70px;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)"><input type="number" placeholder="% مقدم" style="width:70px;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)"><input type="number" placeholder="سنوات" style="width:70px;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)"><select onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select><button class="row-del" onclick="removePlanRow('${p.id}')">✕</button></div><input placeholder="ملاحظات" style="width:100%;margin-bottom:8px;padding:6px;border-radius:4px;border:1px solid #ddd;" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)"><div class="bullets-container">${p.customBullets.map(b=>`<div class="bullet-row"><div class="bullet-top"><select style="flex:1;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)"><option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option><option value="deferred" ${b.type==='deferred'?'selected':''}>دفعة مؤجلة</option><option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option></select><input type="number" placeholder="%" style="width:70px;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)"><button class="row-del" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button></div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>`).join('')}<button class="add-row-btn" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button></div></div>`).join('') || '<div style="font-size:12.5px;color:var(--text-muted);">لا توجد خطط سداد</div>';
+  document.getElementById('planRows').innerHTML = tempPlans.map(p=>`<div class="plan-card"><div class="plan-card-header"><input placeholder="اسم الخطة" style="flex:2;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)"><input type="number" placeholder="% خصم" style="width:70px;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)"><input type="number" placeholder="% مقدم" style="width:70px;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)"><input type="number" placeholder="سنوات" style="width:70px;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)"><select onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select><button class="row-del" onclick="removePlanRow('${p.id}')">✕</button></div><input placeholder="ملاحظات" style="width:100%;margin-bottom:8px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:#111;color:#fff;" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)"><div class="bullets-container">${p.customBullets.map(b=>`<div class="bullet-row"><div class="bullet-top"><select style="flex:1;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)"><option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option><option value="deferred" ${b.type==='deferred'?'selected':''}>دفعة مؤجلة</option><option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option></select><input type="number" placeholder="%" style="width:70px;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)"><button class="row-del" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button></div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>`).join('')}<button class="btn btn-outline-light w-100 btn-pill" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button></div></div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا توجد خطط سداد</div>';
 }
 function updatePlan(id, field, val){ const p = tempPlans.find(x=>x.id===id); if(p) p[field] = (field==='name'||field==='notes'||field==='frequency')?val:(parseFloat(val)||0); }
 function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(field==='type')renderPlanRows();} }
@@ -365,15 +376,15 @@ function renderDetailModalContent() {
   if (c.projectType === 'commercial') {
       finishText = 'حسب النشاط (موضح بالأسعار)'; parkingText = 'لا يوجد';
       let cp = c.commercialPrices || {}; let parts = []; const fName = { core_shell: 'Core & Shell', semi: 'نصف تشطيب', full: 'تشطيب كامل' };
-      if (cp.adminMin || cp.adminMax) parts.push(`<b>إداري:</b> ${formatNum(cp.adminMin)} - ${formatNum(cp.adminMax)} <span style="color:#888; font-size:11px;">(${fName[cp.adminFinish||'core_shell']})</span>`);
-      if (cp.commMin || cp.commMax) parts.push(`<b>تجاري:</b> ${formatNum(cp.commMin)} - ${formatNum(cp.commMax)} <span style="color:#888; font-size:11px;">(${fName[cp.commFinish||'core_shell']})</span>`);
-      if (cp.clinicMin || cp.clinicMax) parts.push(`<b>طبي:</b> ${formatNum(cp.clinicMin)} - ${formatNum(cp.clinicMax)} <span style="color:#888; font-size:11px;">(${fName[cp.clinicFinish||'core_shell']})</span>`);
-      if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> ${formatNum(cp.recMin)} - ${formatNum(cp.recMax)} <span style="color:#888; font-size:11px;">(${fName[cp.recFinish||'core_shell']})</span>`);
-      pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; margin-top:4px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||0)} ج`);
+      if (cp.adminMin || cp.adminMax) parts.push(`<b>إداري:</b> ${formatNum(cp.adminMin)} - ${formatNum(cp.adminMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.adminFinish||'core_shell']})</span>`);
+      if (cp.commMin || cp.commMax) parts.push(`<b>تجاري:</b> ${formatNum(cp.commMin)} - ${formatNum(cp.commMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.commFinish||'core_shell']})</span>`);
+      if (cp.clinicMin || cp.clinicMax) parts.push(`<b>طبي:</b> ${formatNum(cp.clinicMin)} - ${formatNum(cp.clinicMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.clinicFinish||'core_shell']})</span>`);
+      if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> ${formatNum(cp.recMin)} - ${formatNum(cp.recMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.recFinish||'core_shell']})</span>`);
+      pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:13px; margin-top:4px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||0)} ج`);
   } else {
       pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)} ج`;
   }
-  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary-color); font-size:13px; text-decoration:underline; display:inline-block; margin-top:6px; font-weight:bold;">📍 عرض على الخريطة (Google Maps)</a>` : '';
+  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:13px; text-decoration:underline; display:inline-block; margin-top:6px; font-weight:bold;">📍 عرض على الخريطة</a>` : '';
   let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري الهندسي</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>المنطقة والفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item" ${c.projectType === 'commercial' ? 'style="align-items:start;"' : ''}><b>سعر المتر</b><span>${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: ${c.maintenancePercent || 0}% | جراج: ${parkingText}</span></div><div class="detail-item"><b>المساحة الإجمالية</b><span>${c.projectSize ? c.projectSize + ' فدان' : '-'}</span></div><div class="detail-item full"><b>الموقع بالتفصيل</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
 
   const grouped = {}; 
@@ -389,7 +400,7 @@ function renderDetailModalContent() {
       html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>خصم</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
       c.paymentPlans.forEach(p => {
         const r = calcInstallmentWithDiscount(sUnit.price || 0, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12);
-        html += `<tr><td class="txt"><b>${escapeHtml(p.name)}</b></td><td>${p.discountPercent ? p.discountPercent + '%' : '-'}</td><td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent || 0})</small></td><td class="txt">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td><td><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td><td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td></tr>`;
+        html += `<tr><td>${escapeHtml(p.name)}</td><td>${p.discountPercent ? p.discountPercent + '%' : '-'}</td><td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent || 0})</small></td><td>${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td><td style="color:var(--primary);"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td><td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td></tr>`;
       }); html += `</table></div>`;
     }
   } document.getElementById('detailBody').innerHTML = html;
@@ -418,15 +429,11 @@ function renderCalcBulletsRows(){ document.getElementById('calcBulletsRows').inn
 function runUniversalCalculator(){
   const t = parseFloat(document.getElementById('calcTotal').value); if(!t) return showToast('أدخل إجمالي السعر');
   const r = calcInstallmentWithDiscount(t, parseFloat(document.getElementById('calcDiscountPct').value)||0, parseFloat(document.getElementById('calcDownPct').value)||0, calcCustomBullets, parseFloat(document.getElementById('calcYears').value)||0, 12);
-  const box = document.getElementById('calcResult'); box.style.display='grid'; box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
+  const box = document.getElementById('calcResult'); box.style.display='grid'; box.innerHTML = `<div class="item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))}</b></div><div class="item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))}</b></div><div class="highlight"><span style="color:var(--text-muted)">القسط الشهري</span><b style="color:var(--primary);">${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`;
 }
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
-
-// =========================================================================
-// السحر الحقيقي: الكود اللي بيقرا الإكسيل ويربط الداتا صح
-// =========================================================================
 
 function handleExcelUpload(event) {
     const file = event.target.files[0];
@@ -441,21 +448,16 @@ function handleExcelUpload(event) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             
-            let compoundsToUpload = {}; // هنجمع كل صفوف المشروع الواحد في مكان واحد
-            
-            // هنعمل منطقة رئيسية جديدة اسمها (استيراد سكني) عشان ننظم فيها الـ Tabs
+            let compoundsToUpload = {}; 
             const mainLocId = uid();
             let excelMainLoc = { id: mainLocId, name: "استيراد سكني", subLocations: [] };
             
             workbook.SheetNames.forEach(sheetName => {
                 const worksheet = workbook.Sheets[sheetName];
-                
-                // أهم حتة: بنقول للمكتبة تتخطى الصف الأول المدموج وتبدأ من الصف التاني
                 const rows = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: "" });
                 
-                if (rows.length === 0) return; // لو التاب فاضي نتخطاه
+                if (rows.length === 0) return; 
 
-                // نعمل منطقة فرعية باسم التاب (مثلاً Zayed)
                 const subLocId = uid();
                 excelMainLoc.subLocations.push({ id: subLocId, name: sheetName });
 
@@ -463,12 +465,11 @@ function handleExcelUpload(event) {
                     let projName = row['Project'] || row['project'] || '';
                     let devName = row['Developer'] || row['developer'] || '';
                     
-                    if (!projName && !devName) return; // نتجاهل الصفوف الفاضية
+                    if (!projName && !devName) return; 
                     
                     let compKey = `${projName}_${devName}`;
                     
                     if (!compoundsToUpload[compKey]) {
-                        // لو المشروع لسه مش متسجل، نعمله هيكل جديد
                         compoundsToUpload[compKey] = {
                             id: uid(),
                             locationId: subLocId,
@@ -491,7 +492,6 @@ function handleExcelUpload(event) {
                         };
                     }
 
-                    // استخراج الوحدة والمساحة
                     let area = parseFloat(row['BUA From']) || parseFloat(row['BUA To']) || 0;
                     let price = parseFloat(row['Price From']) || parseFloat(row['Price To']) || 0;
                     let bedStr = String(row['No of Bedrooms'] || '').toLowerCase();
@@ -514,10 +514,8 @@ function handleExcelUpload(event) {
                         });
                     }
 
-                    // استخراج خطط السداد
                     let planStr = String(row['Payment Plan'] || '').trim();
                     if (planStr) {
-                        // لو الخطة مش متسجلة في المشروع قبل كده، نضيفها
                         if (!compoundsToUpload[compKey].paymentPlans.some(p => p.notes === planStr)) {
                             compoundsToUpload[compKey].paymentPlans.push({
                                 id: uid(),
@@ -551,13 +549,11 @@ function handleExcelUpload(event) {
 
             document.getElementById('loadingMsg').textContent = "جاري الحفظ في قاعدة البيانات...";
             
-            // رفع منطقة الإكسيل للشجرة
             if(excelMainLoc.subLocations.length > 0){
                 mainLocations.push(excelMainLoc);
                 await db.collection('system').doc('locations').set({ mainLocations });
             }
 
-            // رفع المشاريع على دفعات (Batches)
             let batch = db.batch();
             let count = 0;
             let totalUploaded = 0;
@@ -571,7 +567,6 @@ function handleExcelUpload(event) {
                 count++;
                 totalUploaded++;
 
-                // الفايربيز بيحفظ 400 مشروع في الضربة الواحدة بحد أقصى
                 if (count === 400 || i === projectsArray.length - 1) {
                     await batch.commit();
                     batch = db.batch();
