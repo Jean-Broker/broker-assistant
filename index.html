@@ -246,36 +246,48 @@
           <div class="form-field"><label>اسم مالك الشركة / رئيس المجلس</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي"></div>
           <div class="form-field"><label>الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر"></div>
           
+          <!-- حقول السكني (سعر متر وتشطيب وجراج) اللي هتختفي في التجاري -->
           <div class="form-field res-price-field"><label>سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="number" oninput="updatePriceMeterAvg();"></div>
           <div class="form-field res-price-field"><label>سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="number" oninput="updatePriceMeterAvg();"></div>
           <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:#F2ECE1; color:var(--primary-color);"></div>
-
-          <div id="commercialPriceWrap" class="full" style="display:none;">
-             <div style="font-weight:bold; font-size:14.5px; margin-bottom:10px; color:var(--primary-color);">أسعار المتر المقسمة للأنشطة التجارية (اختياري)</div>
-             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; background:#fafafa; padding:15px; border-radius:8px; border:1px solid #ddd;">
-                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="number" class="comm-price-input"></div>
-             </div>
-          </div>
-
-          <div class="form-field"><label>نسبة الصيانة (% Maintenance)</label><input id="fldMaintenancePercent" type="number" placeholder="مثال: 8"></div>
-          <div class="form-field"><label>سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="number" placeholder="مثال: 150000"></div>
-          <div class="form-field"><label>مساحة المشروع الإجمالية (فدان)</label><input id="fldProjectSize" type="number" step="0.1"></div>
-          <div class="form-field"><label>موعد التسليم</label><select id="fldDeliveryDate"></select></div>
-          <div class="form-field"><label>حالة التشطيب</label>
+          
+          <div class="form-field res-field"><label>حالة التشطيب</label>
             <select id="fldFinishingStatus">
               <option value="core_shell">Core &amp; Shell (خرسانة وبناء)</option>
               <option value="semi">Semi-finished (نصف تشطيب)</option>
               <option value="full">Fully finished (تشطيب كامل)</option>
             </select>
           </div>
-          <div class="form-field full"><label>موقع الكمبوند بالتفصيل</label><input id="fldLocationDetail" placeholder="مثال: امتداد التسعين، بجوار..."></div>
+          <div class="form-field res-field"><label>سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="number" placeholder="مثال: 150000"></div>
+
+          <!-- شبكة أسعار وتشطيبات التجاري المنفصلة (هتظهر بس لو اختار تجاري) -->
+          <div id="commercialPriceWrap" class="full" style="display:none;">
+             <div style="font-weight:bold; font-size:14.5px; margin-bottom:10px; color:var(--primary-color);">أسعار المتر والتشطيب للأنشطة التجارية</div>
+             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; background:#fafafa; padding:15px; border-radius:8px; border:1px solid #ddd;">
+                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+
+                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+
+                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+
+                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="number" class="comm-price-input"></div>
+                 <div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+             </div>
+          </div>
+
+          <div class="form-field"><label>نسبة الصيانة (% Maintenance)</label><input id="fldMaintenancePercent" type="number" placeholder="مثال: 8"></div>
+          <div class="form-field"><label>مساحة المشروع الإجمالية (فدان)</label><input id="fldProjectSize" type="number" step="0.1"></div>
+          <div class="form-field"><label>موعد التسليم</label><select id="fldDeliveryDate"></select></div>
+          
+          <div class="form-field"><label>موقع الكمبوند بالتفصيل</label><input id="fldLocationDetail" placeholder="مثال: امتداد التسعين، بجوار..."></div>
+          <div class="form-field"><label>رابط الموقع (Google Maps) - اختياري</label><input id="fldLocationLink" placeholder="https://maps.app.goo.gl/..." dir="ltr"></div>
         </div>
 
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
