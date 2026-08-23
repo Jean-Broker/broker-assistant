@@ -5,14 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Broker-Assistant | النظام الذكي لإدارة العقارات</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Markazi+Text:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
-<!-- مكتبات فايربيز -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-<!-- مكتبة SheetJS لقراءة ملفات الإكسيل -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <link rel="stylesheet" href="assets/css/css-main.css">
@@ -23,11 +20,11 @@
 
   <div id="landingPage">
       <header class="landing-hero">
-          <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
+          <h1 data-ar="Broker-Assistant" data-en="Broker-Assistant">Broker-Assistant</h1>
           <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy. Designed specifically for real estate brokers to organize clients and save time.">
             النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.
           </p>
-          <button class="btn" style="background:#D4AF37; color:#2C2825; margin-top:25px; padding:12px 30px; font-size:16px; border:none; border-radius:8px; cursor:pointer; font-weight:bold;" onclick="openSystemLogin()" data-ar="دخول للنظام" data-en="Login to System">دخول للنظام</button>
+          <button class="btn btn-primary-style" style="margin-top:30px; padding:15px 40px; font-size:18px; border-radius:12px;" onclick="openSystemLogin()" data-ar="تسجيل الدخول للنظام" data-en="Login to System">تسجيل الدخول للنظام</button>
       </header>
 
       <div class="landing-content">
@@ -45,6 +42,30 @@
                   <p data-ar="واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك." data-en="A modern, organized interface that ensures you accomplish your daily tasks efficiently with the highest level of security.">واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
               </div>
           </div>
+
+          <!-- قسم باقات الدفع (الذي تم إرجاعه) -->
+          <div class="pricing-section">
+              <h2 data-ar="باقات الاشتراكات المتاحة" data-en="Available Subscription Plans">باقات الاشتراكات المتاحة</h2>
+              <p style="color: var(--text-muted); margin-bottom: 40px; font-size: 16px;" data-ar="اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة." data-en="Choose the right plan for your business and activate your system now by contacting us directly.">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
+              <div class="pricing-cards">
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه) لسيستم Broker-Assistant" class="price-card">
+                      <h3 data-ar="باقة شهر واحد" data-en="1 Month Plan">باقة شهر واحد</h3>
+                      <div class="price-val" data-ar="500 جنيه" data-en="500 EGP">500 جنيه</div>
+                      <p data-ar="مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته." data-en="Perfect for experiencing the system fully and benefiting from all its features.">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
+                  </a>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه) لسيستم Broker-Assistant" class="price-card featured-plan">
+                      <div class="best-value-badge" data-ar="الأكثر طلباً" data-en="Most Popular">الأكثر طلباً</div>
+                      <h3 data-ar="باقة 3 شهور" data-en="3 Months Plan">باقة 3 شهور</h3>
+                      <div class="price-val" data-ar="1200 جنيه" data-en="1200 EGP">1200 جنيه</div>
+                      <p data-ar="توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف." data-en="Bigger savings for continuous follow-up and non-stop workflow.">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
+                  </a>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه) لسيستم Broker-Assistant" class="price-card">
+                      <h3 data-ar="باقة 6 شهور" data-en="6 Months Plan">باقة 6 شهور</h3>
+                      <div class="price-val" data-ar="2000 جنيه" data-en="2000 EGP">2000 جنيه</div>
+                      <p data-ar="القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين." data-en="The best value for real estate agencies and professional brokers.">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
+                  </a>
+              </div>
+          </div>
       </div>
   </div>
 
@@ -54,7 +75,7 @@
 
       <div class="auth-badge">
         <span id="userEmailLabel">يرجى تسجيل الدخول</span>
-        <button class="btn btn-outline-light" style="padding:4px 10px; font-size:11.5px;" onclick="handleAuthAction()" id="authActionBtn" data-ar="خروج" data-en="Logout">خروج</button>
+        <button class="btn btn-outline-light btn-small" onclick="handleAuthAction()" id="authActionBtn" data-ar="خروج" data-en="Logout">خروج</button>
       </div>
 
       <div class="location-container">
@@ -66,20 +87,18 @@
         </div>
       </div>
 
-      <div class="side-actions" id="superAdminActions" style="display:none; padding-bottom:0;">
-        <button class="btn btn-outline-light" style="border-color: #D4AF37; color: #D4AF37;" onclick="openUsersManager()">👥 إدارة المشتركين</button>
+      <div class="side-actions" id="superAdminActions" style="display:none;">
+        <button class="btn btn-outline-light w-100" onclick="openUsersManager()">👥 إدارة المشتركين</button>
       </div>
 
-      <div class="side-actions" id="adminActions" style="display:none; border-top:none; padding-top:10px;">
-        <button class="btn btn-primary-style" onclick="openCompoundForm()" data-ar="+ إضافة مشروع" data-en="+ Add Project">+ إضافة مشروع</button>
-        
-        <!-- زرار استيراد ملف الإكسيل -->
+      <div class="side-actions" id="adminActions" style="display:none;">
+        <button class="btn btn-primary-style w-100" onclick="openCompoundForm()" data-ar="+ إضافة مشروع" data-en="+ Add Project">+ إضافة مشروع</button>
         <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelUpload(event)">
-        <button class="btn btn-primary-style" style="margin-top: 10px; background: #217346; color: #fff; border: none;" onclick="document.getElementById('excelFileInput').click()">📊 استيراد ملف إكسيل (Excel)</button>
+        <button class="btn btn-success-style w-100" style="margin-top: 10px;" onclick="document.getElementById('excelFileInput').click()">📊 استيراد إكسيل (Excel)</button>
       </div>
       
-      <div class="side-actions" style="padding-top:10px; border-top:none;">
-        <button class="btn btn-outline-light" onclick="openCalculator()" data-ar="حاسبة الأقساط الشاملة" data-en="Universal Calculator">حاسبة الأقساط الشاملة</button>
+      <div class="side-actions" style="margin-top:10px;">
+        <button class="btn btn-outline-light w-100" onclick="openCalculator()" data-ar="حاسبة الأقساط الشاملة" data-en="Universal Calculator">حاسبة الأقساط الشاملة</button>
       </div>
     </aside>
 
@@ -89,11 +108,11 @@
           <h1 class="page-title" id="pageTitle" data-ar="كل المشروعات" data-en="All Projects">كل المشروعات</h1>
           <div class="page-sub" id="pageSub" data-ar="جاري التحميل..." data-en="Loading...">جاري التحميل...</div>
         </div>
-        <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="backToLanding()" data-ar="العودة للصفحة الرئيسية" data-en="Back to Landing Page">العودة للصفحة الرئيسية</button>
+        <button class="btn btn-outline-light" onclick="backToLanding()" data-ar="العودة للرئيسية" data-en="Back to Landing">العودة للرئيسية</button>
       </div>
 
       <div class="filter-bar">
-        <div class="filter-row-3">
+        <div class="filter-grid">
           <div class="field">
             <label data-ar="اسم المشروع أو المطور" data-en="Project or Developer Name">اسم المشروع أو المطور</label>
             <input type="text" id="fSearchText" placeholder="ابحث باسم المشروع، المطور..." oninput="applyFilters()">
@@ -123,48 +142,42 @@
               </optgroup>
             </select>
           </div>
-        </div>
-
-        <div class="filter-row-4">
           <div class="field">
-            <label data-ar="سعر المتر (جنيه)" data-en="Meter Price (EGP)">سعر المتر (جنيه)</label>
+            <label data-ar="سعر المتر" data-en="Meter Price">سعر المتر</label>
             <input type="number" id="fMeterPrice" placeholder="مثال: 34000" oninput="applyFilters()">
           </div>
           <div class="field">
-            <label data-ar="إجمالي سعر الوحدة (جنيه)" data-en="Total Unit Price (EGP)">إجمالي سعر الوحدة (جنيه)</label>
+            <label data-ar="إجمالي السعر" data-en="Total Price">إجمالي السعر</label>
             <input type="number" id="fTotalMin" placeholder="السعر الإجمالي" oninput="applyFilters()">
           </div>
           <div class="field">
-            <label data-ar="مبلغ المقدم (جنيه)" data-en="Down Payment (EGP)">مبلغ المقدم (جنيه)</label>
+            <label data-ar="مبلغ المقدم" data-en="Down Payment">مبلغ المقدم</label>
             <input type="number" id="fDownPayment" placeholder="مثال: 500000" oninput="applyFilters()">
           </div>
           <div class="field">
-            <label data-ar="القسط الشهري الأقصى (جنيه)" data-en="Max Monthly Installment (EGP)">القسط الشهري الأقصى (جنيه)</label>
+            <label data-ar="القسط الأقصى" data-en="Max Installment">القسط الأقصى</label>
             <input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()">
           </div>
         </div>
-
         <div class="filter-actions">
-          <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="resetFilters()" data-ar="مسح الفلاتر" data-en="Clear Filters">مسح الفلاتر</button>
+          <button class="btn btn-outline-light" onclick="resetFilters()" data-ar="مسح الفلاتر" data-en="Clear Filters">مسح الفلاتر</button>
           <button class="btn btn-primary-style" onclick="applyFilters()" data-ar="بحث متقدم" data-en="Advanced Search">بحث متقدم</button>
         </div>
       </div>
 
       <div class="project-type-nav">
         <span class="type-nav-label" data-ar="تصنيف النشاط:" data-en="Activity Type:">تصنيف النشاط:</span>
-        <button class="type-nav-btn active" onclick="selectProjectType('all', this)" data-ar="كل المشروعات" data-en="All Projects">كل المشروعات</button>
-        <button class="type-nav-btn" onclick="selectProjectType('residential', this)" data-ar="سكني (Residential)" data-en="Residential">سكني (Residential)</button>
-        <button class="type-nav-btn" onclick="selectProjectType('commercial', this)" data-ar="تجاري / إداري (Commercial)" data-en="Commercial">تجاري / إداري (Commercial)</button>
-        <button class="type-nav-btn" onclick="selectProjectType('hotel', this)" data-ar="فندقي (Hotel Apartments)" data-en="Hotel Apartments">فندقي (Hotel Apartments)</button>
-      </div>
-
-      <div class="sort-bar-container">
-        <div class="sort-small-box">
-          <label data-ar="ترتيب حسب سعر المتر:" data-en="Sort by Meter Price:">ترتيب حسب سعر المتر:</label>
+        <button class="type-nav-btn active" onclick="selectProjectType('all', this)" data-ar="الكل" data-en="All">الكل</button>
+        <button class="type-nav-btn" onclick="selectProjectType('residential', this)" data-ar="سكني" data-en="Residential">سكني</button>
+        <button class="type-nav-btn" onclick="selectProjectType('commercial', this)" data-ar="تجاري / إداري" data-en="Commercial">تجاري / إداري</button>
+        <button class="type-nav-btn" onclick="selectProjectType('hotel', this)" data-ar="فندقي" data-en="Hotel">فندقي</button>
+        
+        <div class="sort-small-box ml-auto">
+          <label data-ar="ترتيب:" data-en="Sort:">ترتيب:</label>
           <select id="fSortOrder" onchange="applyFilters()">
             <option value="default" data-ar="الافتراضي" data-en="Default">الافتراضي</option>
-            <option value="asc" data-ar="من الأقل للأعلى 📈" data-en="Lowest to Highest 📈">من الأقل للأعلى 📈</option>
-            <option value="desc" data-ar="من الأعلى للأقل 📉" data-en="Highest to Lowest 📉">من الأعلى للأقل 📉</option>
+            <option value="asc" data-ar="سعر أقل" data-en="Lowest Price">سعر أقل</option>
+            <option value="desc" data-ar="سعر أعلى" data-en="Highest Price">سعر أعلى</option>
           </select>
         </div>
       </div>
@@ -180,19 +193,20 @@
       <p data-ar="برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم." data-en="Please enter your authorized account details to access the dashboard.">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email">
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password">
-      <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px; text-align:right; justify-content:start;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px;">
           <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
           <label for="rememberMe" style="font-size:13px; color:var(--text-muted); cursor:pointer;" data-ar="تذكر بيانات الدخول" data-en="Remember Me">تذكر بيانات الدخول</label>
       </div>
-      <button class="btn btn-primary-style" style="width:100%; padding:12px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
-      <button class="btn btn-outline-light" style="width:100%; color:var(--text-muted); border-color:var(--border-color);" onclick="closeLoginModal()" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
+      <button class="btn btn-primary-style w-100" style="padding:14px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()" data-ar="دخول" data-en="Login">دخول</button>
+      <button class="btn btn-outline-light w-100" onclick="closeLoginModal()" data-ar="إلغاء" data-en="Cancel">إلغاء</button>
     </div>
   </div>
 
+  <!-- Users Drawer Modal -->
   <div class="overlay" id="usersOverlay">
-    <div class="modal" style="max-width: 500px;">
+    <div class="modal drawer">
       <div class="modal-header">
-        <h3>إضافة مشترك جديد</h3>
+        <h3>إدارة المشتركين</h3>
         <button class="modal-close" onclick="closeModal('usersOverlay')">✕</button>
       </div>
       <div class="modal-body">
@@ -218,12 +232,12 @@
               </select>
           </div>
         </div>
-        <button class="btn btn-primary-style" style="width: 100%; margin-top: 20px;" onclick="createNewSubscriber()">إنشاء الحساب الآن</button>
-        <div id="newAccResult" style="display:none; margin-top: 15px; padding: 15px; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px;">
-            <b style="color: #2e7d32; display:block; margin-bottom:5px;">✅ تم إنشاء الحساب وتفعيله بنجاح! انسخ البيانات:</b>
-            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.6;">
+        <button class="btn btn-primary-style w-100" style="margin-top: 20px;" onclick="createNewSubscriber()">إنشاء الحساب الآن</button>
+        <div id="newAccResult" style="display:none; margin-top: 20px; padding: 20px; background: #eef2ff; border: 1px solid #bfdbfe; border-radius: 12px;">
+            <b style="color: #0369a1; display:block; margin-bottom:10px; font-size:16px;">✅ تم إنشاء الحساب بنجاح!</b>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.8;">
                 الإيميل: <span id="resEmail" style="font-weight:bold; color:var(--text-main);"></span><br>
-                الباسورد: <span id="resPass" style="font-weight:bold; color:#d32f2f;"></span><br>
+                الباسورد: <span id="resPass" style="font-weight:bold; color:var(--danger);"></span><br>
                 ينتهي في: <span id="resDate" style="font-weight:bold; color:var(--text-main);"></span>
             </div>
         </div>
@@ -231,8 +245,9 @@
     </div>
   </div>
 
+  <!-- Add/Edit Compound Drawer Modal -->
   <div class="overlay" id="formOverlay">
-    <div class="modal">
+    <div class="modal drawer">
       <div class="modal-header">
         <h3 id="formTitle">إضافة مشروع جديد</h3>
         <button class="modal-close" onclick="closeModal('formOverlay')">✕</button>
@@ -254,7 +269,7 @@
           
           <div class="form-field res-price-field"><label>سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="number" oninput="updatePriceMeterAvg();"></div>
           <div class="form-field res-price-field"><label>سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="number" oninput="updatePriceMeterAvg();"></div>
-          <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:#F2ECE1; color:var(--primary-color);"></div>
+          <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:var(--bg-app); font-weight:bold; color:var(--primary);"></div>
           
           <div class="form-field res-field"><label>حالة التشطيب</label>
             <select id="fldFinishingStatus">
@@ -266,8 +281,8 @@
           <div class="form-field res-field"><label>سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="number" placeholder="مثال: 150000"></div>
 
           <div id="commercialPriceWrap" class="full" style="display:none;">
-             <div style="font-weight:bold; font-size:14.5px; margin-bottom:10px; color:var(--primary-color);">أسعار المتر والتشطيب للأنشطة التجارية</div>
-             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; background:#fafafa; padding:15px; border-radius:8px; border:1px solid #ddd;">
+             <div class="section-label" style="font-size:15px; margin: 10px 0;">أسعار المتر والتشطيب للأنشطة التجارية</div>
+             <div class="comm-prices-grid">
                  <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="number" class="comm-price-input"></div>
                  <div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="number" class="comm-price-input"></div>
                  <div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
@@ -297,9 +312,9 @@
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
         <div id="unitRows"></div>
         <button class="add-row-btn" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
-        <div class="unit-note">💡 <b>ملاحظة هامة:</b> المساحات المذكورة قد تختلف طريقة حسابها ونسبة التحميل بها بناءً على نوع الوحدة والمشروع، يُرجى المراجعة التفصيلية.</div>
+        <div class="unit-note">💡 <b>ملاحظة:</b> المساحات قد تختلف نسبة تحميلها بناءً على المطور.</div>
 
-        <div class="section-label">خطط السداد والدفعات الخاصة (Payment Plans &amp; Custom Bullets)</div>
+        <div class="section-label">خطط السداد والدفعات الخاصة</div>
         <div id="planRows"></div>
         <button class="add-row-btn" onclick="addPlanRow()">+ إضافة خطة سداد جديدة</button>
 
@@ -308,31 +323,33 @@
         <button class="add-row-btn" onclick="addDecreeRow()">+ إضافة قرار وزاري</button>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="closeModal('formOverlay')">إلغاء</button>
+        <button class="btn btn-outline-light" onclick="closeModal('formOverlay')">إلغاء</button>
         <button class="btn btn-primary-style" onclick="saveCompoundToCloud()">حفظ التعديلات</button>
       </div>
     </div>
   </div>
 
+  <!-- Detail Drawer Modal -->
   <div class="overlay" id="detailOverlay">
-    <div class="modal">
+    <div class="modal drawer">
       <div class="modal-header">
         <h3 id="detailTitle">تفاصيل المشروع</h3>
         <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
       </div>
       <div class="modal-body" id="detailBody"></div>
       <div class="modal-footer">
-        <button class="btn btn-outline-light" id="btnDeleteCompound" style="display:none; color:var(--red-alert); border-color:rgba(158,62,52,0.3); background:#FAFAFA;" onclick="deleteCurrentCompoundFromCloud()">حذف المشروع</button>
-        <button class="btn btn-outline-light" id="btnEditCompound" style="display:none; color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="editCurrentCompound()">تعديل</button>
+        <button class="btn btn-danger-style mr-auto" id="btnDeleteCompound" style="display:none;" onclick="deleteCurrentCompoundFromCloud()">حذف المشروع</button>
+        <button class="btn btn-outline-light" id="btnEditCompound" style="display:none;" onclick="editCurrentCompound()">تعديل المشروع</button>
         <button class="btn btn-primary-style" onclick="closeModal('detailOverlay')">إغلاق</button>
       </div>
     </div>
   </div>
 
+  <!-- Calculator Drawer Modal -->
   <div class="overlay" id="calcOverlay">
-    <div class="modal">
+    <div class="modal drawer">
       <div class="modal-header">
-        <h3>حاسبة الأقساط الشاملة (Universal Calculator)</h3>
+        <h3>حاسبة الأقساط الشاملة</h3>
         <button class="modal-close" onclick="closeModal('calcOverlay')">✕</button>
       </div>
       <div class="modal-body">
@@ -342,24 +359,21 @@
           <div class="form-field"><label>نسبة المقدم %</label><input id="calcDownPct" type="number" placeholder="مثال: 10"></div>
           <div class="form-field"><label>عدد سنوات التقسيط</label><input id="calcYears" type="number" placeholder="مثال: 12"></div>
         </div>
-        <div class="bullets-container" style="margin-top:14px;">
-          <div style="font-size:11.5px; font-weight:bold; color:var(--primary-color); margin-bottom:6px;">الدفعات الخاصة والسنوية (Bullets / Extra Payments):</div>
+        <div class="bullets-container" style="margin-top:20px;">
+          <div style="font-size:14px; font-weight:bold; color:var(--text-main); margin-bottom:10px;">الدفعات الخاصة والسنوية:</div>
           <div id="calcBulletsRows"></div>
-          <button class="add-row-btn" style="font-size:11.5px; padding:4px 8px; margin-top:4px;" onclick="addCalcBulletRow()">+ إضافة دفعة خاصة</button>
+          <button class="add-row-btn" onclick="addCalcBulletRow()">+ إضافة دفعة خاصة</button>
         </div>
-        <button class="btn btn-primary-style" style="margin-top:16px; width:100%;" onclick="runUniversalCalculator()">احسب الأقساط الآن</button>
+        <button class="btn btn-primary-style w-100" style="margin-top:25px; padding:15px; font-size:16px;" onclick="runUniversalCalculator()">احسب الأقساط الآن</button>
         <div class="calc-result" id="calcResult" style="display:none;"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="closeModal('calcOverlay')">إغلاق</button>
       </div>
     </div>
   </div>
 
-  <!-- صندوق التحميل الخاص بالإكسيل -->
-  <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; color:#fff; flex-direction:column; justify-content:center; align-items:center;">
-    <h2 style="margin-bottom:10px;">⏳ جاري قراءة ملف الإكسيل ورفع المشاريع...</h2>
-    <p id="loadingMsg" style="color:#D4AF37;">برجاء عدم إغلاق الصفحة، العملية قد تستغرق بضع ثوانٍ</p>
+  <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.9); backdrop-filter:blur(5px); z-index:9999; color:#fff; flex-direction:column; justify-content:center; align-items:center;">
+    <div class="loader"></div>
+    <h2 style="margin-bottom:10px; font-family:'Cairo';">جاري المعالجة...</h2>
+    <p id="loadingMsg" style="color:var(--primary); font-size:14px;">برجاء عدم إغلاق الصفحة</p>
   </div>
 
   <div class="toast" id="toast"></div>
