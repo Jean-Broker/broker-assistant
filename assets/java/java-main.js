@@ -543,4 +543,34 @@ function runUniversalCalculator(){
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
 
+// =========================================================================
+// أداة قراءة ملفات الإكسيل (Excel Reader)
+// =========================================================================
+
+// دي الدالة المبدئية اللي بتربط الزرار، وفي الرسالة الجاية هكملك الكود السحري اللي بيقرأ العواميد والـ Tabs كلها 🚀
+function handleExcelUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('loadingMsg').textContent = "جاري قراءة الشيت وتجهيز المشاريع...";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        
+        console.log("تم قراءة الملف بنجاح! جاري معالجة الـ Tabs:", workbook.SheetNames);
+        
+        // --- هنا هنكتب كود تفصيص البيانات ورفعها في الخطوة الجاية ---
+        
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            alert("تم قراءة الشيت بنجاح. الكود جاهز للخطوة القادمة!");
+            event.target.value = '';
+        }, 1500);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
 populateDeliverySelects();
