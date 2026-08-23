@@ -7,9 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Markazi+Text:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
+<!-- مكتبات فايربيز -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<!-- مكتبة SheetJS لقراءة ملفات الإكسيل -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <link rel="stylesheet" href="assets/css/css-main.css">
 </head>
@@ -68,6 +72,10 @@
 
       <div class="side-actions" id="adminActions" style="display:none; border-top:none; padding-top:10px;">
         <button class="btn btn-primary-style" onclick="openCompoundForm()" data-ar="+ إضافة مشروع" data-en="+ Add Project">+ إضافة مشروع</button>
+        
+        <!-- زرار استيراد ملف الإكسيل -->
+        <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelUpload(event)">
+        <button class="btn btn-primary-style" style="margin-top: 10px; background: #217346; color: #fff; border: none;" onclick="document.getElementById('excelFileInput').click()">📊 استيراد ملف إكسيل (Excel)</button>
       </div>
       
       <div class="side-actions" style="padding-top:10px; border-top:none;">
@@ -346,6 +354,12 @@
         <button class="btn btn-outline-light" style="color:var(--text-main); border-color:var(--border-color); background:#FAFAFA;" onclick="closeModal('calcOverlay')">إغلاق</button>
       </div>
     </div>
+  </div>
+
+  <!-- صندوق التحميل الخاص بالإكسيل -->
+  <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; color:#fff; flex-direction:column; justify-content:center; align-items:center;">
+    <h2 style="margin-bottom:10px;">⏳ جاري قراءة ملف الإكسيل ورفع المشاريع...</h2>
+    <p id="loadingMsg" style="color:#D4AF37;">برجاء عدم إغلاق الصفحة، العملية قد تستغرق بضع ثوانٍ</p>
   </div>
 
   <div class="toast" id="toast"></div>
