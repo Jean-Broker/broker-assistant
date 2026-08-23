@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Broker-Assistant | النظام الذكي لإدارة العقارات</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -18,14 +18,15 @@
 
   <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
 
-  <!-- اللاندينج بيج الأصلية بتاعتك رجعت بالكامل -->
   <div id="landingPage">
       <header class="landing-hero">
-          <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
-          <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy. Designed specifically for real estate brokers to organize clients and save time.">
-            النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.
-          </p>
-          <button class="btn" style="background:#D4AF37; color:#2C2825; margin-top:25px; padding:12px 30px; font-size:16px; border:none; cursor:pointer; font-weight:bold;" onclick="openSystemLogin()" data-ar="دخول للنظام" data-en="Login to System">دخول للنظام</button>
+          <div class="hero-content">
+              <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
+              <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy. Designed specifically for real estate brokers to organize clients and save time.">
+                النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.
+              </p>
+              <button class="btn btn-primary-style btn-large" onclick="openSystemLogin()" data-ar="دخول للنظام" data-en="Login to System">دخول للنظام</button>
+          </div>
       </header>
 
       <div class="landing-content">
@@ -44,7 +45,6 @@
               </div>
           </div>
 
-          <!-- قسم الدفع والباقات رجع زي ما كان -->
           <div class="pricing-section">
               <h2 data-ar="باقات الاشتراكات المتاحة" data-en="Available Subscription Plans">باقات الاشتراكات المتاحة</h2>
               <p style="color: var(--text-muted); margin-bottom: 30px;" data-ar="اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة." data-en="Choose the right plan for your business and activate your system now by contacting us directly.">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
@@ -54,7 +54,7 @@
                       <div class="price-val" data-ar="500 جنيه" data-en="500 EGP">500 جنيه</div>
                       <p style="color:var(--text-muted); font-size:13px;" data-ar="مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته." data-en="Perfect for experiencing the system fully and benefiting from all its features.">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
                   </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه) لسيستم Broker-Assistant" class="price-card" style="border: 2px solid var(--primary);">
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه) لسيستم Broker-Assistant" class="price-card featured-plan">
                       <h3 data-ar="باقة 3 شهور" data-en="3 Months Plan">باقة 3 شهور</h3>
                       <div class="price-val" data-ar="1200 جنيه" data-en="1200 EGP">1200 جنيه</div>
                       <p style="color:var(--text-muted); font-size:13px;" data-ar="توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف." data-en="Bigger savings for continuous follow-up and non-stop workflow.">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
@@ -71,11 +71,11 @@
 
   <div class="app" id="systemApp">
     <aside class="sidebar">
-      <div class="brand">Broker-Assistant<br><small data-ar="إدارة: جان هاني" data-en="Admin: Jean Hany">إدارة: جان هاني</small></div>
+      <div class="brand">Broker-Assistant<br><small>إدارة: جان هاني</small></div>
 
       <div class="auth-badge">
         <span id="userEmailLabel">يرجى تسجيل الدخول</span>
-        <button class="btn btn-outline-light btn-small" onclick="handleAuthAction()" id="authActionBtn">خروج</button>
+        <button class="btn btn-outline-light btn-pill" onclick="handleAuthAction()" id="authActionBtn">خروج</button>
       </div>
 
       <div class="location-container">
@@ -83,22 +83,22 @@
         <div class="location-tree" id="locationTree"></div>
         <div class="add-loc-form" id="addMainLocWrap" style="display:none;">
           <input id="newMainLocInput" placeholder="+ منطقة رئيسية جديدة" onkeydown="if(event.key==='Enter') addMainLocation()">
-          <button class="btn btn-primary-style btn-add-loc" onclick="addMainLocation()">إضافة</button>
+          <button class="btn btn-primary-style btn-pill" onclick="addMainLocation()">إضافة</button>
         </div>
       </div>
 
       <div class="side-actions" id="superAdminActions" style="display:none;">
-        <button class="btn btn-outline-light w-100" onclick="openUsersManager()">👥 إدارة المشتركين</button>
+        <button class="btn btn-outline-light w-100 btn-pill" onclick="openUsersManager()">👥 إدارة المشتركين</button>
       </div>
 
       <div class="side-actions" id="adminActions" style="display:none;">
-        <button class="btn btn-primary-style w-100" onclick="openCompoundForm()">+ إضافة مشروع</button>
+        <button class="btn btn-primary-style w-100 btn-pill" onclick="openCompoundForm()">+ إضافة مشروع</button>
         <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelUpload(event)">
-        <button class="btn w-100" style="margin-top: 10px; background: #217346; color: #fff;" onclick="document.getElementById('excelFileInput').click()">📊 استيراد إكسيل (Excel)</button>
+        <button class="btn w-100 btn-pill" style="margin-top: 10px; background: #fff; color: #111;" onclick="document.getElementById('excelFileInput').click()">📊 استيراد إكسيل (Excel)</button>
       </div>
       
       <div class="side-actions" style="margin-top:10px;">
-        <button class="btn btn-outline-light w-100" onclick="openCalculator()">حاسبة الأقساط الشاملة</button>
+        <button class="btn btn-outline-light w-100 btn-pill" onclick="openCalculator()">حاسبة الأقساط الشاملة</button>
       </div>
     </aside>
 
@@ -108,21 +108,19 @@
           <h1 class="page-title" id="pageTitle">كل المشروعات</h1>
           <div class="page-sub" id="pageSub">جاري التحميل...</div>
         </div>
-        <button class="btn btn-outline-light" onclick="backToLanding()">العودة للرئيسية</button>
+        <button class="btn btn-outline-light btn-pill" onclick="backToLanding()">العودة للرئيسية</button>
       </div>
 
-      <!-- نظام البحث الذكي (شريط أساسي + زرار فلاتر) -->
       <div class="search-master-container">
           <div class="search-main-row">
               <input type="text" id="fSearchText" class="main-search-input" placeholder="🔍 ابحث باسم المشروع، المطور..." oninput="applyFilters()">
-              <button class="btn-filter-toggle" onclick="toggleAdvancedFilters()">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              <button class="btn-filter-toggle" id="toggleFilterBtn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                   فلاتر متقدمة
               </button>
           </div>
 
-          <!-- الفلاتر المخفية -->
-          <div id="advancedFilters" style="display: none;">
+          <div id="advancedFilters" class="filter-dropdown">
             <div class="filter-grid">
               <div class="field">
                 <label>موعد التسليم</label>
@@ -166,8 +164,8 @@
                 <input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()">
               </div>
             </div>
-            <div class="filter-actions" style="margin-top:15px; display:flex; justify-content:flex-end; gap:10px;">
-              <button class="btn btn-outline-light" onclick="resetFilters()">مسح الفلاتر</button>
+            <div class="filter-actions">
+              <button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح الفلاتر</button>
             </div>
           </div>
       </div>
@@ -204,13 +202,13 @@
           <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
           <label for="rememberMe" style="font-size:13px; color:var(--text-muted); cursor:pointer;">تذكر بيانات الدخول</label>
       </div>
-      <button class="btn btn-primary-style w-100" style="padding:14px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()">دخول</button>
-      <button class="btn btn-outline-light w-100" onclick="closeLoginModal()">إلغاء</button>
+      <button class="btn btn-primary-style w-100 btn-pill" style="padding:14px; font-size:16px; margin-bottom:10px;" onclick="submitLogin()">دخول</button>
+      <button class="btn btn-outline-light w-100 btn-pill" onclick="closeLoginModal()">إلغاء</button>
     </div>
   </div>
 
   <div class="overlay" id="usersOverlay">
-    <div class="modal architectural-modal">
+    <div class="modal curved-modal">
       <div class="modal-header">
         <h3>إدارة المشتركين</h3>
         <button class="modal-close" onclick="closeModal('usersOverlay')">✕</button>
@@ -238,12 +236,12 @@
               </select>
           </div>
         </div>
-        <button class="btn btn-primary-style w-100" style="margin-top: 20px;" onclick="createNewSubscriber()">إنشاء الحساب الآن</button>
-        <div id="newAccResult" style="display:none; margin-top: 20px; padding: 20px; background: #fafafa; border: 1px solid #ddd;">
-            <b style="color: #217346; display:block; margin-bottom:10px; font-size:16px;">✅ تم إنشاء الحساب بنجاح!</b>
-            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.8;">
+        <button class="btn btn-primary-style w-100 btn-pill" style="margin-top: 20px;" onclick="createNewSubscriber()">إنشاء الحساب الآن</button>
+        <div id="newAccResult" style="display:none; margin-top: 20px; padding: 20px; background: #1a1a1a; border: 1px solid var(--primary); border-radius: 20px;">
+            <b style="color: var(--primary); display:block; margin-bottom:10px; font-size:16px;">✅ تم إنشاء الحساب بنجاح!</b>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; line-height: 1.8; color:#fff;">
                 الإيميل: <span id="resEmail" style="font-weight:bold;"></span><br>
-                الباسورد: <span id="resPass" style="font-weight:bold; color:var(--danger);"></span><br>
+                الباسورد: <span id="resPass" style="font-weight:bold; color:var(--primary);"></span><br>
                 ينتهي في: <span id="resDate" style="font-weight:bold;"></span>
             </div>
         </div>
@@ -252,7 +250,7 @@
   </div>
 
   <div class="overlay" id="formOverlay">
-    <div class="modal architectural-modal" style="max-width:900px;">
+    <div class="modal curved-modal" style="max-width:900px;">
       <div class="modal-header">
         <h3 id="formTitle">إضافة مشروع جديد</h3>
         <button class="modal-close" onclick="closeModal('formOverlay')">✕</button>
@@ -274,7 +272,7 @@
           
           <div class="form-field res-price-field"><label>سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="number" oninput="updatePriceMeterAvg();"></div>
           <div class="form-field res-price-field"><label>سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="number" oninput="updatePriceMeterAvg();"></div>
-          <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:#f4f4f4; font-weight:bold; color:var(--primary);"></div>
+          <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:#222; font-weight:bold; color:var(--primary);"></div>
           
           <div class="form-field res-field"><label>حالة التشطيب</label>
             <select id="fldFinishingStatus">
@@ -316,40 +314,40 @@
 
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
         <div id="unitRows"></div>
-        <button class="btn btn-outline-light w-100" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
+        <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:15px;" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
         
         <div class="section-label" style="margin-top:30px;">خطط السداد والدفعات الخاصة</div>
         <div id="planRows"></div>
-        <button class="btn btn-outline-light w-100" onclick="addPlanRow()">+ إضافة خطة سداد جديدة</button>
+        <button class="btn btn-outline-light w-100 btn-pill" onclick="addPlanRow()">+ إضافة خطة سداد جديدة</button>
 
         <div class="section-label" style="margin-top:30px;">القرارات الوزارية</div>
         <div id="decreeRows"></div>
-        <button class="btn btn-outline-light w-100" onclick="addDecreeRow()">+ إضافة قرار وزاري</button>
+        <button class="btn btn-outline-light w-100 btn-pill" onclick="addDecreeRow()">+ إضافة قرار وزاري</button>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline-light" onclick="closeModal('formOverlay')">إلغاء</button>
-        <button class="btn btn-primary-style" onclick="saveCompoundToCloud()">حفظ التعديلات</button>
+        <button class="btn btn-outline-light btn-pill" onclick="closeModal('formOverlay')">إلغاء</button>
+        <button class="btn btn-primary-style btn-pill" onclick="saveCompoundToCloud()">حفظ التعديلات</button>
       </div>
     </div>
   </div>
 
   <div class="overlay" id="detailOverlay">
-    <div class="modal architectural-modal" style="max-width:900px;">
+    <div class="modal curved-modal" style="max-width:1000px;">
       <div class="modal-header">
         <h3 id="detailTitle">تفاصيل المشروع</h3>
         <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
       </div>
       <div class="modal-body" id="detailBody"></div>
       <div class="modal-footer">
-        <button class="btn btn-danger-style mr-auto" id="btnDeleteCompound" style="display:none;" onclick="deleteCurrentCompoundFromCloud()">حذف المشروع</button>
-        <button class="btn btn-outline-light" id="btnEditCompound" style="display:none;" onclick="editCurrentCompound()">تعديل المشروع</button>
-        <button class="btn btn-primary-style" onclick="closeModal('detailOverlay')">إغلاق</button>
+        <button class="btn btn-outline-light mr-auto btn-pill" id="btnDeleteCompound" style="display:none; color:var(--primary); border-color:var(--primary);" onclick="deleteCurrentCompoundFromCloud()">حذف المشروع</button>
+        <button class="btn btn-outline-light btn-pill" id="btnEditCompound" style="display:none;" onclick="editCurrentCompound()">تعديل المشروع</button>
+        <button class="btn btn-primary-style btn-pill" onclick="closeModal('detailOverlay')">إغلاق</button>
       </div>
     </div>
   </div>
 
   <div class="overlay" id="calcOverlay">
-    <div class="modal architectural-modal">
+    <div class="modal curved-modal">
       <div class="modal-header">
         <h3>حاسبة الأقساط الشاملة</h3>
         <button class="modal-close" onclick="closeModal('calcOverlay')">✕</button>
@@ -364,9 +362,9 @@
         <div class="bullets-container" style="margin-top:20px;">
           <div style="font-size:14px; font-weight:bold; color:var(--text-main); margin-bottom:10px;">الدفعات الخاصة والسنوية:</div>
           <div id="calcBulletsRows"></div>
-          <button class="btn btn-outline-light w-100" style="margin-top:10px;" onclick="addCalcBulletRow()">+ إضافة دفعة خاصة</button>
+          <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:10px;" onclick="addCalcBulletRow()">+ إضافة دفعة خاصة</button>
         </div>
-        <button class="btn btn-primary-style w-100" style="margin-top:25px; padding:15px; font-size:16px;" onclick="runUniversalCalculator()">احسب الأقساط الآن</button>
+        <button class="btn btn-primary-style w-100 btn-pill" style="margin-top:25px; padding:15px; font-size:16px;" onclick="runUniversalCalculator()">احسب الأقساط الآن</button>
         <div class="calc-result" id="calcResult" style="display:none;"></div>
       </div>
     </div>
