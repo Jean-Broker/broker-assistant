@@ -114,7 +114,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 ======================================================== */
 .grid { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* مقاس مناسب لـ 3 كروت أو 4 حسب الشاشة */
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
     gap: 15px; 
     padding-bottom: 30px; 
 }
@@ -177,15 +177,19 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .section-label { font-size: 13px; font-weight: 800; color: var(--primary); margin: 20px 0 15px 0; background: #000; padding: 10px 20px; border-radius: var(--radius-pill); border: 1px solid var(--border-color); display: inline-block;}
 .comm-prices-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; background: #000; padding: 15px; border-radius: var(--radius-card); border: 1px solid var(--border-color); }
 
-/* 🌟 DETAIL MODAL GRID (RESTORED CLEAN SIDE-BY-SIDE VIEW) 🌟 */
+/* 🌟 DETAIL MODAL GRID (متقسمة نضيفة زي ما طلبت) 🌟 */
 .detail-grid { 
-    display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; 
-    background: #000; padding: 20px; border-radius: var(--radius-card); border: 1px solid var(--border-color); 
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; 
 }
-.detail-item { display: flex; flex-direction: column; gap: 4px; }
+.detail-item { 
+    display: flex; flex-direction: column; gap: 6px; 
+    background: #000; padding: 15px 20px; 
+    border-radius: var(--radius-card); border: 1px solid var(--border-color); 
+    text-align: right;
+}
 .detail-item.full { grid-column: 1 / -1; }
 .detail-item b { font-size: 11px; color: var(--text-muted); font-weight: 800; }
-.detail-item span { font-size: 13px; font-weight: 700; color: var(--text-main); }
+.detail-item span { font-size: 13px; font-weight: 700; color: var(--text-main); line-height: 1.5; }
 
 /* UNIT TABS & TABLE */
 .unit-cat-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; background: #000; padding: 6px; border-radius: var(--radius-pill); border: 1px solid var(--border-color);}
@@ -194,9 +198,9 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .unit-cat-btn.active { background: var(--primary); color: #fff; }
 
 .size-picker-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; }
-.size-chip { padding: 10px 16px; background: #000; border: 1px solid var(--border-color); cursor: pointer; font-weight: 700; font-size: 12px; color: var(--text-muted); transition: var(--transition); border-radius: var(--radius-pill);}
+.size-chip { padding: 10px 16px; background: #000; border: 1px solid var(--border-color); cursor: pointer; font-weight: 700; font-size: 13px; color: var(--text-muted); transition: var(--transition); border-radius: var(--radius-pill);}
 .size-chip:hover { border-color: var(--primary); color: #fff; }
-.size-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.size-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 15px rgba(155, 17, 30, 0.4); }
 
 .category-box { background: #000; border-radius: var(--radius-card); border: 1px solid var(--border-color); overflow: hidden; }
 .spec-table { width: 100%; border-collapse: collapse; }
