@@ -543,24 +543,4 @@ function runUniversalCalculator(){
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
 
-function handleJSONUpload(event) {
-    const file = event.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (!Array.isArray(data)) { alert("الملف غير صحيح! يجب أن يحتوي على قائمة مشاريع."); event.target.value = ''; return; }
-            if (!confirm(`تم العثور على ${data.length} مشروع في الملف. هل أنت متأكد من رفعهم لقاعدة البيانات؟`)) { event.target.value = ''; return; }
-            showToast("جاري رفع المشاريع... يرجى عدم إغلاق الصفحة");
-            const db = firebase.firestore(); let batch = db.batch(), count = 0, totalUploaded = 0;
-            for (let i = 0; i < data.length; i++) {
-                let proj = data[i]; proj.timestamp = firebase.firestore.FieldValue.serverTimestamp();
-                let docRef = db.collection("compounds").doc(); batch.set(docRef, proj);
-                count++; totalUploaded++;
-                if (count === 400 || i === data.length - 1) { await batch.commit(); batch = db.batch(); count = 0; }
-            }
-            showToast(`✅ تم إضافة ${totalUploaded} مشروع بنجاح!`); event.target.value = ''; setTimeout(() => { location.reload(); }, 2000);
-        } catch (error) { alert("حدث خطأ أثناء قراءة الملف. تأكد أنه ملف JSON سليم."); event.target.value = ''; }
-    }; reader.readAsText(file);
-}
 populateDeliverySelects();
