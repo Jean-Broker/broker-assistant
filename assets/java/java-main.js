@@ -1,3 +1,13 @@
+// --- Theme Logic (Light/Dark Mode) ---
+function toggleTheme() {
+    document.body.classList.toggle('light-mode');
+    const isLight = document.body.classList.contains('light-mode');
+    localStorage.setItem('appTheme', isLight ? 'light' : 'dark');
+}
+if (localStorage.getItem('appTheme') === 'light') {
+    document.body.classList.add('light-mode');
+}
+
 // --- تحديد اللي بيظهر أول ما الصفحة تفتح ---
 if (sessionStorage.getItem('isSystemOpen') === 'true') {
     document.getElementById('landingPage').style.display = 'none';
@@ -46,7 +56,6 @@ window.addEventListener('load', () => {
         el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitArea(u.id, u.area)); });
     });
 
-    // برمجة زرار الفلتر الذكي عشان يفتح ويقفل
     const filterBtn = document.getElementById('toggleFilterBtn');
     if(filterBtn) {
         filterBtn.addEventListener('click', function() {
@@ -256,7 +265,7 @@ function renderGrid(){
   document.getElementById('pageTitle').textContent = activeSelection === 'all' ? 'كل المشروعات' : (mainLocations.find(m => m.id === activeSelection)?.name + ' (الكل)' || findSubLocationName(activeSelection));
   document.getElementById('pageSub').textContent = `${list.length} مشروع مسجل بالسحابة`;
   const grid = document.getElementById('compoundGrid');
-  if(!list.length) return grid.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted); font-size:18px; font-weight:bold;">لا توجد مشروعات مطابقة</div>`;
+  if(!list.length) return grid.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted); font-size:16px; font-weight:bold;">لا توجد مشروعات مطابقة</div>`;
   
   grid.innerHTML = list.map(c=>{
     const minPrice = (c.unitTypes||[]).length ? Math.min(...c.unitTypes.map(u=>u.price||Infinity)) : null;
@@ -346,7 +355,7 @@ function addBulletRow(pId){ tempPlans.find(p=>p.id===pId)?.customBullets.push({i
 function removeBulletRow(pId, bId){ const p=tempPlans.find(x=>x.id===pId); if(p) p.customBullets=p.customBullets.filter(b=>b.id!==bId); renderPlanRows(); }
 function toggleYearSelection(pId, bId, y){ const b = tempPlans.find(p=>p.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ const i=b.selectedYears.indexOf(y); i>-1?b.selectedYears.splice(i,1):b.selectedYears.push(y); renderPlanRows(); } }
 function renderPlanRows(){
-  document.getElementById('planRows').innerHTML = tempPlans.map(p=>`<div class="plan-card"><div class="plan-card-header"><input placeholder="اسم الخطة" style="flex:2;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)"><input type="number" placeholder="% خصم" style="width:70px;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)"><input type="number" placeholder="% مقدم" style="width:70px;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)"><input type="number" placeholder="سنوات" style="width:70px;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)"><select onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select><button class="row-del" onclick="removePlanRow('${p.id}')">✕</button></div><input placeholder="ملاحظات" style="width:100%;margin-bottom:8px;padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:#111;color:#fff;" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)"><div class="bullets-container">${p.customBullets.map(b=>`<div class="bullet-row"><div class="bullet-top"><select style="flex:1;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)"><option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option><option value="deferred" ${b.type==='deferred'?'selected':''}>دفعة مؤجلة</option><option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option></select><input type="number" placeholder="%" style="width:70px;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)"><button class="row-del" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button></div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>`).join('')}<button class="btn btn-outline-light w-100 btn-pill" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button></div></div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا توجد خطط سداد</div>';
+  document.getElementById('planRows').innerHTML = tempPlans.map(p=>`<div class="plan-card"><div class="plan-card-header"><input placeholder="اسم الخطة" style="flex:2;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)"><input type="number" placeholder="% خصم" style="width:70px;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)"><input type="number" placeholder="% مقدم" style="width:70px;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)"><input type="number" placeholder="سنوات" style="width:70px;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)"><select onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select><button class="row-del" onclick="removePlanRow('${p.id}')">✕</button></div><input placeholder="ملاحظات" style="width:100%;margin-bottom:8px;padding:12px;border-radius:var(--radius-input);border:1px solid var(--border-color);background:var(--item-bg);color:var(--text-main);" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)"><div class="bullets-container">${p.customBullets.map(b=>`<div class="bullet-row"><div class="bullet-top"><select style="flex:1;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)"><option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option><option value="deferred" ${b.type==='deferred'?'selected':''}>دفعة مؤجلة</option><option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option></select><input type="number" placeholder="%" style="width:70px;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)"><button class="row-del" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button></div>${b.type==='annual'?`<div class="years-pills" style="margin-top:4px;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}</div>`).join('')}<button class="btn btn-outline-light w-100 btn-pill" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button></div></div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا توجد خطط سداد</div>';
 }
 function updatePlan(id, field, val){ const p = tempPlans.find(x=>x.id===id); if(p) p[field] = (field==='name'||field==='notes'||field==='frequency')?val:(parseFloat(val)||0); }
 function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(field==='type')renderPlanRows();} }
@@ -380,11 +389,13 @@ function renderDetailModalContent() {
       if (cp.commMin || cp.commMax) parts.push(`<b>تجاري:</b> ${formatNum(cp.commMin)} - ${formatNum(cp.commMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.commFinish||'core_shell']})</span>`);
       if (cp.clinicMin || cp.clinicMax) parts.push(`<b>طبي:</b> ${formatNum(cp.clinicMin)} - ${formatNum(cp.clinicMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.clinicFinish||'core_shell']})</span>`);
       if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> ${formatNum(cp.recMin)} - ${formatNum(cp.recMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.recFinish||'core_shell']})</span>`);
-      pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:13px; margin-top:4px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||0)} ج`);
+      pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:6px; font-size:13px; margin-top:4px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||0)} ج`);
   } else {
       pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)} ج`;
   }
-  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:13px; text-decoration:underline; display:inline-block; margin-top:6px; font-weight:bold;">📍 عرض على الخريطة</a>` : '';
+  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; display:inline-block; margin-top:8px; font-weight:bold; background:var(--item-bg); padding:6px 12px; border-radius:50px; border:1px solid var(--primary);">📍 عرض على الخريطة</a>` : '';
+  
+  // شكل التفاصيل الفخم الجديد هنا (الحماس)
   let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري الهندسي</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>المنطقة والفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item" ${c.projectType === 'commercial' ? 'style="align-items:start;"' : ''}><b>سعر المتر</b><span>${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: ${c.maintenancePercent || 0}% | جراج: ${parkingText}</span></div><div class="detail-item"><b>المساحة الإجمالية</b><span>${c.projectSize ? c.projectSize + ' فدان' : '-'}</span></div><div class="detail-item full"><b>الموقع بالتفصيل</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
 
   const grouped = {}; 
