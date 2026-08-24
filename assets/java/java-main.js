@@ -15,7 +15,7 @@ const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) { document.getElementById('loginEmail').value = localStorage.getItem('savedEmail'); document.getElementById('loginPassword').value = localStorage.getItem('savedPassword'); document.getElementById('rememberMe').checked = true; }
-    document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
+    document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
     document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitArea(u.id, u.area)); }); });
     const filterBtn = document.getElementById('toggleFilterBtn');
     if(filterBtn) { filterBtn.addEventListener('click', function() { const filtersDiv = document.getElementById('advancedFilters'); filtersDiv.style.display = (filtersDiv.style.display === 'none' || filtersDiv.style.display === '') ? 'block' : 'none'; }); }
@@ -33,14 +33,8 @@ const FINISHING_TYPES = { core_shell: 'Core & Shell', semi: 'نصف تشطيب',
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'تسليم فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'}, ];
 
-/* ✨ الكود السحري لتقسيم الأرقام وفكها ✨ */
-function formatInput(el) {
-    let raw = String(el.value).replace(/[^0-9]/g, '');
-    el.value = raw ? Number(raw).toLocaleString('en-US') : '';
-}
-function getRawNum(val) {
-    return parseFloat(String(val).replace(/,/g, '')) || 0;
-}
+function formatInput(el) { let raw = String(el.value).replace(/[^0-9]/g, ''); el.value = raw ? Number(raw).toLocaleString('en-US') : ''; }
+function getRawNum(val) { return parseFloat(String(val).replace(/,/g, '')) || 0; }
 
 auth.onAuthStateChanged(async (user) => {
   if (user) {
@@ -339,13 +333,39 @@ function renderCalcBulletsRows(){
     </div>`).join(''); 
 }
 
+/* ✨ إظهار كل تفاصيل الحاسبة الشاملة (الصافي، الدفعات الخاصة، الربع سنوي، السنوي) ✨ */
 function runUniversalCalculator(){ 
-    const t = getRawNum(document.getElementById('calcTotal').value); 
+    const inputVal = document.getElementById('calcTotal').value.replace(/,/g, '');
+    const t = parseFloat(inputVal); 
     if(!t) return showToast('أدخل إجمالي السعر'); 
+    
     const r = calcInstallmentWithDiscount(t, parseFloat(document.getElementById('calcDiscountPct').value)||0, parseFloat(document.getElementById('calcDownPct').value)||0, calcCustomBullets, parseFloat(document.getElementById('calcYears').value)||0, 12); 
-    const box = document.getElementById('calcResult'); box.style.display='grid'; 
-    box.innerHTML = `<div class="calc-item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))} ج</b></div><div class="calc-item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))} ج</b></div><div class="calc-highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>`; 
+    
+    const box = document.getElementById('calcResult'); 
+    box.style.display='grid'; 
+    
+    // تجميع الدفعات الخاصة لو موجودة
+    let bulletsHtml = r.bulletsSummary.length > 0 
+        ? `<div class="calc-item" style="grid-column: 1 / -1; background: var(--bg-main); padding: 10px; border-radius: var(--radius-input); border: 1px solid var(--border-color);">
+            <span style="display:block; margin-bottom:5px; color:var(--primary);">الدفعات الخاصة (استلام / سنوي / مؤجل):</span>
+            ${r.bulletsSummary.map(b => `<b style="font-size:14px; display:block;">${b.label}</b>`).join('')}
+           </div>` 
+        : '';
+
+    box.innerHTML = `
+        <div class="calc-item"><span>السعر الصافي</span><b>${formatNum(Math.round(r.netTotal))} ج</b></div>
+        <div class="calc-item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))} ج</b></div>
+        ${bulletsHtml}
+        <div class="calc-highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>
+        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط ربع سنوي</span><b style="color:var(--text-main); font-size:18px;">${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></div>
+        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط سنوي</span><b style="color:var(--text-main); font-size:18px;">${formatNum(Math.round(r.monthlyEquivalent * 12))} ج</b></div>
+    `; 
 }
+
+document.getElementById('calcTotal').addEventListener('input', function() {
+    let raw = this.value.replace(/[^0-9]/g, '');
+    this.value = raw ? Number(raw).toLocaleString('en-US') : '';
+});
 
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
