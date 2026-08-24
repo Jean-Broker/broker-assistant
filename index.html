@@ -126,51 +126,21 @@
 
           <div id="advancedFilters" class="filter-dropdown">
             <div class="filter-grid">
-              <div class="field">
-                <label>موعد التسليم</label>
-                <select id="fDeliveryTimeline" onchange="applyFilters()"><option value="">كل المواعيد</option></select>
-              </div>
+              <div class="field"><label>موعد التسليم</label><select id="fDeliveryTimeline" onchange="applyFilters()"><option value="">كل المواعيد</option></select></div>
               <div class="field">
                 <label>نوع الوحدة</label>
                 <select id="fBedroomType" onchange="applyFilters()">
                   <option value="">كل الأنواع</option>
-                  <optgroup label="سكني">
-                    <option value="studio">استوديو (Studio)</option>
-                    <option value="1br">1 غرفة نوم</option>
-                    <option value="2br">2 غرفة نوم</option>
-                    <option value="3br">3 غرف نوم</option>
-                    <option value="4br">4 غرف نوم</option>
-                    <option value="duplex">دوبلكس</option>
-                    <option value="penthouse">بنتهاوس</option>
-                  </optgroup>
-                  <optgroup label="تجاري / إداري / طبي / ترفيهي">
-                    <option value="commercial">تجاري (Commercial)</option>
-                    <option value="admin">إداري (Admin)</option>
-                    <option value="clinic">عيادة / طبي (Clinic)</option>
-                    <option value="recreational">ترفيهي (Recreational)</option>
-                  </optgroup>
+                  <optgroup label="سكني"><option value="studio">استوديو (Studio)</option><option value="1br">1 غرفة نوم</option><option value="2br">2 غرفة نوم</option><option value="3br">3 غرف نوم</option><option value="4br">4 غرف نوم</option><option value="duplex">دوبلكس</option><option value="penthouse">بنتهاوس</option></optgroup>
+                  <optgroup label="تجاري / إداري / طبي / ترفيهي"><option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option></optgroup>
                 </select>
               </div>
-              <div class="field">
-                <label>سعر المتر</label>
-                <input type="number" id="fMeterPrice" placeholder="مثال: 34000" oninput="applyFilters()">
-              </div>
-              <div class="field">
-                <label>إجمالي السعر</label>
-                <input type="number" id="fTotalMin" placeholder="السعر الإجمالي" oninput="applyFilters()">
-              </div>
-              <div class="field">
-                <label>مبلغ المقدم</label>
-                <input type="number" id="fDownPayment" placeholder="مثال: 500000" oninput="applyFilters()">
-              </div>
-              <div class="field">
-                <label>القسط الأقصى</label>
-                <input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()">
-              </div>
+              <div class="field"><label>سعر المتر</label><input type="number" id="fMeterPrice" placeholder="مثال: 34000" oninput="applyFilters()"></div>
+              <div class="field"><label>إجمالي السعر</label><input type="number" id="fTotalMin" placeholder="السعر الإجمالي" oninput="applyFilters()"></div>
+              <div class="field"><label>مبلغ المقدم</label><input type="number" id="fDownPayment" placeholder="مثال: 500000" oninput="applyFilters()"></div>
+              <div class="field"><label>القسط الأقصى</label><input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()"></div>
             </div>
-            <div class="filter-actions">
-              <button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح الفلاتر</button>
-            </div>
+            <div class="filter-actions"><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح الفلاتر</button></div>
           </div>
       </div>
 
@@ -226,17 +196,13 @@
           <div class="form-field">
               <label>مدة الاشتراك</label>
               <select id="newAccDuration">
-                  <option value="30">شهر واحد</option>
-                  <option value="90">3 شهور</option>
-                  <option value="180">6 شهور</option>
-                  <option value="365">سنة كاملة</option>
+                  <option value="30">شهر واحد</option><option value="90">3 شهور</option><option value="180">6 شهور</option><option value="365">سنة كاملة</option>
               </select>
           </div>
           <div class="form-field">
               <label>صلاحيات الحساب</label>
               <select id="newAccRole">
-                  <option value="viewer">متفرج (تصفح المشروعات وحساب الأقساط فقط)</option>
-                  <option value="editor">محرر (إضافة وتعديل المشروعات مسموح)</option>
+                  <option value="viewer">متفرج (تصفح المشروعات وحساب الأقساط فقط)</option><option value="editor">محرر (إضافة وتعديل المشروعات مسموح)</option>
               </select>
           </div>
         </div>
@@ -264,9 +230,7 @@
           <div class="form-field"><label>المنطقة الفرعية / الفرع</label><select id="fldLocation"></select></div>
           <div class="form-field"><label>نوع النشاط / المشروع</label>
             <select id="fldProjectType" onchange="onProjectTypeChange()">
-              <option value="residential">سكني (Residential)</option>
-              <option value="commercial">تجاري / إداري / طبي (Commercial)</option>
-              <option value="hotel">شقق فندقية (Hotel Apartments)</option>
+              <option value="residential">سكني (Residential)</option><option value="commercial">تجاري / إداري / طبي (Commercial)</option><option value="hotel">شقق فندقية (Hotel Apartments)</option>
             </select>
           </div>
           <div class="form-field"><label>اسم الشركة المطورة</label><input id="fldCompany" placeholder="مثال: سيتي إيدج"></div>
@@ -280,9 +244,7 @@
           
           <div class="form-field res-field"><label>حالة التشطيب</label>
             <select id="fldFinishingStatus">
-              <option value="core_shell">Core &amp; Shell (خرسانة وبناء)</option>
-              <option value="semi">Semi-finished (نصف تشطيب)</option>
-              <option value="full">Fully finished (تشطيب كامل)</option>
+              <option value="core_shell">Core &amp; Shell (خرسانة وبناء)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
             </select>
           </div>
           <div class="form-field res-field"><label>سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="number" placeholder="مثال: 150000"></div>
@@ -290,37 +252,33 @@
           <div id="commercialPriceWrap" class="full" style="display:none;">
              <div class="section-label">أسعار المتر والتشطيب للأنشطة التجارية</div>
              <div class="comm-prices-grid">
-                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-
-                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-
-                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-
-                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="number" class="comm-price-input"></div>
-                 <div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="number" class="comm-price-input"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="number" class="comm-price-input"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="number" class="comm-price-input"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="number" class="comm-price-input"></div><div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
              </div>
           </div>
 
           <div class="form-field"><label>نسبة الصيانة (% Maintenance)</label><input id="fldMaintenancePercent" type="number" placeholder="مثال: 8"></div>
           <div class="form-field"><label>مساحة المشروع الإجمالية (فدان)</label><input id="fldProjectSize" type="number" step="0.1"></div>
           <div class="form-field"><label>موعد التسليم</label><select id="fldDeliveryDate"></select></div>
-          
           <div class="form-field"><label>موقع الكمبوند بالتفصيل</label><input id="fldLocationDetail" placeholder="مثال: امتداد التسعين، بجوار..."></div>
           <div class="form-field"><label>رابط الموقع (Google Maps) - اختياري</label><input id="fldLocationLink" placeholder="https://maps.app.goo.gl/..." dir="ltr"></div>
+
         </div>
 
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
         <div id="unitRows"></div>
         <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:15px;" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
         
-        <div class="section-label" style="margin-top:30px;">خطط السداد والدفعات الخاصة</div>
+        <div class="section-label" style="margin-top:30px;">خطط السداد وخصم الكاش</div>
+        
+        <!-- حقل خصم الكاش الجديد هنا -->
+        <div class="form-field full" style="margin-bottom: 20px; background: var(--item-bg); padding: 15px; border-radius: var(--radius-input); border: 1px solid var(--border-color);">
+            <label style="color: var(--primary); font-size: 13px;">نسبة خصم الكاش للمشروع (% Cash Discount)</label>
+            <input type="number" id="fldCashDiscount" placeholder="مثال: 30" style="background: var(--card-bg);">
+        </div>
+
         <div id="planRows"></div>
         <button class="btn btn-outline-light w-100 btn-pill" onclick="addPlanRow()">+ إضافة خطة سداد جديدة</button>
 
