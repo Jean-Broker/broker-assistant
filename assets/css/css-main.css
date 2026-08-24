@@ -168,19 +168,32 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 
 .repeat-row, .plan-card { background: var(--item-bg); padding: 18px; border-radius: var(--radius-card); border: 1px solid var(--border-color); margin-bottom: 15px; }
 .plan-card-header, .bullet-top, .repeat-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.repeat-row input, .repeat-row select, .plan-card-header input, .plan-card-header select, .bullet-top input, .bullet-top select { padding: 10px 14px; background: var(--card-bg); border: 1px solid var(--border-color); height: 38px; border-radius: var(--radius-input); color: var(--text-main); font-size: 12px; outline: none; transition: var(--transition); box-sizing: border-box; font-weight: 600;}
+
+/* ✨ حل مشكلة الكلام المقطوع من تحت وتكبير الخانات شوية ✨ */
+.repeat-row input, .repeat-row select, .plan-card-header input, .plan-card-header select, .bullet-top input, .bullet-top select { 
+    padding: 6px 12px; 
+    background: var(--card-bg); 
+    border: 1px solid var(--border-color); 
+    height: 44px; /* الارتفاع زاد عشان يظبط الكلام المقطوع */
+    border-radius: var(--radius-input); 
+    color: var(--text-main); 
+    font-size: 13px; 
+    outline: none; 
+    transition: var(--transition); 
+    box-sizing: border-box; 
+    font-weight: 600;
+}
 .repeat-row input:focus, .repeat-row select:focus, .plan-card-header input:focus, .plan-card-header select:focus, .bullet-top input:focus, .bullet-top select:focus { border-color: var(--primary); }
+
 .row-del { background: var(--card-bg); color: var(--text-muted); border: 1px solid var(--border-color); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 14px; transition: var(--transition); display: flex; align-items: center; justify-content: center;}
 .row-del:hover { border-color: var(--danger); color: var(--danger); background: #222; box-shadow: 0 0 10px rgba(239,68,68,0.3);}
 
 .bullets-container { background: var(--bg-main); padding: 15px; border-radius: var(--radius-card); margin-top:10px; border: 1px dashed var(--border-color);}
 .bullet-row { padding: 12px; background: var(--item-bg); margin-bottom: 10px; border-radius: var(--radius-input); border: 1px solid var(--border-color); }
 
-/* ✨ تعديل زراير السنوات عشان تنور وتتداس بنظافة ✨ */
 .year-pill { background: var(--card-bg); border: 1px solid var(--border-color); padding: 6px 16px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: var(--transition); border-radius: var(--radius-pill); user-select: none; display: inline-flex; align-items: center; justify-content: center;}
 .year-pill.selected { background: var(--primary); color: var(--btn-text); border-color: var(--primary); box-shadow: var(--glow);}
 
-/* ✨ تنسيق نتائج حاسبة الأقساط عشان متكونش سايحة ✨ */
 .calc-result { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; background: var(--item-bg); padding: 20px; border-radius: var(--radius-card); border: 1px solid var(--border-color); }
 .calc-item { display: flex; flex-direction: column; gap: 5px; text-align: center;}
 .calc-item span { font-size: 12px; color: var(--text-muted); font-weight: 700; }
