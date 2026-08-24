@@ -16,7 +16,6 @@
 </head>
 <body>
 
-  <!-- زراير التحكم العلوية -->
   <div class="top-controls">
       <button class="theme-switcher" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
       <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
@@ -135,10 +134,10 @@
                   <optgroup label="تجاري / إداري / طبي / ترفيهي"><option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option></optgroup>
                 </select>
               </div>
-              <div class="field"><label>سعر المتر</label><input type="number" id="fMeterPrice" placeholder="مثال: 34000" oninput="applyFilters()"></div>
-              <div class="field"><label>إجمالي السعر</label><input type="number" id="fTotalMin" placeholder="السعر الإجمالي" oninput="applyFilters()"></div>
-              <div class="field"><label>مبلغ المقدم</label><input type="number" id="fDownPayment" placeholder="مثال: 500000" oninput="applyFilters()"></div>
-              <div class="field"><label>القسط الأقصى</label><input type="number" id="fMonthlyInstallment" placeholder="مثال: 20000" oninput="applyFilters()"></div>
+              <div class="field"><label>سعر المتر</label><input type="text" id="fMeterPrice" placeholder="مثال: 34,000" oninput="formatInput(this); applyFilters()"></div>
+              <div class="field"><label>إجمالي السعر</label><input type="text" id="fTotalMin" placeholder="السعر الإجمالي" oninput="formatInput(this); applyFilters()"></div>
+              <div class="field"><label>مبلغ المقدم</label><input type="text" id="fDownPayment" placeholder="مثال: 500,000" oninput="formatInput(this); applyFilters()"></div>
+              <div class="field"><label>القسط الأقصى</label><input type="text" id="fMonthlyInstallment" placeholder="مثال: 20,000" oninput="formatInput(this); applyFilters()"></div>
             </div>
             <div class="filter-actions"><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح الفلاتر</button></div>
           </div>
@@ -238,8 +237,8 @@
           <div class="form-field"><label>اسم مالك الشركة / رئيس المجلس</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي"></div>
           <div class="form-field"><label>الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر"></div>
           
-          <div class="form-field res-price-field"><label>سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="number" oninput="updatePriceMeterAvg();"></div>
-          <div class="form-field res-price-field"><label>سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="number" oninput="updatePriceMeterAvg();"></div>
+          <div class="form-field res-price-field"><label>سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="text" oninput="formatInput(this); updatePriceMeterAvg();"></div>
+          <div class="form-field res-price-field"><label>سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="text" oninput="formatInput(this); updatePriceMeterAvg();"></div>
           <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label>متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:var(--item-bg); font-weight:bold; color:var(--primary);"></div>
           
           <div class="form-field res-field"><label>حالة التشطيب</label>
@@ -247,15 +246,15 @@
               <option value="core_shell">Core &amp; Shell (خرسانة وبناء)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
             </select>
           </div>
-          <div class="form-field res-field"><label>سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="number" placeholder="مثال: 150000"></div>
+          <div class="form-field res-field"><label>سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="text" placeholder="مثال: 150,000" oninput="formatInput(this);"></div>
 
           <div id="commercialPriceWrap" class="full" style="display:none;">
              <div class="section-label">أسعار المتر والتشطيب للأنشطة التجارية</div>
              <div class="comm-prices-grid">
-                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="number" class="comm-price-input"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="number" class="comm-price-input"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="number" class="comm-price-input"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="number" class="comm-price-input"></div><div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="number" class="comm-price-input"></div><div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="text" class="comm-price-input" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
              </div>
           </div>
 
@@ -273,7 +272,6 @@
         
         <div class="section-label" style="margin-top:30px;">خطط السداد وخصم الكاش</div>
         
-        <!-- حقل خصم الكاش الجديد هنا -->
         <div class="form-field full" style="margin-bottom: 20px; background: var(--item-bg); padding: 15px; border-radius: var(--radius-input); border: 1px solid var(--border-color);">
             <label style="color: var(--primary); font-size: 13px;">نسبة خصم الكاش للمشروع (% Cash Discount)</label>
             <input type="number" id="fldCashDiscount" placeholder="مثال: 30" style="background: var(--card-bg);">
@@ -316,7 +314,7 @@
       </div>
       <div class="modal-body">
         <div class="form-grid">
-          <div class="form-field"><label>إجمالي السعر (جنيه)</label><input id="calcTotal" type="number" placeholder="مثال: 5700000"></div>
+          <div class="form-field"><label>إجمالي السعر (جنيه)</label><input id="calcTotal" type="text" placeholder="مثال: 5,700,000" oninput="formatInput(this);"></div>
           <div class="form-field"><label>نسبة الخصم % (إن وجد)</label><input id="calcDiscountPct" type="number" placeholder="مثال: 5"></div>
           <div class="form-field"><label>نسبة المقدم %</label><input id="calcDownPct" type="number" placeholder="مثال: 10"></div>
           <div class="form-field"><label>عدد سنوات التقسيط</label><input id="calcYears" type="number" placeholder="مثال: 12"></div>
