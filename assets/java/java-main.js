@@ -15,7 +15,7 @@ const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) { document.getElementById('loginEmail').value = localStorage.getItem('savedEmail'); document.getElementById('loginPassword').value = localStorage.getItem('savedPassword'); document.getElementById('rememberMe').checked = true; }
-    document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
+    document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
     document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitArea(u.id, u.area)); }); });
     const filterBtn = document.getElementById('toggleFilterBtn');
     if(filterBtn) { filterBtn.addEventListener('click', function() { const filtersDiv = document.getElementById('advancedFilters'); filtersDiv.style.display = (filtersDiv.style.display === 'none' || filtersDiv.style.display === '') ? 'block' : 'none'; }); }
@@ -67,7 +67,6 @@ async function saveCompoundToCloud() {
 
   const data = {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
-    
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value), 
     pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value),
     commercialPrices: { 
@@ -76,7 +75,6 @@ async function saveCompoundToCloud() {
         clinicMin: getRawNum(document.getElementById('fldClinicMin').value), clinicMax: getRawNum(document.getElementById('fldClinicMax').value), clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', 
         recMin: getRawNum(document.getElementById('fldRecMin').value), recMax: getRawNum(document.getElementById('fldRecMax').value), recFinish: document.getElementById('fldRecFinish').value || 'core_shell', 
     },
-    
     maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, 
     parkingFee: getRawNum(document.getElementById('fldParkingFee').value), 
     projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(),
@@ -156,7 +154,7 @@ function openCompoundForm(existing){
       document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; 
       document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; 
       document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; 
-      document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell';
+      document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell'; 
       
       document.getElementById('fldMaintenancePercent').value = existing.maintenancePercent || ''; 
       document.getElementById('fldParkingFee').value = existing.parkingFee ? formatNum(existing.parkingFee) : ''; 
@@ -300,7 +298,43 @@ function renderDetailModalContent() {
   } document.getElementById('detailBody').innerHTML = html;
 }
 
-function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ const discountVal = originalTotal * ((discountPct||0)/100), netTotal = originalTotal - discountVal, downPayment = netTotal * ((downPct||0)/100); let extraPaymentsTotal = 0; let bulletsSummary = []; (customBullets || []).forEach(b => { const pct = parseFloat(b.percent) || 0; if(pct > 0){ if(b.type === 'annual'){ const count = (b.selectedYears || []).length, perYearVal = netTotal * (pct / 100), totalBulletVal = perYearVal * count; extraPaymentsTotal += totalBulletVal; bulletsSummary.push({ type: 'annual', label: `%${pct} سنوي = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); } else { const val = netTotal * (pct / 100); extraPaymentsTotal += val; bulletsSummary.push({ type: b.type, label: b.type === 'delivery' ? `استلام: %${pct}` : `مؤجلة: %${pct}`, val }); } } }); const remaining = netTotal - (downPayment + extraPaymentsTotal), monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; }
+function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
+    const discountVal = originalTotal * ((discountPct||0)/100);
+    const netTotal = originalTotal - discountVal;
+    const downPayment = netTotal * ((downPct||0)/100);
+    let extraPaymentsTotal = 0; 
+    let bulletsSummary = []; 
+    
+    (customBullets || []).forEach(b => { 
+        const pct = parseFloat(b.percent) || 0; 
+        if(pct > 0){ 
+            if(b.type === 'annual'){ 
+                const count = (b.selectedYears || []).length;
+                const perYearVal = netTotal * (pct / 100);
+                const totalBulletVal = perYearVal * count; 
+                extraPaymentsTotal += totalBulletVal; 
+                bulletsSummary.push({ 
+                    type: 'annual', 
+                    label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, 
+                    perYearVal 
+                }); 
+            } else { 
+                const val = netTotal * (pct / 100); 
+                extraPaymentsTotal += val; 
+                const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة';
+                bulletsSummary.push({ 
+                    type: b.type, 
+                    label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, 
+                    val 
+                }); 
+            } 
+        } 
+    }); 
+    
+    const remaining = netTotal - (downPayment + extraPaymentsTotal);
+    const monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; 
+    return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
+}
 
 function openCalculator(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>document.getElementById(id).value=''); document.getElementById('calcResult').style.display='none'; renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); }
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
@@ -316,24 +350,32 @@ function toggleCalcYearSelection(bId, y){
     } 
 }
 
-function updateCalcBullet(id, f, v){ const b=calcCustomBullets.find(x=>x.id===id); if(b){ b[f]=f==='type'?v:(parseFloat(v)||0); if(f==='type')renderCalcBulletsRows(); } }
+/* ✨ تصحيح حفظ بيانات الدفعات في الحاسبة ✨ */
+function updateCalcBullet(id, f, v){ 
+    const b = calcCustomBullets.find(x=>x.id===id); 
+    if(b){ 
+        b[f] = f==='type' ? v : (parseFloat(v)||0); 
+        if(f==='type') renderCalcBulletsRows(); 
+    } 
+}
 
+/* ✨ تصحيح أسماء الدوال المربوطة بالأزرار ✨ */
 function renderCalcBulletsRows(){ 
     document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row">
         <div class="bullet-top" style="display:flex; gap:10px; align-items:center;">
-            <select style="flex:1; min-width:100px;" onchange="updateBullet('${b.id}','type',this.value)">
+            <select style="flex:1; min-width:100px;" onchange="updateCalcBullet('${b.id}','type',this.value)">
                 <option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option>
                 <option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option>
                 <option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option>
             </select>
-            <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${b.id}','percent',this.value)">
-            <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${b.id}')">✕</button>
+            <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
+            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
         </div>
         ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     </div>`).join(''); 
 }
 
-/* ✨ إظهار كل تفاصيل الحاسبة الشاملة (الصافي، الدفعات الخاصة، الربع سنوي، السنوي) ✨ */
+/* ✨ إظهار تفاصيل الدفعات والأقساط كاملة في نتيجة الحاسبة ✨ */
 function runUniversalCalculator(){ 
     const inputVal = document.getElementById('calcTotal').value.replace(/,/g, '');
     const t = parseFloat(inputVal); 
@@ -344,11 +386,10 @@ function runUniversalCalculator(){
     const box = document.getElementById('calcResult'); 
     box.style.display='grid'; 
     
-    // تجميع الدفعات الخاصة لو موجودة
     let bulletsHtml = r.bulletsSummary.length > 0 
-        ? `<div class="calc-item" style="grid-column: 1 / -1; background: var(--bg-main); padding: 10px; border-radius: var(--radius-input); border: 1px solid var(--border-color);">
-            <span style="display:block; margin-bottom:5px; color:var(--primary);">الدفعات الخاصة (استلام / سنوي / مؤجل):</span>
-            ${r.bulletsSummary.map(b => `<b style="font-size:14px; display:block;">${b.label}</b>`).join('')}
+        ? `<div class="calc-item" style="grid-column: 1 / -1; background: var(--bg-main); padding: 12px; border-radius: var(--radius-input); border: 1px dashed var(--primary); text-align:right;">
+            <span style="display:block; margin-bottom:6px; color:var(--primary); font-weight:800;">الدفعات الخاصة المحسوبة:</span>
+            ${r.bulletsSummary.map(b => `<div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">• ${b.label}</div>`).join('')}
            </div>` 
         : '';
 
@@ -357,8 +398,8 @@ function runUniversalCalculator(){
         <div class="calc-item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))} ج</b></div>
         ${bulletsHtml}
         <div class="calc-highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>
-        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط ربع سنوي</span><b style="color:var(--text-main); font-size:18px;">${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></div>
-        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط سنوي</span><b style="color:var(--text-main); font-size:18px;">${formatNum(Math.round(r.monthlyEquivalent * 12))} ج</b></div>
+        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط ربع سنوي</span><b style="color:var(--text-main); font-size:16px;">${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></div>
+        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط سنوي</span><b style="color:var(--text-main); font-size:16px;">${formatNum(Math.round(r.monthlyEquivalent * 12))} ج</b></div>
     `; 
 }
 
