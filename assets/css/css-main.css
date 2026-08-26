@@ -168,29 +168,13 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 
 .repeat-row, .plan-card { background: var(--item-bg); padding: 18px; border-radius: var(--radius-card); border: 1px solid var(--border-color); margin-bottom: 15px; }
 .plan-card-header, .bullet-top, .repeat-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-
-/* ✨ حل مشكلة الكلام المقطوع من تحت وتكبير الخانات شوية ✨ */
-.repeat-row input, .repeat-row select, .plan-card-header input, .plan-card-header select, .bullet-top input, .bullet-top select { 
-    padding: 6px 12px; 
-    background: var(--card-bg); 
-    border: 1px solid var(--border-color); 
-    height: 44px; /* الارتفاع زاد عشان يظبط الكلام المقطوع */
-    border-radius: var(--radius-input); 
-    color: var(--text-main); 
-    font-size: 13px; 
-    outline: none; 
-    transition: var(--transition); 
-    box-sizing: border-box; 
-    font-weight: 600;
-}
+.repeat-row input, .repeat-row select, .plan-card-header input, .plan-card-header select, .bullet-top input, .bullet-top select { padding: 6px 12px; background: var(--card-bg); border: 1px solid var(--border-color); height: 44px; border-radius: var(--radius-input); color: var(--text-main); font-size: 13px; outline: none; transition: var(--transition); box-sizing: border-box; font-weight: 600;}
 .repeat-row input:focus, .repeat-row select:focus, .plan-card-header input:focus, .plan-card-header select:focus, .bullet-top input:focus, .bullet-top select:focus { border-color: var(--primary); }
-
 .row-del { background: var(--card-bg); color: var(--text-muted); border: 1px solid var(--border-color); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 14px; transition: var(--transition); display: flex; align-items: center; justify-content: center;}
 .row-del:hover { border-color: var(--danger); color: var(--danger); background: #222; box-shadow: 0 0 10px rgba(239,68,68,0.3);}
 
 .bullets-container { background: var(--bg-main); padding: 15px; border-radius: var(--radius-card); margin-top:10px; border: 1px dashed var(--border-color);}
 .bullet-row { padding: 12px; background: var(--item-bg); margin-bottom: 10px; border-radius: var(--radius-input); border: 1px solid var(--border-color); }
-
 .year-pill { background: var(--card-bg); border: 1px solid var(--border-color); padding: 6px 16px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--text-muted); transition: var(--transition); border-radius: var(--radius-pill); user-select: none; display: inline-flex; align-items: center; justify-content: center;}
 .year-pill.selected { background: var(--primary); color: var(--btn-text); border-color: var(--primary); box-shadow: var(--glow);}
 
@@ -236,10 +220,45 @@ body.light-mode .paywall-overlay { background: rgba(255,255,255,0.85); }
 .login-close-btn { position: absolute; top: 15px; right: 15px; background: var(--item-bg); border: 1px solid var(--border-color); font-size: 14px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: var(--transition); display: flex; justify-content: center; align-items: center;}
 .login-close-btn:hover { background: var(--danger); color: #fff; border-color: var(--danger); transform: rotate(90deg);}
 
+/* ✨✨✨ السحر هنا: تظبيط الموبايل ڤيو (ترتيب البحث فوق والقائمة تحت) ✨✨✨ */
 @media (max-width: 900px) {
-    .app { flex-direction: column; overflow: visible; height: auto;}
-    .sidebar { width: 100%; }
-    .main { padding: 20px; }
-    .search-main-row { flex-direction: column; }
-    .btn-filter-toggle { width: 100%; justify-content: center; }
+    .app { 
+        flex-direction: column; 
+        overflow: visible; 
+        height: auto; 
+        padding-top: 65px; /* مسافة للزراير العلوية */
+    }
+    
+    /* رفع الشاشة الرئيسية (البحث والمشاريع) لفوق */
+    .main { 
+        order: 1; 
+        border-radius: var(--radius-card); 
+        padding: 20px 15px; 
+        margin-bottom: 20px;
+    }
+    
+    /* تنزيل القائمة الجانبية (المناطق والإدارة) لتحت */
+    .sidebar { 
+        order: 2; 
+        width: 100%; 
+        border-radius: var(--radius-card); 
+        padding: 20px 15px;
+    }
+
+    /* تظبيط شكل البحث والزراير للموبايل */
+    .search-main-row { flex-direction: column; padding: 0;}
+    .btn-filter-toggle { width: 100%; justify-content: center; margin-top: 10px;}
+    .project-type-nav { justify-content: center; }
+    .sort-small-box { margin-left: 0; margin-top: 10px; width: 100%; justify-content: space-between;}
+    .topbar { flex-direction: column; align-items: flex-start; gap: 15px; }
+    .topbar .btn { width: 100%; }
+
+    /* تظبيط زراير اللغة والوضع الليلي عشان متغطيش على الشعار */
+    .top-controls { 
+        top: 10px; 
+        left: 10px; 
+        right: 10px; 
+        justify-content: space-between; 
+        width: calc(100% - 20px); 
+    }
 }
