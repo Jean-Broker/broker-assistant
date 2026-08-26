@@ -15,7 +15,7 @@ const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) { document.getElementById('loginEmail').value = localStorage.getItem('savedEmail'); document.getElementById('loginPassword').value = localStorage.getItem('savedPassword'); document.getElementById('rememberMe').checked = true; }
-    document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
+    document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
     document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitArea(u.id, u.area)); }); });
     const filterBtn = document.getElementById('toggleFilterBtn');
     if(filterBtn) { filterBtn.addEventListener('click', function() { const filtersDiv = document.getElementById('advancedFilters'); filtersDiv.style.display = (filtersDiv.style.display === 'none' || filtersDiv.style.display === '') ? 'block' : 'none'; }); }
@@ -69,16 +69,8 @@ async function saveCompoundToCloud() {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value), 
     pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value),
-    commercialPrices: { 
-        adminMin: getRawNum(document.getElementById('fldAdminMin').value), adminMax: getRawNum(document.getElementById('fldAdminMax').value), adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', 
-        commMin: getRawNum(document.getElementById('fldCommMin').value), commMax: getRawNum(document.getElementById('fldCommMax').value), commFinish: document.getElementById('fldCommFinish').value || 'core_shell', 
-        clinicMin: getRawNum(document.getElementById('fldClinicMin').value), clinicMax: getRawNum(document.getElementById('fldClinicMax').value), clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', 
-        recMin: getRawNum(document.getElementById('fldRecMin').value), recMax: getRawNum(document.getElementById('fldRecMax').value), recFinish: document.getElementById('fldRecFinish').value || 'core_shell', 
-    },
-    maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, 
-    parkingFee: getRawNum(document.getElementById('fldParkingFee').value), 
-    projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(),
-    cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
+    commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value), adminMax: getRawNum(document.getElementById('fldAdminMax').value), adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value), commMax: getRawNum(document.getElementById('fldCommMax').value), commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value), clinicMax: getRawNum(document.getElementById('fldClinicMax').value), clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value), recMax: getRawNum(document.getElementById('fldRecMax').value), recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
+    maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value), projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, price: parseFloat(u.price) || 0 })),
     paymentPlans: tempPlans, ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
@@ -94,11 +86,40 @@ function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'
 function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
 function populateDeliverySelects(){ const opts = DELIVERY_TIMELINES.map(d=>`<option value="${d.value}">${d.label}</option>`).join(''); document.getElementById('fldDeliveryDate').innerHTML = opts; document.getElementById('fDeliveryTimeline').innerHTML = '<option value="">كل المواعيد</option>' + opts; }
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
+
+/* ✨ دالة إظهار وإخفاء المناطق على الموبايل ✨ */
+function toggleMobileLoc() {
+    const wrap = document.getElementById('locWrapperMobile');
+    const btn = document.getElementById('mobileLocToggleBtn');
+    if(wrap.classList.contains('show')) {
+        wrap.classList.remove('show');
+        btn.classList.remove('active');
+        btn.innerHTML = '📍 تصفية بالمناطق والمدن ▼';
+    } else {
+        wrap.classList.add('show');
+        btn.classList.add('active');
+        btn.innerHTML = '📍 إخفاء المناطق ▲';
+    }
+}
+
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree'); let html = `<div class="sub-loc-tab ${activeSelection==='all'?'active':''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${compounds.length}</span></div>`;
   mainLocations.forEach((mainLoc) => { let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); const isOpen = !!openMainLocIds[mainLoc.id]; html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${activeSelection === mainLoc.id ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; mainLoc.subLocations.forEach(sub => { const subCount = compounds.filter(c => c.locationId === sub.id).length; html += `<div class="sub-loc-tab ${activeSelection === sub.id?'active':''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; }); html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; }); wrap.innerHTML = html; if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
 }
-function selectLocationNode(nodeId){ activeSelection = nodeId; renderLocationTree(); renderGrid(); }
+
+/* ✨ تحديث دالة الاختيار عشان تقفل المناطق أوتوماتيك على الموبايل ✨ */
+function selectLocationNode(nodeId){ 
+    activeSelection = nodeId; 
+    renderLocationTree(); 
+    renderGrid(); 
+    if(window.innerWidth <= 900) {
+        const wrap = document.getElementById('locWrapperMobile');
+        if(wrap && wrap.classList.contains('show')) {
+            toggleMobileLoc();
+        }
+    }
+}
+
 async function addMainLocation(){ if(!isEditor) return; const input = document.getElementById('newMainLocInput'); if(!input.value.trim()) return; const newId = uid(); mainLocations.push({ id: newId, name: input.value.trim(), subLocations: [] }); openMainLocIds[newId] = true; input.value = ''; await saveMainLocationsToCloud(); }
 async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف المنطقة؟')) return; const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; mainLocations = mainLocations.filter(m => m.id !== mainId); const batch = db.batch(); compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); if(activeSelection === mainId || subIds.includes(activeSelection)) activeSelection = 'all'; await saveMainLocationsToCloud(); }
 async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
@@ -146,27 +167,13 @@ function openCompoundForm(existing){
   
   if (existing) {
       document.getElementById('fldProjectType').value = existing.projectType || 'residential'; document.getElementById('fldCompany').value = existing.companyName || ''; document.getElementById('fldProject').value = existing.projectName || ''; document.getElementById('fldOwner').value = existing.ownerName || ''; document.getElementById('fldConsultant').value = existing.consultant || ''; 
-      
-      document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : ''; 
-      document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '';
-      
-      let cp = existing.commercialPrices || {}; 
-      document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; 
-      document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; 
-      document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; 
-      document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell'; 
-      
-      document.getElementById('fldMaintenancePercent').value = existing.maintenancePercent || ''; 
-      document.getElementById('fldParkingFee').value = existing.parkingFee ? formatNum(existing.parkingFee) : ''; 
-      document.getElementById('fldProjectSize').value = existing.projectSize || ''; document.getElementById('fldDeliveryDate').value = existing.deliveryDate || ''; document.getElementById('fldFinishingStatus').value = existing.finishingStatus || 'core_shell'; document.getElementById('fldLocationDetail').value = existing.compoundLocationDetail || ''; document.getElementById('fldLocationLink').value = existing.locationLink || '';
-      document.getElementById('fldCashDiscount').value = existing.cashDiscount || ''; 
+      document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : ''; document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '';
+      let cp = existing.commercialPrices || {}; document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell';
+      document.getElementById('fldMaintenancePercent').value = existing.maintenancePercent || ''; document.getElementById('fldParkingFee').value = existing.parkingFee ? formatNum(existing.parkingFee) : ''; document.getElementById('fldProjectSize').value = existing.projectSize || ''; document.getElementById('fldDeliveryDate').value = existing.deliveryDate || ''; document.getElementById('fldFinishingStatus').value = existing.finishingStatus || 'core_shell'; document.getElementById('fldLocationDetail').value = existing.compoundLocationDetail || ''; document.getElementById('fldLocationLink').value = existing.locationLink || ''; document.getElementById('fldCashDiscount').value = existing.cashDiscount || ''; 
   } else {
       document.getElementById('fldProjectType').value = 'residential'; ['fldCompany','fldProject','fldOwner','fldConsultant','fldPriceMeterMin','fldPriceMeterMax','fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax','fldMaintenancePercent','fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { document.getElementById(id).value = ''; }); ['fldFinishingStatus', 'fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { document.getElementById(id).value = 'core_shell'; });
   }
-  
-  onProjectTypeChange();
-  tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : []; if (existing) { tempUnits.forEach(u => { u.bedroomType = getCorrectedUnitType(u.bedroomType, existing.projectType); }); }
-  tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : []; tempDecrees = existing ? JSON.parse(JSON.stringify(existing.ministerialDecrees||[])) : []; updatePriceMeterAvg(); renderUnitRows(); renderPlanRows(); renderDecreeRows(); document.getElementById('formOverlay').classList.add('open');
+  onProjectTypeChange(); tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : []; if (existing) { tempUnits.forEach(u => { u.bedroomType = getCorrectedUnitType(u.bedroomType, existing.projectType); }); } tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : []; tempDecrees = existing ? JSON.parse(JSON.stringify(existing.ministerialDecrees||[])) : []; updatePriceMeterAvg(); renderUnitRows(); renderPlanRows(); renderDecreeRows(); document.getElementById('formOverlay').classList.add('open');
 }
 
 function onProjectTypeChange() { const isComm = document.getElementById('fldProjectType').value === 'commercial'; document.querySelectorAll('.res-price-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.getElementById('commercialPriceWrap').style.display = isComm ? 'block' : 'none'; if (isComm) document.getElementById('priceMeterAvgWrap').style.display = 'none'; renderUnitRows(); }
@@ -200,12 +207,7 @@ function removeBulletRow(pId, bId){ const p=tempPlans.find(x=>x.id===pId); if(p)
 
 function toggleYearSelection(pId, bId, y){ 
     const b = tempPlans.find(p=>p.id===pId)?.customBullets.find(x=>x.id===bId); 
-    if(b){ 
-        if(!b.selectedYears) b.selectedYears = [];
-        const i = b.selectedYears.indexOf(y); 
-        i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); 
-        renderPlanRows(); 
-    } 
+    if(b){ if(!b.selectedYears) b.selectedYears = []; const i = b.selectedYears.indexOf(y); i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); renderPlanRows(); } 
 }
 
 function renderPlanRows(){ 
@@ -298,43 +300,7 @@ function renderDetailModalContent() {
   } document.getElementById('detailBody').innerHTML = html;
 }
 
-function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
-    const discountVal = originalTotal * ((discountPct||0)/100);
-    const netTotal = originalTotal - discountVal;
-    const downPayment = netTotal * ((downPct||0)/100);
-    let extraPaymentsTotal = 0; 
-    let bulletsSummary = []; 
-    
-    (customBullets || []).forEach(b => { 
-        const pct = parseFloat(b.percent) || 0; 
-        if(pct > 0){ 
-            if(b.type === 'annual'){ 
-                const count = (b.selectedYears || []).length;
-                const perYearVal = netTotal * (pct / 100);
-                const totalBulletVal = perYearVal * count; 
-                extraPaymentsTotal += totalBulletVal; 
-                bulletsSummary.push({ 
-                    type: 'annual', 
-                    label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, 
-                    perYearVal 
-                }); 
-            } else { 
-                const val = netTotal * (pct / 100); 
-                extraPaymentsTotal += val; 
-                const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة';
-                bulletsSummary.push({ 
-                    type: b.type, 
-                    label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, 
-                    val 
-                }); 
-            } 
-        } 
-    }); 
-    
-    const remaining = netTotal - (downPayment + extraPaymentsTotal);
-    const monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; 
-    return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
-}
+function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ const discountVal = originalTotal * ((discountPct||0)/100), netTotal = originalTotal - discountVal, downPayment = netTotal * ((downPct||0)/100); let extraPaymentsTotal = 0; let bulletsSummary = []; (customBullets || []).forEach(b => { const pct = parseFloat(b.percent) || 0; if(pct > 0){ if(b.type === 'annual'){ const count = (b.selectedYears || []).length, perYearVal = netTotal * (pct / 100), totalBulletVal = perYearVal * count; extraPaymentsTotal += totalBulletVal; bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); } else { const val = netTotal * (pct / 100); extraPaymentsTotal += val; const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة'; bulletsSummary.push({ type: b.type, label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, val }); } } }); const remaining = netTotal - (downPayment + extraPaymentsTotal), monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; }
 
 function openCalculator(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>document.getElementById(id).value=''); document.getElementById('calcResult').style.display='none'; renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); }
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
@@ -342,24 +308,11 @@ function removeCalcBulletRow(id){ calcCustomBullets=calcCustomBullets.filter(b=>
 
 function toggleCalcYearSelection(bId, y){ 
     const b = calcCustomBullets.find(x=>x.id===bId); 
-    if(b){ 
-        if(!b.selectedYears) b.selectedYears = [];
-        const i = b.selectedYears.indexOf(y); 
-        i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); 
-        renderCalcBulletsRows(); 
-    } 
+    if(b){ if(!b.selectedYears) b.selectedYears = []; const i = b.selectedYears.indexOf(y); i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); renderCalcBulletsRows(); } 
 }
 
-/* ✨ تصحيح حفظ بيانات الدفعات في الحاسبة ✨ */
-function updateCalcBullet(id, f, v){ 
-    const b = calcCustomBullets.find(x=>x.id===id); 
-    if(b){ 
-        b[f] = f==='type' ? v : (parseFloat(v)||0); 
-        if(f==='type') renderCalcBulletsRows(); 
-    } 
-}
+function updateCalcBullet(id, f, v){ const b = calcCustomBullets.find(x=>x.id===id); if(b){ b[f] = f==='type' ? v : (parseFloat(v)||0); if(f==='type') renderCalcBulletsRows(); } }
 
-/* ✨ تصحيح أسماء الدوال المربوطة بالأزرار ✨ */
 function renderCalcBulletsRows(){ 
     document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row">
         <div class="bullet-top" style="display:flex; gap:10px; align-items:center;">
@@ -375,7 +328,6 @@ function renderCalcBulletsRows(){
     </div>`).join(''); 
 }
 
-/* ✨ إظهار تفاصيل الدفعات والأقساط كاملة في نتيجة الحاسبة ✨ */
 function runUniversalCalculator(){ 
     const inputVal = document.getElementById('calcTotal').value.replace(/,/g, '');
     const t = parseFloat(inputVal); 
@@ -403,11 +355,7 @@ function runUniversalCalculator(){
     `; 
 }
 
-document.getElementById('calcTotal').addEventListener('input', function() {
-    let raw = this.value.replace(/[^0-9]/g, '');
-    this.value = raw ? Number(raw).toLocaleString('en-US') : '';
-});
-
+document.getElementById('calcTotal').addEventListener('input', function() { let raw = this.value.replace(/[^0-9]/g, ''); this.value = raw ? Number(raw).toLocaleString('en-US') : ''; });
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
 
