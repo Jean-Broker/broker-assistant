@@ -220,40 +220,49 @@ body.light-mode .paywall-overlay { background: rgba(255,255,255,0.85); }
 .login-close-btn { position: absolute; top: 15px; right: 15px; background: var(--item-bg); border: 1px solid var(--border-color); font-size: 14px; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--text-muted); transition: var(--transition); display: flex; justify-content: center; align-items: center;}
 .login-close-btn:hover { background: var(--danger); color: #fff; border-color: var(--danger); transform: rotate(90deg);}
 
-/* ✨✨✨ السحر هنا: تظبيط الموبايل ڤيو (ترتيب البحث فوق والقائمة تحت) ✨✨✨ */
+/* ✨✨✨ السحر هنا: تظبيط الموبايل ڤيو وتداخل العناصر ✨✨✨ */
 @media (max-width: 900px) {
     .app { 
+        display: flex; 
         flex-direction: column; 
-        overflow: visible; 
+        overflow-y: auto; 
         height: auto; 
-        padding-top: 65px; /* مسافة للزراير العلوية */
+        padding-top: 65px; 
+        gap: 15px;
     }
     
-    /* رفع الشاشة الرئيسية (البحث والمشاريع) لفوق */
-    .main { 
-        order: 1; 
-        border-radius: var(--radius-card); 
-        padding: 20px 15px; 
-        margin-bottom: 20px;
-    }
-    
-    /* تنزيل القائمة الجانبية (المناطق والإدارة) لتحت */
-    .sidebar { 
-        order: 2; 
-        width: 100%; 
-        border-radius: var(--radius-card); 
-        padding: 20px 15px;
+    /* فك الصناديق الرئيسية عشان نقدر نرتب العناصر اللي جواهم بحرية */
+    .sidebar, .main { 
+        display: contents; 
     }
 
-    /* تظبيط شكل البحث والزراير للموبايل */
+    /* إعطاء خلفية وحواف للعناصر بعد ما خرجت من الصناديق */
+    .topbar, .search-master-container, .project-type-nav, .location-container, .brand, .auth-badge, .side-actions {
+        background: var(--card-bg); 
+        border: 1px solid var(--border-color); 
+        border-radius: var(--radius-card); 
+        padding: 15px; 
+        width: 100%;
+        margin: 0; 
+    }
+
+    /* الترتيب الجديد بالمللي زي ما طلبت */
+    .topbar { order: 1; flex-direction: column; align-items: flex-start; gap: 10px;}
+    .search-master-container { order: 2; }
+    .project-type-nav { order: 3; justify-content: center;}
+    .location-container { order: 4; }
+    .grid { order: 5; background: transparent; border: none; padding: 0; margin-top: 10px;}
+    .side-actions { order: 6; }
+    .auth-badge { order: 7; }
+    .brand { order: 8; margin-bottom: 20px;}
+
+    /* تظبيط الأحجام (Scale) على الموبايل */
+    .topbar .btn { width: 100%; }
     .search-main-row { flex-direction: column; padding: 0;}
     .btn-filter-toggle { width: 100%; justify-content: center; margin-top: 10px;}
-    .project-type-nav { justify-content: center; }
     .sort-small-box { margin-left: 0; margin-top: 10px; width: 100%; justify-content: space-between;}
-    .topbar { flex-direction: column; align-items: flex-start; gap: 15px; }
-    .topbar .btn { width: 100%; }
 
-    /* تظبيط زراير اللغة والوضع الليلي عشان متغطيش على الشعار */
+    /* تظبيط زراير اللغة والوضع الليلي */
     .top-controls { 
         top: 10px; 
         left: 10px; 
