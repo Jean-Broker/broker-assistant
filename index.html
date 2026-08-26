@@ -16,6 +16,7 @@
 </head>
 <body>
 
+  <!-- زراير التحكم العلوية -->
   <div class="top-controls">
       <button class="theme-switcher" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
       <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
@@ -81,12 +82,16 @@
         <button class="btn btn-outline-light btn-pill" onclick="handleAuthAction()" id="authActionBtn">خروج</button>
       </div>
 
+      <!-- 🌟 التعديل السحري هنا: زرار القائمة للموبايل 🌟 -->
       <div class="location-container">
-        <div class="side-section-title">المناطق الرئيسية والفرعية</div>
-        <div class="location-tree" id="locationTree"></div>
-        <div class="add-loc-form" id="addMainLocWrap" style="display:none;">
-          <input id="newMainLocInput" placeholder="+ منطقة رئيسية جديدة" onkeydown="if(event.key==='Enter') addMainLocation()">
-          <button class="btn btn-primary-style btn-pill" onclick="addMainLocation()">إضافة</button>
+        <button class="btn-loc-toggle-mobile" id="mobileLocToggleBtn" onclick="toggleMobileLoc()">📍 تصفية بالمناطق والمدن ▼</button>
+        <div class="loc-wrapper-mobile" id="locWrapperMobile">
+          <div class="side-section-title desktop-only">المناطق الرئيسية والفرعية</div>
+          <div class="location-tree" id="locationTree"></div>
+          <div class="add-loc-form" id="addMainLocWrap" style="display:none;">
+            <input id="newMainLocInput" placeholder="+ منطقة رئيسية جديدة" onkeydown="if(event.key==='Enter') addMainLocation()">
+            <button class="btn btn-primary-style btn-pill" onclick="addMainLocation()">إضافة</button>
+          </div>
         </div>
       </div>
 
