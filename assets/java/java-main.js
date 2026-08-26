@@ -26,8 +26,6 @@ let mainLocations = [], compounds = [], activeProjectType = 'all';
 let editingCompoundId = null, viewingCompoundId = null;
 let tempUnits = [], tempPlans = [], tempDecrees = [], filters = {}, openMainLocIds = {}; 
 let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = [];
-
-/* ✨ تعديل نوع متغير المناطق عشان يقبل أكتر من منطقة في نفس الوقت ✨ */
 let activeLocationIds = []; 
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
@@ -77,11 +75,16 @@ async function saveCompoundToCloud() {
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, price: parseFloat(u.price) || 0 })),
     paymentPlans: tempPlans, ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
-  try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); closeModal('formOverlay'); showToast('تم حفظ المشروع بنجاح'); } 
+  try { 
+      await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); 
+      // بعد الحفظ نأكد الإغلاق بدون رسالة تحذير
+      document.getElementById('formOverlay').classList.remove('open');
+      showToast('تم حفظ المشروع بنجاح'); 
+  } 
   catch (error) { alert('خطأ! الفايربيز رفض الحفظ.'); }
 }
 
-async function deleteCurrentCompoundFromCloud() { if(!isEditor || !confirm('متأكد من الحذف؟')) return; await db.collection('compounds').doc(viewingCompoundId).delete(); closeModal('detailOverlay'); showToast('تم الحذف'); }
+async function deleteCurrentCompoundFromCloud() { if(!isEditor || !confirm('متأكد من الحذف؟')) return; await db.collection('compounds').doc(viewingCompoundId).delete(); document.getElementById('detailOverlay').classList.remove('open'); showToast('تم الحذف'); }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
 function formatNum(n){ return Number(n).toLocaleString('en-US'); }
@@ -104,7 +107,6 @@ function toggleMobileLoc() {
     }
 }
 
-/* ✨ دالة تحديث قائمة المناطق بعد التعديل لتقبل اختيار متعدد ✨ */
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree'); 
   const isAllActive = activeLocationIds.length === 0;
@@ -115,7 +117,6 @@ function renderLocationTree(){
       let mainCount = 0; 
       mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
       const isOpen = !!openMainLocIds[mainLoc.id]; 
-      
       const isMainActive = activeLocationIds.includes(mainLoc.id);
       
       html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
@@ -123,7 +124,6 @@ function renderLocationTree(){
       mainLoc.subLocations.forEach(sub => { 
           const subCount = compounds.filter(c => c.locationId === sub.id).length; 
           const isSubActive = activeLocationIds.includes(sub.id);
-          
           html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
       }); 
       html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
@@ -132,44 +132,18 @@ function renderLocationTree(){
   if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
 }
 
-/* ✨ دالة الاختيار المتعدد (Multi-Select) ✨ */
 function selectLocationNode(nodeId){ 
-    if(nodeId === 'all') {
-        activeLocationIds = []; // تصفير المصفوفة للعودة لكل المشاريع
-    } else {
+    if(nodeId === 'all') { activeLocationIds = []; } else {
         const index = activeLocationIds.indexOf(nodeId);
-        if(index > -1) {
-            activeLocationIds.splice(index, 1); // لو متحددة شيلها
-        } else {
-            activeLocationIds.push(nodeId); // لو مش متحددة ضيفها للمجموعة
-        }
+        if(index > -1) { activeLocationIds.splice(index, 1); } else { activeLocationIds.push(nodeId); }
     }
-    renderLocationTree(); 
-    renderGrid(); 
+    renderLocationTree(); renderGrid(); 
 }
 
 async function addMainLocation(){ if(!isEditor) return; const input = document.getElementById('newMainLocInput'); if(!input.value.trim()) return; const newId = uid(); mainLocations.push({ id: newId, name: input.value.trim(), subLocations: [] }); openMainLocIds[newId] = true; input.value = ''; await saveMainLocationsToCloud(); }
-async function deleteMainLocation(mainId){ 
-    if(!isEditor || !confirm('حذف المنطقة؟')) return; 
-    const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; 
-    mainLocations = mainLocations.filter(m => m.id !== mainId); 
-    const batch = db.batch(); 
-    compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); 
-    await batch.commit(); 
-    activeLocationIds = activeLocationIds.filter(id => id !== mainId && !subIds.includes(id));
-    await saveMainLocationsToCloud(); 
-}
+async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف المنطقة؟')) return; const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; mainLocations = mainLocations.filter(m => m.id !== mainId); const batch = db.batch(); compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== mainId && !subIds.includes(id)); await saveMainLocationsToCloud(); }
 async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
-async function deleteSubLocation(mainId, subId){ 
-    if(!isEditor || !confirm('حذف الفرع؟')) return; 
-    const m = mainLocations.find(m => m.id === mainId); 
-    if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); 
-    const batch = db.batch(); 
-    compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); 
-    await batch.commit(); 
-    activeLocationIds = activeLocationIds.filter(id => id !== subId);
-    await saveMainLocationsToCloud(); 
-}
+async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
 function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
 function applyFilters(){ filters = { searchText: (document.getElementById('fSearchText').value || '').trim().toLowerCase(), meterPrice: getRawNum(document.getElementById('fMeterPrice').value) || null, totalTarget: getRawNum(document.getElementById('fTotalMin').value) || null, downPaymentTarget: getRawNum(document.getElementById('fDownPayment').value) || null, bedroomType: document.getElementById('fBedroomType').value || null, deliveryTimeline: document.getElementById('fDeliveryTimeline').value || null, sortOrder: document.getElementById('fSortOrder').value || 'default', maxMonthlyInstallment: getRawNum(document.getElementById('fMonthlyInstallment').value) || null }; renderGrid(); }
 function resetFilters(){ ['fSearchText','fMeterPrice','fTotalMin','fDownPayment','fBedroomType','fDeliveryTimeline','fSortOrder','fMonthlyInstallment'].forEach(id => document.getElementById(id).value=''); filters = {}; renderGrid(); }
@@ -177,15 +151,11 @@ function findSubLocationName(subId){ for(const m of mainLocations){ const s = m.
 
 function renderGrid(){
   let list = compounds.filter(c=>{
-    // فلتر المناطق المتعدد
     if (activeLocationIds.length > 0) {
         let parentMain = mainLocations.find(m => m.subLocations.some(s => s.id === c.locationId));
         let parentId = parentMain ? parentMain.id : null;
-        if (!activeLocationIds.includes(c.locationId) && !activeLocationIds.includes(parentId)) {
-            return false;
-        }
+        if (!activeLocationIds.includes(c.locationId) && !activeLocationIds.includes(parentId)) { return false; }
     }
-    
     if(activeProjectType !== 'all' && (c.projectType || 'residential') !== activeProjectType) return false;
     if(filters.searchText && !(c.projectName||'').toLowerCase().includes(filters.searchText) && !(c.companyName||'').toLowerCase().includes(filters.searchText)) return false;
     if(filters.deliveryTimeline && c.deliveryDate!==filters.deliveryTimeline) return false;
@@ -229,11 +199,7 @@ function openCompoundForm(existing){
   editingCompoundId = existing ? existing.id : null; document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
   
   let defaultLoc = '';
-  if (activeLocationIds.length === 1) {
-      let isSub = mainLocations.some(m => m.subLocations.some(s => s.id === activeLocationIds[0]));
-      if (isSub) defaultLoc = activeLocationIds[0];
-  }
-  
+  if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => m.subLocations.some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
   if(existing) document.getElementById('fldLocation').value = existing.locationId || ''; else document.getElementById('fldLocation').value = defaultLoc;
   
   if (existing) {
@@ -371,7 +337,43 @@ function renderDetailModalContent() {
   } document.getElementById('detailBody').innerHTML = html;
 }
 
-function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ const discountVal = originalTotal * ((discountPct||0)/100), netTotal = originalTotal - discountVal, downPayment = netTotal * ((downPct||0)/100); let extraPaymentsTotal = 0; let bulletsSummary = []; (customBullets || []).forEach(b => { const pct = parseFloat(b.percent) || 0; if(pct > 0){ if(b.type === 'annual'){ const count = (b.selectedYears || []).length, perYearVal = netTotal * (pct / 100), totalBulletVal = perYearVal * count; extraPaymentsTotal += totalBulletVal; bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); } else { const val = netTotal * (pct / 100); extraPaymentsTotal += val; const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة'; bulletsSummary.push({ type: b.type, label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, val }); } } }); const remaining = netTotal - (downPayment + extraPaymentsTotal), monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; }
+function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
+    const discountVal = originalTotal * ((discountPct||0)/100);
+    const netTotal = originalTotal - discountVal;
+    const downPayment = netTotal * ((downPct||0)/100);
+    let extraPaymentsTotal = 0; 
+    let bulletsSummary = []; 
+    
+    (customBullets || []).forEach(b => { 
+        const pct = parseFloat(b.percent) || 0; 
+        if(pct > 0){ 
+            if(b.type === 'annual'){ 
+                const count = (b.selectedYears || []).length;
+                const perYearVal = netTotal * (pct / 100);
+                const totalBulletVal = perYearVal * count; 
+                extraPaymentsTotal += totalBulletVal; 
+                bulletsSummary.push({ 
+                    type: 'annual', 
+                    label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, 
+                    perYearVal 
+                }); 
+            } else { 
+                const val = netTotal * (pct / 100); 
+                extraPaymentsTotal += val; 
+                const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة';
+                bulletsSummary.push({ 
+                    type: b.type, 
+                    label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, 
+                    val 
+                }); 
+            } 
+        } 
+    }); 
+    
+    const remaining = netTotal - (downPayment + extraPaymentsTotal);
+    const monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; 
+    return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
+}
 
 function openCalculator(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>document.getElementById(id).value=''); document.getElementById('calcResult').style.display='none'; renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); }
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
@@ -379,10 +381,21 @@ function removeCalcBulletRow(id){ calcCustomBullets=calcCustomBullets.filter(b=>
 
 function toggleCalcYearSelection(bId, y){ 
     const b = calcCustomBullets.find(x=>x.id===bId); 
-    if(b){ if(!b.selectedYears) b.selectedYears = []; const i = b.selectedYears.indexOf(y); i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); renderCalcBulletsRows(); } 
+    if(b){ 
+        if(!b.selectedYears) b.selectedYears = [];
+        const i = b.selectedYears.indexOf(y); 
+        i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); 
+        renderCalcBulletsRows(); 
+    } 
 }
 
-function updateCalcBullet(id, f, v){ const b = calcCustomBullets.find(x=>x.id===id); if(b){ b[f] = f==='type' ? v : (parseFloat(v)||0); if(f==='type') renderCalcBulletsRows(); } }
+function updateCalcBullet(id, f, v){ 
+    const b = calcCustomBullets.find(x=>x.id===id); 
+    if(b){ 
+        b[f] = f==='type' ? v : (parseFloat(v)||0); 
+        if(f==='type') renderCalcBulletsRows(); 
+    } 
+}
 
 function renderCalcBulletsRows(){ 
     document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row">
@@ -426,9 +439,26 @@ function runUniversalCalculator(){
     `; 
 }
 
-document.getElementById('calcTotal').addEventListener('input', function() { let raw = this.value.replace(/[^0-9]/g, ''); this.value = raw ? Number(raw).toLocaleString('en-US') : ''; });
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-document.addEventListener('click', (e)=>{ if(e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
+document.getElementById('calcTotal').addEventListener('input', function() {
+    let raw = this.value.replace(/[^0-9]/g, '');
+    this.value = raw ? Number(raw).toLocaleString('en-US') : '';
+});
+
+/* ✨✨✨ الحماية المزدوجة: منع الإغلاق الخطأ ✨✨✨ */
+function closeModal(id){ 
+    if (id === 'formOverlay') {
+        if(!confirm('هل أنت متأكد من إغلاق النافذة؟ لن يتم حفظ التعديلات الأخيرة.')) return;
+    }
+    document.getElementById(id).classList.remove('open'); 
+}
+
+document.addEventListener('click', (e)=>{ 
+    if(e.target.classList.contains('overlay')) {
+        // لو دوست في الشاشة السودا بتاعة "الفورم" متقفلش أبداً
+        if(e.target.id === 'formOverlay') return; 
+        e.target.classList.remove('open');
+    }
+});
 
 function handleExcelUpload(event) {
     const file = event.target.files[0]; if (!file) return; document.getElementById('loadingOverlay').style.display = 'flex'; document.getElementById('loadingMsg').textContent = "جاري قراءة الشيت وتجهيز المشاريع...";
