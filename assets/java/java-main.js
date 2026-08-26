@@ -22,10 +22,13 @@ window.addEventListener('load', () => {
 });
 
 let currentUser = null, isAdmin = false, isEditor = false;
-let mainLocations = [], compounds = [], activeSelection = 'all', activeProjectType = 'all';
+let mainLocations = [], compounds = [], activeProjectType = 'all';
 let editingCompoundId = null, viewingCompoundId = null;
 let tempUnits = [], tempPlans = [], tempDecrees = [], filters = {}, openMainLocIds = {}; 
 let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = [];
+
+/* ✨ تعديل نوع متغير المناطق عشان يقبل أكتر من منطقة في نفس الوقت ✨ */
+let activeLocationIds = []; 
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
 const BEDROOM_TYPES = { studio: 'استوديو (Studio)', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس', commercial: 'تجاري (Commercial)', admin: 'إداري (Admin)', clinic: 'عيادة / طبي (Clinic)', recreational: 'ترفيهي (Recreational)' };
@@ -87,7 +90,6 @@ function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); re
 function populateDeliverySelects(){ const opts = DELIVERY_TIMELINES.map(d=>`<option value="${d.value}">${d.label}</option>`).join(''); document.getElementById('fldDeliveryDate').innerHTML = opts; document.getElementById('fDeliveryTimeline').innerHTML = '<option value="">كل المواعيد</option>' + opts; }
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
-/* ✨ دالة إظهار وإخفاء المناطق على الموبايل ✨ */
 function toggleMobileLoc() {
     const wrap = document.getElementById('locWrapperMobile');
     const btn = document.getElementById('mobileLocToggleBtn');
@@ -102,37 +104,88 @@ function toggleMobileLoc() {
     }
 }
 
+/* ✨ دالة تحديث قائمة المناطق بعد التعديل لتقبل اختيار متعدد ✨ */
 function renderLocationTree(){
-  const wrap = document.getElementById('locationTree'); let html = `<div class="sub-loc-tab ${activeSelection==='all'?'active':''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${compounds.length}</span></div>`;
-  mainLocations.forEach((mainLoc) => { let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); const isOpen = !!openMainLocIds[mainLoc.id]; html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${activeSelection === mainLoc.id ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; mainLoc.subLocations.forEach(sub => { const subCount = compounds.filter(c => c.locationId === sub.id).length; html += `<div class="sub-loc-tab ${activeSelection === sub.id?'active':''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; }); html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; }); wrap.innerHTML = html; if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
+  const wrap = document.getElementById('locationTree'); 
+  const isAllActive = activeLocationIds.length === 0;
+  
+  let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${compounds.length}</span></div>`;
+  
+  mainLocations.forEach((mainLoc) => { 
+      let mainCount = 0; 
+      mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
+      const isOpen = !!openMainLocIds[mainLoc.id]; 
+      
+      const isMainActive = activeLocationIds.includes(mainLoc.id);
+      
+      html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
+      
+      mainLoc.subLocations.forEach(sub => { 
+          const subCount = compounds.filter(c => c.locationId === sub.id).length; 
+          const isSubActive = activeLocationIds.includes(sub.id);
+          
+          html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
+      }); 
+      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
+  }); 
+  wrap.innerHTML = html; 
+  if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
 }
 
-/* ✨ تحديث دالة الاختيار عشان تقفل المناطق أوتوماتيك على الموبايل ✨ */
+/* ✨ دالة الاختيار المتعدد (Multi-Select) ✨ */
 function selectLocationNode(nodeId){ 
-    activeSelection = nodeId; 
-    renderLocationTree(); 
-    renderGrid(); 
-    if(window.innerWidth <= 900) {
-        const wrap = document.getElementById('locWrapperMobile');
-        if(wrap && wrap.classList.contains('show')) {
-            toggleMobileLoc();
+    if(nodeId === 'all') {
+        activeLocationIds = []; // تصفير المصفوفة للعودة لكل المشاريع
+    } else {
+        const index = activeLocationIds.indexOf(nodeId);
+        if(index > -1) {
+            activeLocationIds.splice(index, 1); // لو متحددة شيلها
+        } else {
+            activeLocationIds.push(nodeId); // لو مش متحددة ضيفها للمجموعة
         }
     }
+    renderLocationTree(); 
+    renderGrid(); 
 }
 
 async function addMainLocation(){ if(!isEditor) return; const input = document.getElementById('newMainLocInput'); if(!input.value.trim()) return; const newId = uid(); mainLocations.push({ id: newId, name: input.value.trim(), subLocations: [] }); openMainLocIds[newId] = true; input.value = ''; await saveMainLocationsToCloud(); }
-async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف المنطقة؟')) return; const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; mainLocations = mainLocations.filter(m => m.id !== mainId); const batch = db.batch(); compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); if(activeSelection === mainId || subIds.includes(activeSelection)) activeSelection = 'all'; await saveMainLocationsToCloud(); }
+async function deleteMainLocation(mainId){ 
+    if(!isEditor || !confirm('حذف المنطقة؟')) return; 
+    const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; 
+    mainLocations = mainLocations.filter(m => m.id !== mainId); 
+    const batch = db.batch(); 
+    compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); 
+    await batch.commit(); 
+    activeLocationIds = activeLocationIds.filter(id => id !== mainId && !subIds.includes(id));
+    await saveMainLocationsToCloud(); 
+}
 async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
-async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); if(activeSelection === subId) activeSelection = 'all'; await saveMainLocationsToCloud(); }
+async function deleteSubLocation(mainId, subId){ 
+    if(!isEditor || !confirm('حذف الفرع؟')) return; 
+    const m = mainLocations.find(m => m.id === mainId); 
+    if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); 
+    const batch = db.batch(); 
+    compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); 
+    await batch.commit(); 
+    activeLocationIds = activeLocationIds.filter(id => id !== subId);
+    await saveMainLocationsToCloud(); 
+}
 function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
 function applyFilters(){ filters = { searchText: (document.getElementById('fSearchText').value || '').trim().toLowerCase(), meterPrice: getRawNum(document.getElementById('fMeterPrice').value) || null, totalTarget: getRawNum(document.getElementById('fTotalMin').value) || null, downPaymentTarget: getRawNum(document.getElementById('fDownPayment').value) || null, bedroomType: document.getElementById('fBedroomType').value || null, deliveryTimeline: document.getElementById('fDeliveryTimeline').value || null, sortOrder: document.getElementById('fSortOrder').value || 'default', maxMonthlyInstallment: getRawNum(document.getElementById('fMonthlyInstallment').value) || null }; renderGrid(); }
 function resetFilters(){ ['fSearchText','fMeterPrice','fTotalMin','fDownPayment','fBedroomType','fDeliveryTimeline','fSortOrder','fMonthlyInstallment'].forEach(id => document.getElementById(id).value=''); filters = {}; renderGrid(); }
 function findSubLocationName(subId){ for(const m of mainLocations){ const s = m.subLocations.find(x => x.id === subId); if(s) return `${m.name} ⬅️ ${s.name}`; } return '-'; }
 
 function renderGrid(){
-  let targetSubIds = []; if(activeSelection !== 'all'){ const main = mainLocations.find(m => m.id === activeSelection); targetSubIds = main ? main.subLocations.map(s => s.id) : [activeSelection]; }
   let list = compounds.filter(c=>{
-    if(activeSelection !== 'all' && !targetSubIds.includes(c.locationId)) return false;
+    // فلتر المناطق المتعدد
+    if (activeLocationIds.length > 0) {
+        let parentMain = mainLocations.find(m => m.subLocations.some(s => s.id === c.locationId));
+        let parentId = parentMain ? parentMain.id : null;
+        if (!activeLocationIds.includes(c.locationId) && !activeLocationIds.includes(parentId)) {
+            return false;
+        }
+    }
+    
     if(activeProjectType !== 'all' && (c.projectType || 'residential') !== activeProjectType) return false;
     if(filters.searchText && !(c.projectName||'').toLowerCase().includes(filters.searchText) && !(c.companyName||'').toLowerCase().includes(filters.searchText)) return false;
     if(filters.deliveryTimeline && c.deliveryDate!==filters.deliveryTimeline) return false;
@@ -145,7 +198,18 @@ function renderGrid(){
     } return true;
   });
   if(filters.sortOrder && filters.sortOrder !== 'default') list.sort((a, b) => filters.sortOrder === 'asc' ? (a.pricePerMeterMin||0) - (b.pricePerMeterMin||0) : (b.pricePerMeterMin||0) - (a.pricePerMeterMin||0));
-  document.getElementById('pageTitle').textContent = activeSelection === 'all' ? 'كل المشروعات' : (mainLocations.find(m => m.id === activeSelection)?.name + ' (الكل)' || findSubLocationName(activeSelection));
+  
+  let pageTitleText = 'كل المشروعات';
+  if (activeLocationIds.length === 1) {
+      let selectedId = activeLocationIds[0];
+      let main = mainLocations.find(m => m.id === selectedId);
+      if (main) pageTitleText = main.name + ' (الكل)';
+      else pageTitleText = findSubLocationName(selectedId);
+  } else if (activeLocationIds.length > 1) {
+      pageTitleText = `تصفية متعددة (${activeLocationIds.length} مناطق)`;
+  }
+  
+  document.getElementById('pageTitle').textContent = pageTitleText;
   document.getElementById('pageSub').textContent = `${list.length} مشروع مسجل بالسحابة`;
   const grid = document.getElementById('compoundGrid');
   if(!list.length) return grid.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted); font-size:16px; font-weight:bold;">لا توجد مشروعات مطابقة</div>`;
@@ -163,7 +227,14 @@ function renderGrid(){
 
 function openCompoundForm(existing){
   editingCompoundId = existing ? existing.id : null; document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
-  if(existing) document.getElementById('fldLocation').value = existing.locationId || ''; else document.getElementById('fldLocation').value = (activeSelection !== 'all' && !mainLocations.find(m=>m.id===activeSelection)) ? activeSelection : '';
+  
+  let defaultLoc = '';
+  if (activeLocationIds.length === 1) {
+      let isSub = mainLocations.some(m => m.subLocations.some(s => s.id === activeLocationIds[0]));
+      if (isSub) defaultLoc = activeLocationIds[0];
+  }
+  
+  if(existing) document.getElementById('fldLocation').value = existing.locationId || ''; else document.getElementById('fldLocation').value = defaultLoc;
   
   if (existing) {
       document.getElementById('fldProjectType').value = existing.projectType || 'residential'; document.getElementById('fldCompany').value = existing.companyName || ''; document.getElementById('fldProject').value = existing.projectName || ''; document.getElementById('fldOwner').value = existing.ownerName || ''; document.getElementById('fldConsultant').value = existing.consultant || ''; 
