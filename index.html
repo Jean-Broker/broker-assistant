@@ -16,7 +16,6 @@
 </head>
 <body>
 
-  <!-- زراير التحكم العلوية -->
   <div class="top-controls">
       <button class="theme-switcher" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
       <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
@@ -82,7 +81,6 @@
         <button class="btn btn-outline-light btn-pill" onclick="handleAuthAction()" id="authActionBtn">خروج</button>
       </div>
 
-      <!-- 🌟 التعديل السحري هنا: زرار القائمة للموبايل 🌟 -->
       <div class="location-container">
         <button class="btn-loc-toggle-mobile" id="mobileLocToggleBtn" onclick="toggleMobileLoc()">📍 تصفية بالمناطق والمدن ▼</button>
         <div class="loc-wrapper-mobile" id="locWrapperMobile">
@@ -119,32 +117,65 @@
         <button class="btn btn-outline-light btn-pill" onclick="backToLanding()">العودة للرئيسية</button>
       </div>
 
+      <!-- 🌟 التعديل السحري الجديد للبحث والفلاتر (شكل Nawy) 🌟 -->
       <div class="search-master-container">
           <div class="search-main-row">
-              <input type="text" id="fSearchText" class="main-search-input" placeholder="🔍 ابحث باسم المشروع، المطور..." oninput="applyFilters()">
-              <button class="btn-filter-toggle" id="toggleFilterBtn">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                  فلاتر متقدمة
-              </button>
+              <input type="text" id="fSearchText" class="main-search-input" placeholder="🔍 ابحث باسم المشروع، الشركة المطورة..." onkeydown="if(event.key==='Enter') applyFilters()">
           </div>
 
-          <div id="advancedFilters" class="filter-dropdown">
-            <div class="filter-grid">
-              <div class="field"><label>موعد التسليم</label><select id="fDeliveryTimeline" onchange="applyFilters()"><option value="">كل المواعيد</option></select></div>
-              <div class="field">
-                <label>نوع الوحدة</label>
-                <select id="fBedroomType" onchange="applyFilters()">
-                  <option value="">كل الأنواع</option>
-                  <optgroup label="سكني"><option value="studio">استوديو (Studio)</option><option value="1br">1 غرفة نوم</option><option value="2br">2 غرفة نوم</option><option value="3br">3 غرف نوم</option><option value="4br">4 غرف نوم</option><option value="duplex">دوبلكس</option><option value="penthouse">بنتهاوس</option></optgroup>
-                  <optgroup label="تجاري / إداري / طبي / ترفيهي"><option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option></optgroup>
-                </select>
+          <div class="filters-row">
+              <!-- فلتر أنواع الوحدات -->
+              <div class="filter-dropdown-wrapper">
+                  <button class="filter-btn" onclick="toggleDropdown('typeDropdown')">نوع العقار <span class="arrow">▼</span></button>
+                  <div class="filter-dropdown-menu" id="typeDropdown">
+                      <div class="filter-menu-item"><label><input type="checkbox" value="apartment" class="prop-type-cb"> شقة</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="villa" class="prop-type-cb"> فيلا</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="twinhouse" class="prop-type-cb"> توين هاوس</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="townhouse" class="prop-type-cb"> تاون هاوس</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="duplex" class="prop-type-cb"> دوبلكس</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="penthouse" class="prop-type-cb"> بنتهاوس</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="studio" class="prop-type-cb"> استوديو</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="chalet" class="prop-type-cb"> شاليه</label></div>
+                      <div class="filter-menu-item"><label><input type="checkbox" value="commercial" class="prop-type-cb"> تجاري / مكتب</label></div>
+                  </div>
               </div>
-              <div class="field"><label>سعر المتر</label><input type="text" id="fMeterPrice" placeholder="مثال: 34,000" oninput="formatInput(this); applyFilters()"></div>
-              <div class="field"><label>إجمالي السعر</label><input type="text" id="fTotalMin" placeholder="السعر الإجمالي" oninput="formatInput(this); applyFilters()"></div>
-              <div class="field"><label>مبلغ المقدم</label><input type="text" id="fDownPayment" placeholder="مثال: 500,000" oninput="formatInput(this); applyFilters()"></div>
-              <div class="field"><label>القسط الأقصى</label><input type="text" id="fMonthlyInstallment" placeholder="مثال: 20,000" oninput="formatInput(this); applyFilters()"></div>
-            </div>
-            <div class="filter-actions"><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح الفلاتر</button></div>
+
+              <!-- فلتر الغرف -->
+              <div class="filter-dropdown-wrapper">
+                  <button class="filter-btn" onclick="toggleDropdown('bedsDropdown')">الغرف <span class="arrow">▼</span></button>
+                  <div class="filter-dropdown-menu" id="bedsDropdown">
+                      <div class="filter-menu-title">عدد غرف النوم</div>
+                      <div class="pill-group" id="bedsGroup">
+                          <div class="pill" onclick="selectPill('bedsGroup', '1')">1</div>
+                          <div class="pill" onclick="selectPill('bedsGroup', '2')">2</div>
+                          <div class="pill" onclick="selectPill('bedsGroup', '3')">3</div>
+                          <div class="pill" onclick="selectPill('bedsGroup', '4')">4</div>
+                          <div class="pill" onclick="selectPill('bedsGroup', '5+')">5+</div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- فلتر الأسعار -->
+              <div class="filter-dropdown-wrapper">
+                  <button class="filter-btn" onclick="toggleDropdown('priceDropdown')">نطاق السعر <span class="arrow">▼</span></button>
+                  <div class="filter-dropdown-menu" id="priceDropdown" style="width: 250px;">
+                      <div class="filter-menu-title">السعر (جنيه)</div>
+                      <div style="display:flex; gap:10px; margin-bottom:15px;">
+                          <input type="text" id="fMinPrice" placeholder="من" class="range-input" oninput="formatInput(this)">
+                          <input type="text" id="fMaxPrice" placeholder="إلى" class="range-input" oninput="formatInput(this)">
+                      </div>
+                      <div class="filter-menu-title">المقدم</div>
+                      <input type="text" id="fDownPayment" placeholder="الحد الأقصى للمقدم" class="range-input" style="width:100%; margin-bottom:15px;" oninput="formatInput(this)">
+                      <div class="filter-menu-title">القسط الشهري</div>
+                      <input type="text" id="fMonthlyInstallment" placeholder="الحد الأقصى للقسط" class="range-input" style="width:100%;" oninput="formatInput(this)">
+                      
+                      <button class="btn btn-primary-style w-100 btn-pill" style="margin-top:15px;" onclick="applyFilters(); closeAllDropdowns();">تطبيق الأسعار</button>
+                  </div>
+              </div>
+
+              <!-- زرار البحث -->
+              <button class="btn btn-primary-style btn-search-action" onclick="applyFilters()">بحث</button>
+              <button class="btn-clear-filters" onclick="resetFilters()" title="مسح الفلاتر">✕</button>
           </div>
       </div>
 
