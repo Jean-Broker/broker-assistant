@@ -19,32 +19,12 @@ window.addEventListener('load', () => {
     document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitArea(u.id, u.area)); }); });
 });
 
-/* ✨ برمجة قوائم البحث المنسدلة (Drop-downs) ✨ */
-function toggleDropdown(id) {
-    const wrapper = document.getElementById(id).parentElement;
-    const isActive = wrapper.classList.contains('active');
-    closeAllDropdowns();
-    if (!isActive) wrapper.classList.add('active');
-}
-function closeAllDropdowns() {
-    document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active'));
-}
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.filter-dropdown-wrapper')) {
-        closeAllDropdowns();
-    }
-});
+function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
+function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
+document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper')) { closeAllDropdowns(); } });
 
 let selectedBeds = [];
-function selectPill(groupId, val) {
-    const el = event.target;
-    el.classList.toggle('active');
-    if (el.classList.contains('active')) {
-        selectedBeds.push(val);
-    } else {
-        selectedBeds = selectedBeds.filter(v => v !== val);
-    }
-}
+function selectPill(groupId, val) { const el = event.target; el.classList.toggle('active'); if (el.classList.contains('active')) { selectedBeds.push(val); } else { selectedBeds = selectedBeds.filter(v => v !== val); } }
 
 let currentUser = null, isAdmin = false, isEditor = false;
 let mainLocations = [], compounds = [], activeProjectType = 'all';
@@ -52,15 +32,16 @@ let editingCompoundId = null, viewingCompoundId = null;
 let tempUnits = [], tempPlans = [], tempDecrees = [], openMainLocIds = {}; 
 let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = [];
 let activeLocationIds = []; 
+let filters = {};
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
-const BEDROOM_TYPES = { studio: 'استوديو (Studio)', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس', commercial: 'تجاري (Commercial)', admin: 'إداري (Admin)', clinic: 'عيادة / طبي (Clinic)', recreational: 'ترفيهي (Recreational)' };
+const BEDROOM_TYPES = { 'apartment': 'شقة', 'villa': 'فيلا', 'twinhouse': 'توين هاوس', 'townhouse': 'تاون هاوس', 'chalet': 'شاليه', studio: 'استوديو (Studio)', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس', commercial: 'تجاري (Commercial)', admin: 'إداري (Admin)', clinic: 'عيادة / طبي (Clinic)', recreational: 'ترفيهي (Recreational)' };
 const FINISHING_TYPES = { core_shell: 'Core & Shell', semi: 'نصف تشطيب', full: 'تشطيب كامل' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'تسليم فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'}, ];
 
 function formatInput(el) { let raw = String(el.value).replace(/[^0-9]/g, ''); el.value = raw ? Number(raw).toLocaleString('en-US') : ''; }
-function getRawNum(val) { return parseFloat(String(val).replace(/,/g, '')) || 0; }
+function getRawNum(val) { return parseFloat(String(val).replace(/,/g, '')) || null; }
 
 auth.onAuthStateChanged(async (user) => {
   if (user) {
@@ -93,10 +74,9 @@ async function saveCompoundToCloud() {
 
   const data = {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
-    pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value), 
-    pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value),
-    commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value), adminMax: getRawNum(document.getElementById('fldAdminMax').value), adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value), commMax: getRawNum(document.getElementById('fldCommMax').value), commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value), clinicMax: getRawNum(document.getElementById('fldClinicMax').value), clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value), recMax: getRawNum(document.getElementById('fldRecMax').value), recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
-    maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value), projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
+    pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
+    commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
+    maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, price: parseFloat(u.price) || 0 })),
     paymentPlans: tempPlans, ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
@@ -114,15 +94,13 @@ function populateDeliverySelects(){ const opts = DELIVERY_TIMELINES.map(d=>`<opt
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
 function toggleMobileLoc() {
-    const wrap = document.getElementById('locWrapperMobile');
-    const btn = document.getElementById('mobileLocToggleBtn');
+    const wrap = document.getElementById('locWrapperMobile'); const btn = document.getElementById('mobileLocToggleBtn');
     if(wrap.classList.contains('show')) { wrap.classList.remove('show'); btn.classList.remove('active'); btn.innerHTML = '📍 تصفية بالمناطق والمدن ▼'; } 
     else { wrap.classList.add('show'); btn.classList.add('active'); btn.innerHTML = '📍 إخفاء المناطق ▲'; }
 }
 
 function renderLocationTree(){
-  const wrap = document.getElementById('locationTree'); 
-  const isAllActive = activeLocationIds.length === 0;
+  const wrap = document.getElementById('locationTree'); const isAllActive = activeLocationIds.length === 0;
   let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${compounds.length}</span></div>`;
   mainLocations.forEach((mainLoc) => { 
       let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
@@ -152,92 +130,96 @@ async function addSubLocation(mainId){ if(!isEditor) return; const input = docum
 async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
 function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
 
-/* ✨ تطبيق الفلاتر المتقدمة الجديدة ✨ */
+/* ✨ تطبيق الفلاتر ✨ */
 function applyFilters(){ 
     const checkedTypes = Array.from(document.querySelectorAll('.prop-type-cb:checked')).map(cb => cb.value);
-    
-    let filters = { 
+    filters = { 
         searchText: (document.getElementById('fSearchText').value || '').trim().toLowerCase(), 
-        minPrice: getRawNum(document.getElementById('fMinPrice').value) || null, 
-        maxPrice: getRawNum(document.getElementById('fMaxPrice').value) || null, 
-        downPaymentTarget: getRawNum(document.getElementById('fDownPayment').value) || null, 
-        maxMonthlyInstallment: getRawNum(document.getElementById('fMonthlyInstallment').value) || null,
+        minPrice: getRawNum(document.getElementById('fMinPrice').value), 
+        maxPrice: getRawNum(document.getElementById('fMaxPrice').value), 
+        downPaymentTarget: getRawNum(document.getElementById('fDownPayment').value), 
+        maxMonthlyInstallment: getRawNum(document.getElementById('fMonthlyInstallment').value),
         propertyTypes: checkedTypes.length > 0 ? checkedTypes : null,
         bedrooms: selectedBeds.length > 0 ? selectedBeds : null,
         sortOrder: document.getElementById('fSortOrder').value || 'default'
     }; 
-    
-    closeAllDropdowns();
-    renderGridWithFilters(filters); 
+    closeAllDropdowns(); renderGrid(); 
 }
 
 function resetFilters(){ 
-    document.getElementById('fSearchText').value = '';
-    document.getElementById('fMinPrice').value = '';
-    document.getElementById('fMaxPrice').value = '';
-    document.getElementById('fDownPayment').value = '';
-    document.getElementById('fMonthlyInstallment').value = '';
-    document.getElementById('fSortOrder').value = 'default';
-    
-    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false);
-    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    selectedBeds = [];
-    
+    document.getElementById('fSearchText').value = ''; document.getElementById('fMinPrice').value = ''; document.getElementById('fMaxPrice').value = ''; document.getElementById('fDownPayment').value = ''; document.getElementById('fMonthlyInstallment').value = ''; document.getElementById('fSortOrder').value = 'default';
+    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false); document.querySelectorAll('.pill').forEach(p => p.classList.remove('active')); selectedBeds = [];
     applyFilters(); 
 }
 
 function findSubLocationName(subId){ for(const m of mainLocations){ const s = m.subLocations.find(x => x.id === subId); if(s) return `${m.name} ⬅️ ${s.name}`; } return '-'; }
 
-/* ✨ عرض المشروعات بالفلاتر الجديدة ✨ */
-function renderGridWithFilters(filters){
+function renderGrid(){
   let list = compounds.filter(c=>{
+    // فلتر المناطق
     if (activeLocationIds.length > 0) {
         let parentMain = mainLocations.find(m => m.subLocations.some(s => s.id === c.locationId));
         let parentId = parentMain ? parentMain.id : null;
         if (!activeLocationIds.includes(c.locationId) && !activeLocationIds.includes(parentId)) { return false; }
     }
     
+    // فلتر التاب الأساسي
     if(activeProjectType !== 'all' && (c.projectType || 'residential') !== activeProjectType) return false;
+    
+    // فلتر البحث
     if(filters.searchText && !(c.projectName||'').toLowerCase().includes(filters.searchText) && !(c.companyName||'').toLowerCase().includes(filters.searchText)) return false;
     
     let cUnits = c.unitTypes||[]; 
     
+    // 💡 فلتر أنواع الشقق والفلل الجديد 💡
     if(filters.propertyTypes) {
-        cUnits = cUnits.filter(u => filters.propertyTypes.includes(u.bedroomType));
+        cUnits = cUnits.filter(u => {
+            let t = u.bedroomType;
+            // لو اختار شقة، هات أي حاجة ليها غرف نوم
+            if (filters.propertyTypes.includes('apartment') && ['1br', '2br', '3br', '4br', 'apartment'].includes(t)) return true;
+            if (filters.propertyTypes.includes('commercial') && ['commercial', 'admin', 'clinic', 'recreational'].includes(t)) return true;
+            return filters.propertyTypes.includes(t);
+        });
         if(cUnits.length === 0) return false;
     }
     
+    // فلتر الغرف
     if(filters.bedrooms) {
         cUnits = cUnits.filter(u => {
-            if (u.bedroomType === 'studio' && filters.bedrooms.includes('1')) return true;
-            if (u.bedroomType === '1br' && filters.bedrooms.includes('1')) return true;
-            if (u.bedroomType === '2br' && filters.bedrooms.includes('2')) return true;
-            if (u.bedroomType === '3br' && filters.bedrooms.includes('3')) return true;
-            if (u.bedroomType === '4br' && filters.bedrooms.includes('4')) return true;
-            if (['duplex', 'penthouse'].includes(u.bedroomType) && filters.bedrooms.includes('5+')) return true;
+            let t = u.bedroomType;
+            if (t === 'studio' && filters.bedrooms.includes('1')) return true;
+            if (t === '1br' && filters.bedrooms.includes('1')) return true;
+            if (t === '2br' && filters.bedrooms.includes('2')) return true;
+            if (t === '3br' && filters.bedrooms.includes('3')) return true;
+            if (t === '4br' && filters.bedrooms.includes('4')) return true;
+            if (['duplex', 'penthouse', 'villa', 'twinhouse', 'townhouse'].includes(t) && filters.bedrooms.includes('5+')) return true;
             return false;
         });
         if(cUnits.length === 0) return false;
     }
     
+    // 💡 الحماية القوية للأسعار والمقدمات 💡
     if(filters.minPrice != null || filters.maxPrice != null) {
         let passPrice = false;
         for(const u of cUnits){
             let p = u.price || 0;
-            let okMin = filters.minPrice ? (p >= filters.minPrice) : true;
-            let okMax = filters.maxPrice ? (p <= filters.maxPrice) : true;
+            if(p <= 0) continue; // لازم يكون ليها سعر عشان تتفلتر
+            let okMin = filters.minPrice != null ? (p >= filters.minPrice) : true;
+            let okMax = filters.maxPrice != null ? (p <= filters.maxPrice) : true;
             if (okMin && okMax) { passPrice = true; break; }
         }
         if(!passPrice) return false;
     }
     
+    // فلتر الأقساط
     if(filters.downPaymentTarget != null || filters.maxMonthlyInstallment != null){
       const plans = c.paymentPlans || []; if(!plans.length) return false; let pass = false;
       for(const u of cUnits){ 
+          if ((u.price || 0) <= 0) continue; // تخطي الوحدات الوهمية (اللي ملهاش سعر)
           for(const p of plans){ 
-              const r = calcInstallmentWithDiscount(u.price||0, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
-              let okDP = filters.downPaymentTarget ? (r.downPayment <= filters.downPaymentTarget) : true;
-              let okInst = filters.maxMonthlyInstallment ? (r.monthlyEquivalent <= filters.maxMonthlyInstallment) : true;
+              const r = calcInstallmentWithDiscount(u.price, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
+              let okDP = filters.downPaymentTarget != null ? (r.downPayment > 0 && r.downPayment <= filters.downPaymentTarget) : true;
+              let okInst = filters.maxMonthlyInstallment != null ? (r.monthlyEquivalent > 0 && r.monthlyEquivalent <= filters.maxMonthlyInstallment) : true;
               if (okDP && okInst) { pass = true; break; } 
           } 
           if(pass) break; 
@@ -275,10 +257,6 @@ function renderGridWithFilters(filters){
   }).join('');
 }
 
-function renderGrid() {
-    applyFilters(); // بيعتمد على الدالة الأساسية عشان نختصر الأكواد
-}
-
 function openCompoundForm(existing){
   editingCompoundId = existing ? existing.id : null; document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
   
@@ -304,9 +282,11 @@ function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProje
 
 function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', price:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
+
+/* ✨ إضافة خيارات الفيلا والشاليه في شاشة التعديل والإضافة ✨ */
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
-    let optionsHtml = pType === 'commercial' ? `<option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option>` : `<option value="studio">استوديو (Studio)</option><option value="1br">1 غرفة نوم</option><option value="2br">2 غرفة نوم</option><option value="3br">3 غرف نوم</option><option value="4br">4 غرف نوم</option><option value="duplex">دوبلكس</option><option value="penthouse">بنتهاوس</option>`; 
+    let optionsHtml = pType === 'commercial' ? `<option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option>` : `<option value="apartment">شقة (Apartment)</option><option value="studio">استوديو (Studio)</option><option value="1br">1 غرفة نوم</option><option value="2br">2 غرفة نوم</option><option value="3br">3 غرف نوم</option><option value="4br">4 غرف نوم</option><option value="villa">فيلا (Villa)</option><option value="twinhouse">توين هاوس</option><option value="townhouse">تاون هاوس</option><option value="duplex">دوبلكس</option><option value="penthouse">بنتهاوس</option><option value="chalet">شاليه</option>`; 
     document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
         let bType = getCorrectedUnitType(u.bedroomType, pType); 
         return `<div class="repeat-row" style="display:flex; gap:10px; align-items:center;">
