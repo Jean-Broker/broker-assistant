@@ -64,16 +64,14 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .page-title { font-size: 26px; color: var(--text-main); font-weight: 800; }
 .page-sub { font-size: 12px; color: var(--primary); font-weight: 700; margin-top: 2px; }
 
-/* ✨✨ ستايل البحث الجديد والمميز (Nawy Style) ✨✨ */
 .search-master-container { background: var(--card-bg); padding: 15px 20px; border-radius: var(--radius-card); box-shadow: var(--shadow-sm); margin-bottom: 25px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 15px;}
 .search-main-row { display: flex; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
 .main-search-input { flex: 1; border: none; background: transparent; padding: 10px 5px; font-size: 16px; outline: none; color: var(--text-main); font-weight: 600; width: 100%;}
 .main-search-input::placeholder { color: var(--text-muted); }
 
-/* ✨ تعديل عشان الفلاتر تتفرد على عرض الشاشة ✨ */
 .filters-row { display: flex; gap: 12px; align-items: center; position: relative; width: 100%;}
-.filter-dropdown-wrapper { position: relative; flex: 1; /* يخليهم يتمددوا بالتساوي */ min-width: 0;}
-.filter-btn { background: var(--item-bg); border: 1px solid var(--border-color); padding: 12px 20px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: var(--transition); width: 100%; /* ياخد عرض الكونتينر بتاعه */}
+.filter-dropdown-wrapper { position: relative; flex: 1; min-width: 0;}
+.filter-btn { background: var(--item-bg); border: 1px solid var(--border-color); padding: 12px 20px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: var(--transition); width: 100%;}
 .filter-btn:hover { border-color: var(--primary); }
 .filter-btn .arrow { font-size: 10px; color: var(--text-muted); transition: var(--transition);}
 .filter-dropdown-wrapper.active .filter-btn { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(220,38,38,0.2);}
@@ -93,7 +91,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .pill:hover { border-color: var(--primary); color: var(--primary);}
 .pill.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: var(--glow);}
 
-.btn-search-action { padding: 12px 35px; font-size: 15px; border-radius: var(--radius-pill); flex-shrink: 0;} /* متصغرش مع الباقيين */
+.btn-search-action { padding: 12px 35px; font-size: 15px; border-radius: var(--radius-pill); flex-shrink: 0;} 
 .btn-clear-filters { background: transparent; border: 1px solid var(--border-color); color: var(--text-muted); width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: var(--transition); flex-shrink: 0;}
 .btn-clear-filters:hover { border-color: var(--danger); color: var(--danger); background: var(--item-bg);}
 
@@ -212,6 +210,12 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 .loader { border: 3px solid rgba(220, 38, 38, 0.2); border-top: 3px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
+/* ✨ ستايل مربع الاستيراد الذكي ✨ */
+.magic-paste-box { background: var(--item-bg); padding: 18px; border-radius: var(--radius-card); border: 1px dashed var(--primary); margin-bottom: 25px; box-shadow: var(--glow);}
+.magic-paste-box label { color: var(--primary); font-weight: 800; font-size: 13px; margin-bottom: 10px; display: block;}
+.magic-paste-box textarea { width: 100%; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-input); color: var(--text-main); padding: 12px; font-size: 12px; outline: none; transition: var(--transition); resize: vertical; margin-bottom: 12px;}
+.magic-paste-box textarea:focus { border-color: var(--primary); }
+
 /* LANDING PAGE */
 .landing-hero { background: var(--gradient-header); color: var(--text-main); padding: 100px 20px; text-align: center; border-radius: 0 0 var(--radius-card) var(--radius-card); margin-bottom: 40px; border-bottom: 2px solid var(--primary); box-shadow: var(--shadow-sm);}
 .landing-hero h1 { font-size: 42px; color: var(--primary); margin-bottom: 15px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
@@ -261,8 +265,6 @@ body.light-mode .paywall-overlay { background: rgba(255,255,255,0.85); }
     .topbar .btn { width: 100%; }
     .sort-small-box { margin-left: 0; margin-top: 10px; width: 100%; justify-content: space-between;}
     .top-controls { top: 10px; left: 10px; right: 10px; justify-content: space-between; width: calc(100% - 20px); }
-    
-    /* ✨ تعديل عشان الفلاتر تتفرد فوق بعضها في الموبايل بدل ما تتعصر ✨ */
     .filters-row { flex-direction: column; width: 100%; align-items: stretch; }
     .filter-dropdown-wrapper { width: 100%; }
     .btn-search-action { width: 100%; margin-top: 5px; }
