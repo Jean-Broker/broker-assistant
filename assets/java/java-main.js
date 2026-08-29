@@ -72,6 +72,90 @@ async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collec
 
 function getCorrectedUnitType(typeStr, projectType) { if (projectType === 'commercial') { if (typeStr === '1br') return 'admin'; if (typeStr === '2br' || typeStr === 'studio') return 'commercial'; if (!['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'commercial'; } else { if (['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'studio'; } return typeStr || (projectType === 'commercial' ? 'commercial' : 'studio'); }
 
+/* ✨ دالة الاستيراد الذكي (Magic Paste) ✨ */
+function processMagicPaste() {
+    const text = document.getElementById('magicPasteInput').value;
+    if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
+
+    const lines = text.split('\n');
+    let currentType = 'apartment'; // الافتراضي
+    let unitsAdded = 0;
+    let plansAdded = 0;
+
+    // استخراج اسم المشروع (أول سطر بدون إيموجي)
+    const nameMatch = lines[0].replace(/[*🚨\-]/g, '').trim();
+    if (nameMatch && !document.getElementById('fldProject').value) {
+        document.getElementById('fldProject').value = nameMatch;
+    }
+
+    // استخراج المساحة بالفدان
+    const sizeMatch = text.match(/(\d+)\s*(acres?|فدان)/i);
+    if (sizeMatch && !document.getElementById('fldProjectSize').value) {
+        document.getElementById('fldProjectSize').value = sizeMatch[1];
+    }
+
+    // استخراج لينك جوجل مابس
+    const linkMatch = text.match(/https?:\/\/[^\s]+/);
+    if (linkMatch && !document.getElementById('fldLocationLink').value) {
+        document.getElementById('fldLocationLink').value = linkMatch[0];
+    }
+
+    lines.forEach(line => {
+        const cleanLine = line.replace(/\*/g, '').trim().toLowerCase();
+
+        // 1. تحديد نوع الوحدة
+        if (cleanLine.includes('1 bed')) currentType = '1br';
+        else if (cleanLine.includes('2 bed')) currentType = '2br';
+        else if (cleanLine.includes('3 bed')) currentType = '3br';
+        else if (cleanLine.includes('4 bed')) currentType = '4br';
+        else if (cleanLine.includes('penthouse')) currentType = 'penthouse';
+        else if (cleanLine.includes('duplex')) currentType = 'duplex';
+        else if (cleanLine.includes('family house') || cleanLine.includes('villa') || cleanLine.includes('twin') || cleanLine.includes('town')) currentType = 'villa';
+        else if (cleanLine.includes('chalet')) currentType = 'chalet';
+        else if (cleanLine.includes('studio')) currentType = 'studio';
+
+        // 2. استخراج مساحات وأسعار الوحدات
+        // النمط: (75m + 31m) = 4,000,000 أو Typical (101m) = 4,281,500
+        const unitMatch = line.match(/\(\s*(\d+)[mM]?\s*(?:\+\s*(\d+)[mM]?.*?)?\s*\)\s*=\s*([\d,]+)/);
+        if (unitMatch) {
+            const area = parseFloat(unitMatch[1]);
+            const garden = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
+            const price = parseFloat(unitMatch[3].replace(/,/g, ''));
+            tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: price });
+            unitsAdded++;
+        }
+
+        // 3. استخراج خطط السداد
+        // النمط: 5% discount – 5% DP over 9 years
+        const planMatch = line.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(\d+)%\s*(?:DP|مقدم).*?(\d+)\s*(?:year|سن)/i);
+        if (planMatch && !line.includes('?')) {
+            const discount = planMatch[1] ? parseFloat(planMatch[1]) : '';
+            const dp = parseFloat(planMatch[2]);
+            const years = parseFloat(planMatch[3]);
+            
+            // منع تكرار نفس الخطة لو داس مرتين
+            if (!tempPlans.some(p => p.notes === line.trim().replace(/^- /,''))) {
+                tempPlans.push({
+                    id: uid(),
+                    name: `خطة ${years} سنوات`,
+                    discountPercent: discount,
+                    downPaymentPercent: dp,
+                    years: years,
+                    frequency: '12',
+                    notes: line.trim().replace(/^- /,''),
+                    customBullets: []
+                });
+                plansAdded++;
+            }
+        }
+    });
+
+    renderUnitRows();
+    renderPlanRows();
+    document.getElementById('magicPasteInput').value = '';
+    showToast(`تم سحب ${unitsAdded} مساحة و ${plansAdded} خطة بنجاح! 🚀`);
+}
+
 async function saveCompoundToCloud() {
   if(!isEditor) return;
   const projectName = document.getElementById('fldProject').value.trim();
@@ -278,30 +362,18 @@ function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProje
 function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', price:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 
-/* ✨ الدالة السحرية لحساب السعر والمباني والجاردن ✨ */
 function updateUnitData(id, field, val) {
     const u = tempUnits.find(x => x.id === id);
     if (!u) return;
+    if (field === 'bedroomType') { u.bedroomType = val; } else if (field === 'price') { u.price = getRawNum(val); return; } else if (field === 'area' || field === 'gardenArea') { u[field] = parseFloat(val) || 0; }
 
-    if (field === 'bedroomType') {
-        u.bedroomType = val;
-    } else if (field === 'price') {
-        u.price = getRawNum(val);
-        return; // لو المستخدم كتب السعر بإيده، متعملش حسبة أوتوماتيك
-    } else if (field === 'area' || field === 'gardenArea') {
-        u[field] = parseFloat(val) || 0;
-    }
-
-    // الحسبة الأوتوماتيكية بناءً على متوسط سعر المتر
     const pType = document.getElementById('fldProjectType').value;
     let avg = pType === 'commercial' ? getAverageCommercialPrice(u.bedroomType) : getAveragePricePerMeter();
     
     if (avg > 0) {
-        let mainPrice = (u.area || 0) * avg;
-        let gardenPrice = (u.gardenArea || 0) * (avg / 3); // الجاردن بـ تُلت السعر
+        let mainPrice = (u.area || 0) * avg; let gardenPrice = (u.gardenArea || 0) * (avg / 3); 
         if (mainPrice > 0 || gardenPrice > 0) {
-            u.price = Math.round(mainPrice + gardenPrice);
-            document.getElementById(`price-input-${u.id}`).value = u.price ? formatNum(u.price) : '';
+            u.price = Math.round(mainPrice + gardenPrice); document.getElementById(`price-input-${u.id}`).value = u.price ? formatNum(u.price) : '';
         }
     }
 }
@@ -401,7 +473,6 @@ function renderDetailModalContent() {
     if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) activeDetailUnitId = grouped[activeDetailCategory][0].id;
     html += `<div class="section-label">حساب الأقساط والكاش</div><div class="unit-cat-tabs">` + cats.map(k => `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${BEDROOM_TYPES[k] || k}</button>`).join('') + `</div>`;
     
-    // ✨ ظهور الجاردن بشكل شيك في النتيجة ✨
     html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => {
         let gText = u.gardenArea ? ` + جاردن ${u.gardenArea}م²` : '';
         return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText} | ${formatNum(u.price)} ج</div>`
