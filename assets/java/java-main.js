@@ -72,7 +72,6 @@ async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collec
 
 function getCorrectedUnitType(typeStr, projectType) { if (projectType === 'commercial') { if (typeStr === '1br') return 'admin'; if (typeStr === '2br' || typeStr === 'studio') return 'commercial'; if (!['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'commercial'; } else { if (['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'studio'; } return typeStr || (projectType === 'commercial' ? 'commercial' : 'studio'); }
 
-/* ✨✨✨ الخوارزمية الذكية (V2.0) لفهم أي رسالة واتساب وتسجيلها ✨✨✨ */
 function extractValueAfterKeyword(line, keywords) {
     const lowerLine = line.toLowerCase();
     for (let kw of keywords) {
@@ -85,6 +84,7 @@ function extractValueAfterKeyword(line, keywords) {
     return null;
 }
 
+/* ✨✨✨ الخوارزمية الجديدة اللي بتحمي الأرقام وتمسح الكلمات الملغبطة ✨✨✨ */
 function processMagicPaste() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
@@ -93,14 +93,12 @@ function processMagicPaste() {
     let currentType = 'apartment'; 
     let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
 
-    // استخراج اسم المشروع (أول سطر فيه كلام)
     let firstLine = lines.find(l => l.replace(/[*🚨\-\s]/g, '').length > 0);
     if (firstLine && !document.getElementById('fldProject').value) {
         document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By]/ig, '').trim();
         fieldsFilled++;
     }
 
-    // سحب اسم الشركة المطورة لو كانت في السطر اللي بعد كلمة By
     let foundBy = false;
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i].trim().replace(/[*]/g, '');
@@ -114,19 +112,17 @@ function processMagicPaste() {
     lines.forEach(line => {
         const cleanLine = line.replace(/\*/g, '').trim();
         const lowerLine = cleanLine.toLowerCase();
+        let processingLine = cleanLine; // دي اللي هنمسح منها الغرف عشان متلغبطش المساحة
 
-        // 1. المطور (لو مكتوب صريح)
         let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']);
         if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
 
-        // 2. المالك والاستشاري
         let owner = extractValueAfterKeyword(cleanLine, ['Owner', 'المالك']);
         if (owner && !document.getElementById('fldOwner').value) { document.getElementById('fldOwner').value = owner; fieldsFilled++; }
 
         let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']);
         if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
 
-        // 3. التسليم
         let delivery = extractValueAfterKeyword(cleanLine, ['Delivery Date', 'Delivery', 'التسليم', 'استلام']);
         if (delivery) {
             let dSelect = document.getElementById('fldDeliveryDate');
@@ -137,7 +133,6 @@ function processMagicPaste() {
             else if (lowerLine.includes('4') || lowerLine.includes('four')) dSelect.value = '4y';
         }
 
-        // 4. التشطيب
         let finishing = extractValueAfterKeyword(cleanLine, ['Finishing', 'التشطيب', 'تشطيب']);
         if (finishing) {
             let fSelect = document.getElementById('fldFinishingStatus');
@@ -146,56 +141,61 @@ function processMagicPaste() {
             else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) fSelect.value = 'full';
         }
 
-        // 5. نسبة الصيانة
         let maintenance = extractValueAfterKeyword(cleanLine, ['Maintenance', 'صيانة', 'الصيانة']);
         if (maintenance) {
             let mVal = maintenance.replace(/[^0-9.]/g, '');
             if (mVal && !document.getElementById('fldMaintenancePercent').value) { document.getElementById('fldMaintenancePercent').value = mVal; fieldsFilled++; }
         }
 
-        // 6. الجراج (Parking)
         if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
             let pMatch = cleanLine.match(/([\d,]+)\s*(egp|ج|جنيه)/i);
             if (pMatch && !document.getElementById('fldParkingFee').value) { document.getElementById('fldParkingFee').value = formatNum(pMatch[1].replace(/,/g, '')); fieldsFilled++; }
         }
 
-        // 7. مساحة المشروع
         const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i);
         if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
 
-        // 8. لينك جوجل مابس
         const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/);
         if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
 
-        // 9. تحديد نوع الوحدة من السياق
-        if (lowerLine.includes('1 bed') || lowerLine.includes('غرفة واحدة') || lowerLine.includes('1 غرف')) currentType = '1br';
-        else if (lowerLine.includes('2 bed') || lowerLine.includes('غرفتين') || lowerLine.includes('2 غرف')) currentType = '2br';
-        else if (lowerLine.includes('3 bed') || lowerLine.includes('3 غرف')) currentType = '3br';
-        else if (lowerLine.includes('4 bed') || lowerLine.includes('4 غرف')) currentType = '4br';
-        else if (lowerLine.includes('penthouse') || lowerLine.includes('بنتهاوس')) currentType = 'penthouse';
-        else if (lowerLine.includes('duplex') || lowerLine.includes('دوبلكس')) currentType = 'duplex';
-        else if (lowerLine.includes('family house') || lowerLine.includes('villa') || lowerLine.includes('twin') || lowerLine.includes('town') || lowerLine.includes('فيلا')) currentType = 'villa';
-        else if (lowerLine.includes('chalet') || lowerLine.includes('شاليه')) currentType = 'chalet';
-        else if (lowerLine.includes('studio') || lowerLine.includes('استوديو')) currentType = 'studio';
+        // ✨ تحديد نوع الغرف ومسحه من السطر عشان ميتلغبطش مع المساحة ✨
+        const bedRegexes = [
+            {regex: /1\s*bed(rooms?)?|غرفة\s*واحدة|1\s*غرف/i, type: '1br'},
+            {regex: /2\s*bed(rooms?)?|غرفتين|2\s*غرف/i, type: '2br'},
+            {regex: /3\s*bed(rooms?)?|3\s*غرف/i, type: '3br'},
+            {regex: /4\s*bed(rooms?)?|4\s*غرف/i, type: '4br'},
+            {regex: /penthouse|بنتهاوس/i, type: 'penthouse'},
+            {regex: /duplex|دوبلكس/i, type: 'duplex'},
+            {regex: /family house|villa|twin|town|فيلا|توين|تاون/i, type: 'villa'},
+            {regex: /chalet|شاليه/i, type: 'chalet'},
+            {regex: /studio|استوديو/i, type: 'studio'}
+        ];
+        
+        for(let br of bedRegexes) {
+            if(br.regex.test(processingLine)) {
+                currentType = br.type;
+                processingLine = processingLine.replace(br.regex, ''); // سحر المسح
+                break;
+            }
+        }
 
-        // 10. استخراج مساحات وأسعار الوحدات (شامل Up to و Garden)
-        // بيلقط المساحة الرئيسية، والجاردن لو موجود، والسعر اللي غالباً بيبقى رقم كبير بعد : أو =
-        const unitMatch = cleanLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)[mM]?(?:\s*\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)[mM]?)?.*?[:=]\s*([\d,]+)/i) 
-                        || cleanLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)[mM]?\s*(?:\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)[mM]?)?\s*([\d,]{4,})/i); 
+        // ✨ استخراج المساحات والأسعار بعد ما نظفنا السطر ✨
+        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)\s*(?:[mM]2?|m²|م|متر)?\s*(?:\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)?\s*(?:[mM]2?|m²|م|متر)?)?.*?[:=]?\s*([\d,]{5,})/i); 
         
         if (unitMatch && parseFloat(unitMatch[3].replace(/,/g, '')) > 1000) {
             const area = parseFloat(unitMatch[1]);
             const garden = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
-            let priceStr = unitMatch[3].replace(/,/g, '');
-            // لو السعر ناقص صفر (مثلاً 4,90,000 بدل 4,900,000) نحاول نعالجه لو حسينا إنه قليل أوي
-            if (priceStr.length === 6 && priceStr.startsWith('4')) priceStr += '0'; // حالة استثنائية عشان الغلطة اللي في الرسالة
-            const price = parseFloat(priceStr);
+            let price = parseFloat(unitMatch[3].replace(/,/g, ''));
+            
+            // ✨ سحر تصحيح الأصفار الناقصة (لو السعر أقل من مليون والمساحة أكبر من 30) ✨
+            if (price < 1000000 && area > 30) {
+                price = price * 10;
+            }
+
             tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: price });
             unitsAdded++;
         }
 
-        // 11. استخراج خطط السداد
-        // بيقدر يفهم (0% مقدم) و (خصم 27%) و (5 سنوات)
         const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
         if (planMatch && !cleanLine.includes('?')) {
             const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : '');
