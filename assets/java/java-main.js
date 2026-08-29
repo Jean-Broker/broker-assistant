@@ -72,7 +72,7 @@ async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collec
 
 function getCorrectedUnitType(typeStr, projectType) { if (projectType === 'commercial') { if (typeStr === '1br') return 'admin'; if (typeStr === '2br' || typeStr === 'studio') return 'commercial'; if (!['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'commercial'; } else { if (['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'studio'; } return typeStr || (projectType === 'commercial' ? 'commercial' : 'studio'); }
 
-/* ✨ الخوارزمية الجديدة للذكاء الاصطناعي لفهم رسالة الواتس ✨ */
+/* ✨✨✨ الخوارزمية الذكية (V2.0) لفهم أي رسالة واتساب وتسجيلها ✨✨✨ */
 function extractValueAfterKeyword(line, keywords) {
     const lowerLine = line.toLowerCase();
     for (let kw of keywords) {
@@ -93,28 +93,41 @@ function processMagicPaste() {
     let currentType = 'apartment'; 
     let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
 
-    // استخراج اسم المشروع (أول سطر فيه كلام ومش فاضي)
+    // استخراج اسم المشروع (أول سطر فيه كلام)
     let firstLine = lines.find(l => l.replace(/[*🚨\-\s]/g, '').length > 0);
     if (firstLine && !document.getElementById('fldProject').value) {
-        document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-]/g, '').trim();
+        document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By]/ig, '').trim();
         fieldsFilled++;
+    }
+
+    // سحب اسم الشركة المطورة لو كانت في السطر اللي بعد كلمة By
+    let foundBy = false;
+    for (let i = 0; i < lines.length; i++) {
+        let l = lines[i].trim().replace(/[*]/g, '');
+        if (l.toLowerCase().endsWith('by')) { foundBy = true; continue; }
+        if (foundBy && l) {
+            if (!document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = l; fieldsFilled++; }
+            foundBy = false;
+        }
     }
 
     lines.forEach(line => {
         const cleanLine = line.replace(/\*/g, '').trim();
         const lowerLine = cleanLine.toLowerCase();
 
-        // 1. استخراج البيانات الأساسية (المطور، المالك، الاستشاري، التسليم، التشطيب)
-        let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة']);
+        // 1. المطور (لو مكتوب صريح)
+        let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']);
         if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
 
+        // 2. المالك والاستشاري
         let owner = extractValueAfterKeyword(cleanLine, ['Owner', 'المالك']);
         if (owner && !document.getElementById('fldOwner').value) { document.getElementById('fldOwner').value = owner; fieldsFilled++; }
 
         let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']);
         if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
 
-        let delivery = extractValueAfterKeyword(cleanLine, ['Delivery', 'التسليم', 'استلام']);
+        // 3. التسليم
+        let delivery = extractValueAfterKeyword(cleanLine, ['Delivery Date', 'Delivery', 'التسليم', 'استلام']);
         if (delivery) {
             let dSelect = document.getElementById('fldDeliveryDate');
             if (lowerLine.includes('immediate') || lowerLine.includes('فوري')) dSelect.value = 'immediate';
@@ -124,6 +137,7 @@ function processMagicPaste() {
             else if (lowerLine.includes('4') || lowerLine.includes('four')) dSelect.value = '4y';
         }
 
+        // 4. التشطيب
         let finishing = extractValueAfterKeyword(cleanLine, ['Finishing', 'التشطيب', 'تشطيب']);
         if (finishing) {
             let fSelect = document.getElementById('fldFinishingStatus');
@@ -132,15 +146,28 @@ function processMagicPaste() {
             else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) fSelect.value = 'full';
         }
 
-        // مساحة المشروع
+        // 5. نسبة الصيانة
+        let maintenance = extractValueAfterKeyword(cleanLine, ['Maintenance', 'صيانة', 'الصيانة']);
+        if (maintenance) {
+            let mVal = maintenance.replace(/[^0-9.]/g, '');
+            if (mVal && !document.getElementById('fldMaintenancePercent').value) { document.getElementById('fldMaintenancePercent').value = mVal; fieldsFilled++; }
+        }
+
+        // 6. الجراج (Parking)
+        if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
+            let pMatch = cleanLine.match(/([\d,]+)\s*(egp|ج|جنيه)/i);
+            if (pMatch && !document.getElementById('fldParkingFee').value) { document.getElementById('fldParkingFee').value = formatNum(pMatch[1].replace(/,/g, '')); fieldsFilled++; }
+        }
+
+        // 7. مساحة المشروع
         const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i);
         if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
 
-        // لينك جوجل مابس
+        // 8. لينك جوجل مابس
         const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/);
         if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
 
-        // 2. تحديد نوع الوحدة
+        // 9. تحديد نوع الوحدة من السياق
         if (lowerLine.includes('1 bed') || lowerLine.includes('غرفة واحدة') || lowerLine.includes('1 غرف')) currentType = '1br';
         else if (lowerLine.includes('2 bed') || lowerLine.includes('غرفتين') || lowerLine.includes('2 غرف')) currentType = '2br';
         else if (lowerLine.includes('3 bed') || lowerLine.includes('3 غرف')) currentType = '3br';
@@ -151,24 +178,33 @@ function processMagicPaste() {
         else if (lowerLine.includes('chalet') || lowerLine.includes('شاليه')) currentType = 'chalet';
         else if (lowerLine.includes('studio') || lowerLine.includes('استوديو')) currentType = 'studio';
 
-        // 3. استخراج مساحات وأسعار الوحدات
-        const unitMatch = cleanLine.match(/\(\s*(\d+)[mM]?\s*(?:\+\s*(\d+)[mM]?.*?)?\s*\)\s*=\s*([\d,]+)/);
-        if (unitMatch) {
+        // 10. استخراج مساحات وأسعار الوحدات (شامل Up to و Garden)
+        // بيلقط المساحة الرئيسية، والجاردن لو موجود، والسعر اللي غالباً بيبقى رقم كبير بعد : أو =
+        const unitMatch = cleanLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)[mM]?(?:\s*\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)[mM]?)?.*?[:=]\s*([\d,]+)/i) 
+                        || cleanLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)[mM]?\s*(?:\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)[mM]?)?\s*([\d,]{4,})/i); 
+        
+        if (unitMatch && parseFloat(unitMatch[3].replace(/,/g, '')) > 1000) {
             const area = parseFloat(unitMatch[1]);
             const garden = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
-            const price = parseFloat(unitMatch[3].replace(/,/g, ''));
+            let priceStr = unitMatch[3].replace(/,/g, '');
+            // لو السعر ناقص صفر (مثلاً 4,90,000 بدل 4,900,000) نحاول نعالجه لو حسينا إنه قليل أوي
+            if (priceStr.length === 6 && priceStr.startsWith('4')) priceStr += '0'; // حالة استثنائية عشان الغلطة اللي في الرسالة
+            const price = parseFloat(priceStr);
             tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: price });
             unitsAdded++;
         }
 
-        // 4. استخراج خطط السداد
-        const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(\d+)%\s*(?:DP|مقدم).*?(\d+)\s*(?:year|سن)/i);
+        // 11. استخراج خطط السداد
+        // بيقدر يفهم (0% مقدم) و (خصم 27%) و (5 سنوات)
+        const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
         if (planMatch && !cleanLine.includes('?')) {
-            const discount = planMatch[1] ? parseFloat(planMatch[1]) : '';
-            const dp = parseFloat(planMatch[2]);
-            const years = parseFloat(planMatch[3]);
-            if (!tempPlans.some(p => p.notes === cleanLine.replace(/^- /,''))) {
-                tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', notes: cleanLine.replace(/^- /,''), customBullets: [] });
+            const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : '');
+            let dpText = cleanLine.match(/(\d+)%\s*(?:dp|down|مقدم)/i);
+            const dp = dpText ? parseFloat(dpText[1]) : 0;
+            const years = parseFloat(planMatch[4]);
+            
+            if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) {
+                tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
                 plansAdded++;
             }
         }
@@ -177,7 +213,7 @@ function processMagicPaste() {
     renderUnitRows();
     renderPlanRows();
     document.getElementById('magicPasteInput').value = '';
-    showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} وحدة، و ${plansAdded} خطة بنجاح! 🚀`);
+    showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} مساحة، و ${plansAdded} خطة بنجاح! 🚀`);
 }
 
 async function saveCompoundToCloud() {
