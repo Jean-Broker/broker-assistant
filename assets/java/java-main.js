@@ -177,28 +177,29 @@ function processMagicPaste() {
             }
         }
 
-        // ✨ سحب المساحة وتجاهل السعر تماماً حسب رغبة العميل ✨
         const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)\s*(?:[mM]2?|m²|م|متر)?\s*(?:\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)?\s*(?:[mM]2?|m²|م|متر)?)?.*?[:=]?\s*([\d,]{5,})/i); 
         
         if (unitMatch && parseFloat(unitMatch[3].replace(/,/g, '')) > 1000) {
             const area = parseFloat(unitMatch[1]);
             const garden = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
             
-            // بيسيب السعر فاضي عشان يحسب أوتوماتيك لما اليوزر يكتب سعر المتر
             tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: '' });
             unitsAdded++;
         }
 
-        const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
-        if (planMatch && !cleanLine.includes('?')) {
-            const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : '');
-            let dpText = cleanLine.match(/(\d+)%\s*(?:dp|down|مقدم)/i);
-            const dp = dpText ? parseFloat(dpText[1]) : 0;
-            const years = parseFloat(planMatch[4]);
-            
-            if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) {
-                tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
-                plansAdded++;
+        // ✨ التعديل السحري: استبعاد سطور التسليم من خطط السداد ✨
+        if (!lowerLine.includes('delivery') && !lowerLine.includes('تسليم') && !lowerLine.includes('استلام')) {
+            const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
+            if (planMatch && !cleanLine.includes('?')) {
+                const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : '');
+                let dpText = cleanLine.match(/(\d+)%\s*(?:dp|down|مقدم)/i);
+                const dp = dpText ? parseFloat(dpText[1]) : 0;
+                const years = parseFloat(planMatch[4]);
+                
+                if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) {
+                    tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
+                    plansAdded++;
+                }
             }
         }
     });
@@ -206,7 +207,7 @@ function processMagicPaste() {
     renderUnitRows();
     renderPlanRows();
     document.getElementById('magicPasteInput').value = '';
-    showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} مساحة (بدون أسعار)، و ${plansAdded} خطة بنجاح! 🚀`);
+    showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} مساحة، و ${plansAdded} خطة بنجاح! 🚀`);
 }
 
 async function saveCompoundToCloud() {
@@ -415,19 +416,10 @@ function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProje
 function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', price:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 
-/* ✨ إزالة قفل الأسعار عشان السعر يتجدد دائماً بالمتوسط ✨ */
 function updateUnitData(id, field, val) {
     const u = tempUnits.find(x => x.id === id);
     if (!u) return;
-    
-    if (field === 'bedroomType') { 
-        u.bedroomType = val; 
-    } else if (field === 'price') { 
-        u.price = getRawNum(val); 
-        return; // لو اليوزر كتب السعر بإيده، يقف بس مش بيقفله للأبد لو غيّر سعر المتر
-    } else if (field === 'area' || field === 'gardenArea') { 
-        u[field] = parseFloat(val) || 0; 
-    }
+    if (field === 'bedroomType') { u.bedroomType = val; } else if (field === 'price') { u.price = getRawNum(val); return; } else if (field === 'area' || field === 'gardenArea') { u[field] = parseFloat(val) || 0; }
 
     const pType = document.getElementById('fldProjectType').value;
     let avg = pType === 'commercial' ? getAverageCommercialPrice(u.bedroomType) : getAveragePricePerMeter();
@@ -435,9 +427,7 @@ function updateUnitData(id, field, val) {
     if (avg > 0) {
         let mainPrice = (u.area || 0) * avg; let gardenPrice = (u.gardenArea || 0) * (avg / 3); 
         if (mainPrice > 0 || gardenPrice > 0) {
-            u.price = Math.round(mainPrice + gardenPrice); 
-            let pInput = document.getElementById(`price-input-${u.id}`);
-            if(pInput) pInput.value = formatNum(u.price);
+            u.price = Math.round(mainPrice + gardenPrice); document.getElementById(`price-input-${u.id}`).value = u.price ? formatNum(u.price) : '';
         }
     }
 }
