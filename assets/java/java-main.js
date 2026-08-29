@@ -84,7 +84,6 @@ function extractValueAfterKeyword(line, keywords) {
     return null;
 }
 
-/* ✨✨✨ الخوارزمية الجديدة اللي بتحمي الأرقام وتمسح الكلمات الملغبطة ✨✨✨ */
 function processMagicPaste() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
@@ -112,7 +111,7 @@ function processMagicPaste() {
     lines.forEach(line => {
         const cleanLine = line.replace(/\*/g, '').trim();
         const lowerLine = cleanLine.toLowerCase();
-        let processingLine = cleanLine; // دي اللي هنمسح منها الغرف عشان متلغبطش المساحة
+        let processingLine = cleanLine; 
 
         let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']);
         if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
@@ -158,7 +157,6 @@ function processMagicPaste() {
         const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/);
         if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
 
-        // ✨ تحديد نوع الغرف ومسحه من السطر عشان ميتلغبطش مع المساحة ✨
         const bedRegexes = [
             {regex: /1\s*bed(rooms?)?|غرفة\s*واحدة|1\s*غرف/i, type: '1br'},
             {regex: /2\s*bed(rooms?)?|غرفتين|2\s*غرف/i, type: '2br'},
@@ -174,25 +172,20 @@ function processMagicPaste() {
         for(let br of bedRegexes) {
             if(br.regex.test(processingLine)) {
                 currentType = br.type;
-                processingLine = processingLine.replace(br.regex, ''); // سحر المسح
+                processingLine = processingLine.replace(br.regex, ''); 
                 break;
             }
         }
 
-        // ✨ استخراج المساحات والأسعار بعد ما نظفنا السطر ✨
+        // ✨ سحب المساحة وتجاهل السعر تماماً حسب رغبة العميل ✨
         const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)\s*(?:[mM]2?|m²|م|متر)?\s*(?:\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)?\s*(?:[mM]2?|m²|م|متر)?)?.*?[:=]?\s*([\d,]{5,})/i); 
         
         if (unitMatch && parseFloat(unitMatch[3].replace(/,/g, '')) > 1000) {
             const area = parseFloat(unitMatch[1]);
             const garden = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
-            let price = parseFloat(unitMatch[3].replace(/,/g, ''));
             
-            // ✨ سحر تصحيح الأصفار الناقصة (لو السعر أقل من مليون والمساحة أكبر من 30) ✨
-            if (price < 1000000 && area > 30) {
-                price = price * 10;
-            }
-
-            tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: price });
+            // بيسيب السعر فاضي عشان يحسب أوتوماتيك لما اليوزر يكتب سعر المتر
+            tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: '' });
             unitsAdded++;
         }
 
@@ -213,7 +206,7 @@ function processMagicPaste() {
     renderUnitRows();
     renderPlanRows();
     document.getElementById('magicPasteInput').value = '';
-    showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} مساحة، و ${plansAdded} خطة بنجاح! 🚀`);
+    showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} مساحة (بدون أسعار)، و ${plansAdded} خطة بنجاح! 🚀`);
 }
 
 async function saveCompoundToCloud() {
@@ -422,10 +415,19 @@ function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProje
 function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', price:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 
+/* ✨ إزالة قفل الأسعار عشان السعر يتجدد دائماً بالمتوسط ✨ */
 function updateUnitData(id, field, val) {
     const u = tempUnits.find(x => x.id === id);
     if (!u) return;
-    if (field === 'bedroomType') { u.bedroomType = val; } else if (field === 'price') { u.price = getRawNum(val); return; } else if (field === 'area' || field === 'gardenArea') { u[field] = parseFloat(val) || 0; }
+    
+    if (field === 'bedroomType') { 
+        u.bedroomType = val; 
+    } else if (field === 'price') { 
+        u.price = getRawNum(val); 
+        return; // لو اليوزر كتب السعر بإيده، يقف بس مش بيقفله للأبد لو غيّر سعر المتر
+    } else if (field === 'area' || field === 'gardenArea') { 
+        u[field] = parseFloat(val) || 0; 
+    }
 
     const pType = document.getElementById('fldProjectType').value;
     let avg = pType === 'commercial' ? getAverageCommercialPrice(u.bedroomType) : getAveragePricePerMeter();
@@ -433,7 +435,9 @@ function updateUnitData(id, field, val) {
     if (avg > 0) {
         let mainPrice = (u.area || 0) * avg; let gardenPrice = (u.gardenArea || 0) * (avg / 3); 
         if (mainPrice > 0 || gardenPrice > 0) {
-            u.price = Math.round(mainPrice + gardenPrice); document.getElementById(`price-input-${u.id}`).value = u.price ? formatNum(u.price) : '';
+            u.price = Math.round(mainPrice + gardenPrice); 
+            let pInput = document.getElementById(`price-input-${u.id}`);
+            if(pInput) pInput.value = formatNum(u.price);
         }
     }
 }
