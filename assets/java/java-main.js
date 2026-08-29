@@ -16,10 +16,9 @@ const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) { document.getElementById('loginEmail').value = localStorage.getItem('savedEmail'); document.getElementById('loginPassword').value = localStorage.getItem('savedPassword'); document.getElementById('rememberMe').checked = true; }
     document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
-    document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitArea(u.id, u.area)); }); });
+    document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null)); }); });
 });
 
-/* ✨ برمجة قوائم البحث المنسدلة ✨ */
 function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
 function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
 document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper')) { closeAllDropdowns(); } });
@@ -63,22 +62,10 @@ function handleAuthAction() { currentUser ? (auth.signOut(), sessionStorage.remo
 function openUsersManager() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); }
 async function createNewSubscriber() { const email = document.getElementById('newAccEmail').value.trim().toLowerCase(), duration = parseInt(document.getElementById('newAccDuration').value), role = document.getElementById('newAccRole').value; if(!email) { showToast('يرجى كتابة الإيميل!'); return; } const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100), expDate = new Date(); expDate.setDate(expDate.getDate() + duration); try { await secondaryApp.auth().createUserWithEmailAndPassword(email, password); await db.collection('users').doc(email).set({ role: role, expiryDate: expDate.toISOString().split('T')[0] }); await secondaryApp.auth().signOut(); document.getElementById('resEmail').textContent = email; document.getElementById('resPass').textContent = password; document.getElementById('resDate').textContent = expDate.toISOString().split('T')[0]; document.getElementById('newAccResult').style.display = 'block'; showToast('تم تسجيل الحساب بنجاح!'); } catch (error) { alert('حدث خطأ: ' + error.message); } }
 
-/* ✨✨ السحر هنا: حل مشكلة المشاريع اللي مش بتظهر لوحدها في البداية ✨✨ */
 async function syncCloudData() { 
     document.getElementById('pageSub').textContent = "جاري تحميل البيانات..."; 
-    
-    db.collection('system').doc('locations').onSnapshot(doc => { 
-        mainLocations = doc.exists ? doc.data().mainLocations || [] : []; 
-        renderLocationTree(); // تحديث القائمة
-        applyFilters(); // تحديث المشاريع بالأسماء الجديدة
-    }); 
-    
-    db.collection('compounds').onSnapshot(snapshot => { 
-        compounds = []; 
-        snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); 
-        renderLocationTree(); // تحديث العدادات فوراً
-        applyFilters(); // فرش المشروعات على الشاشة فوراً
-    }); 
+    db.collection('system').doc('locations').onSnapshot(doc => { mainLocations = doc.exists ? doc.data().mainLocations || [] : []; renderLocationTree(); applyFilters(); }); 
+    db.collection('compounds').onSnapshot(snapshot => { compounds = []; snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); renderLocationTree(); applyFilters(); }); 
 }
 
 async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collection('system').doc('locations').set({ mainLocations }); } catch (error) { alert('خطأ في الحفظ!'); } } }
@@ -95,7 +82,7 @@ async function saveCompoundToCloud() {
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
-    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, price: parseFloat(u.price) || 0 })),
+    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, price: parseFloat(u.price) || 0 })),
     paymentPlans: tempPlans, ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
   try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); document.getElementById('formOverlay').classList.remove('open'); showToast('تم حفظ المشروع بنجاح'); } 
@@ -286,10 +273,38 @@ function openCompoundForm(existing){
 function onProjectTypeChange() { const isComm = document.getElementById('fldProjectType').value === 'commercial'; document.querySelectorAll('.res-price-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.getElementById('commercialPriceWrap').style.display = isComm ? 'block' : 'none'; if (isComm) document.getElementById('priceMeterAvgWrap').style.display = 'none'; renderUnitRows(); }
 function getAverageCommercialPrice(bType) { let min = 0, max = 0; if (bType === 'admin') { min = getRawNum(document.getElementById('fldAdminMin').value); max = getRawNum(document.getElementById('fldAdminMax').value); } else if (bType === 'commercial') { min = getRawNum(document.getElementById('fldCommMin').value); max = getRawNum(document.getElementById('fldCommMax').value); } else if (bType === 'clinic') { min = getRawNum(document.getElementById('fldClinicMin').value); max = getRawNum(document.getElementById('fldClinicMax').value); } else if (bType === 'recreational') { min = getRawNum(document.getElementById('fldRecMin').value); max = getRawNum(document.getElementById('fldRecMax').value); } if (min > 0 && max > 0) return (min + max) / 2; return min || max || getAveragePricePerMeter(); }
 function getAveragePricePerMeter(){ const min = getRawNum(document.getElementById('fldPriceMeterMin').value); const max = getRawNum(document.getElementById('fldPriceMeterMax').value); if(min > 0 && max > 0) return (min + max) / 2; return min || max || 0; }
-function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProjectType').value === 'commercial'; const avg = getAveragePricePerMeter(); const wrap = document.getElementById('priceMeterAvgWrap'); if (wrap) wrap.style.display = (avg > 0 && !isComm) ? 'block' : 'none'; const avgInput = document.getElementById('fldPriceMeterAvg'); if (avgInput) avgInput.value = formatNum(Math.round(avg)) + ' جنيه'; tempUnits.forEach(u => updateUnitArea(u.id, u.area)); }
+function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProjectType').value === 'commercial'; const avg = getAveragePricePerMeter(); const wrap = document.getElementById('priceMeterAvgWrap'); if (wrap) wrap.style.display = (avg > 0 && !isComm) ? 'block' : 'none'; const avgInput = document.getElementById('fldPriceMeterAvg'); if (avgInput) avgInput.value = formatNum(Math.round(avg)) + ' جنيه'; tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null)); }
 
-function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', price:''}); renderUnitRows(); }
+function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', price:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
+
+/* ✨ الدالة السحرية لحساب السعر والمباني والجاردن ✨ */
+function updateUnitData(id, field, val) {
+    const u = tempUnits.find(x => x.id === id);
+    if (!u) return;
+
+    if (field === 'bedroomType') {
+        u.bedroomType = val;
+    } else if (field === 'price') {
+        u.price = getRawNum(val);
+        return; // لو المستخدم كتب السعر بإيده، متعملش حسبة أوتوماتيك
+    } else if (field === 'area' || field === 'gardenArea') {
+        u[field] = parseFloat(val) || 0;
+    }
+
+    // الحسبة الأوتوماتيكية بناءً على متوسط سعر المتر
+    const pType = document.getElementById('fldProjectType').value;
+    let avg = pType === 'commercial' ? getAverageCommercialPrice(u.bedroomType) : getAveragePricePerMeter();
+    
+    if (avg > 0) {
+        let mainPrice = (u.area || 0) * avg;
+        let gardenPrice = (u.gardenArea || 0) * (avg / 3); // الجاردن بـ تُلت السعر
+        if (mainPrice > 0 || gardenPrice > 0) {
+            u.price = Math.round(mainPrice + gardenPrice);
+            document.getElementById(`price-input-${u.id}`).value = u.price ? formatNum(u.price) : '';
+        }
+    }
+}
 
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
@@ -297,16 +312,14 @@ function renderUnitRows(){
     document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
         let bType = getCorrectedUnitType(u.bedroomType, pType); 
         return `<div class="repeat-row" style="display:flex; gap:10px; align-items:center;">
-                    <select style="flex:1.5; min-width:110px;" onchange="updateUnit('${u.id}','bedroomType',this.value)">${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}</select>
-                    <input type="number" placeholder="المساحة (م²)" style="flex:1; min-width:80px;" value="${u.area}" oninput="updateUnitArea('${u.id}', this.value)">
-                    <input type="text" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.5; min-width:110px; font-weight:800; color:var(--text-main);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnit('${u.id}','price',this.value)" autocomplete="off">
+                    <select style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}</select>
+                    <input type="number" placeholder="مباني(م²)" style="flex:1; min-width:70px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
+                    <input type="number" placeholder="جاردن(م²)" style="flex:1; min-width:70px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
+                    <input type="text" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.5; min-width:100px; font-weight:800; color:var(--text-main);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')">✕</button>
                 </div>` 
     }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا يوجد وحدات مضافة</div>'; 
 }
-
-function updateUnitArea(id, val){ const u = tempUnits.find(x=>x.id===id); if(u){ u.area = parseFloat(val) || 0; const pType = document.getElementById('fldProjectType').value; let avg = pType === 'commercial' ? getAverageCommercialPrice(u.bedroomType) : getAveragePricePerMeter(); if(avg > 0 && u.area > 0) u.price = Math.round(u.area * avg); document.getElementById(`price-input-${u.id}`).value = u.price ? formatNum(u.price) : ''; } }
-function updateUnit(id, field, val){ const u = tempUnits.find(x=>x.id===id); if(u) { u[field] = field==='bedroomType'?val:getRawNum(val); if (field === 'bedroomType') updateUnitArea(id, u.area); } }
 
 function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', notes:'', customBullets:[]}); renderPlanRows(); }
 function removePlanRow(id){ tempPlans = tempPlans.filter(p=>p.id!==id); renderPlanRows(); }
@@ -387,7 +400,13 @@ function renderDetailModalContent() {
   if(cats.length){
     if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) activeDetailUnitId = grouped[activeDetailCategory][0].id;
     html += `<div class="section-label">حساب الأقساط والكاش</div><div class="unit-cat-tabs">` + cats.map(k => `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${BEDROOM_TYPES[k] || k}</button>`).join('') + `</div>`;
-    html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area} م² | ${formatNum(u.price)} ج</div>`).join('') + `</div>`;
+    
+    // ✨ ظهور الجاردن بشكل شيك في النتيجة ✨
+    html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => {
+        let gText = u.gardenArea ? ` + جاردن ${u.gardenArea}م²` : '';
+        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText} | ${formatNum(u.price)} ج</div>`
+    }).join('') + `</div>`;
+    
     const sUnit = (c.unitTypes || []).find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
     
     let cashDiscount = c.cashDiscount || 0;
@@ -408,43 +427,7 @@ function renderDetailModalContent() {
   } document.getElementById('detailBody').innerHTML = html;
 }
 
-function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
-    const discountVal = originalTotal * ((discountPct||0)/100);
-    const netTotal = originalTotal - discountVal;
-    const downPayment = netTotal * ((downPct||0)/100);
-    let extraPaymentsTotal = 0; 
-    let bulletsSummary = []; 
-    
-    (customBullets || []).forEach(b => { 
-        const pct = parseFloat(b.percent) || 0; 
-        if(pct > 0){ 
-            if(b.type === 'annual'){ 
-                const count = (b.selectedYears || []).length;
-                const perYearVal = netTotal * (pct / 100);
-                const totalBulletVal = perYearVal * count; 
-                extraPaymentsTotal += totalBulletVal; 
-                bulletsSummary.push({ 
-                    type: 'annual', 
-                    label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, 
-                    perYearVal 
-                }); 
-            } else { 
-                const val = netTotal * (pct / 100); 
-                extraPaymentsTotal += val; 
-                const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة';
-                bulletsSummary.push({ 
-                    type: b.type, 
-                    label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, 
-                    val 
-                }); 
-            } 
-        } 
-    }); 
-    
-    const remaining = netTotal - (downPayment + extraPaymentsTotal);
-    const monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; 
-    return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
-}
+function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ const discountVal = originalTotal * ((discountPct||0)/100), netTotal = originalTotal - discountVal, downPayment = netTotal * ((downPct||0)/100); let extraPaymentsTotal = 0; let bulletsSummary = []; (customBullets || []).forEach(b => { const pct = parseFloat(b.percent) || 0; if(pct > 0){ if(b.type === 'annual'){ const count = (b.selectedYears || []).length, perYearVal = netTotal * (pct / 100), totalBulletVal = perYearVal * count; extraPaymentsTotal += totalBulletVal; bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); } else { const val = netTotal * (pct / 100); extraPaymentsTotal += val; const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة'; bulletsSummary.push({ type: b.type, label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, val }); } } }); const remaining = netTotal - (downPayment + extraPaymentsTotal), monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; }
 
 function openCalculator(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>document.getElementById(id).value=''); document.getElementById('calcResult').style.display='none'; renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); }
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
@@ -452,21 +435,10 @@ function removeCalcBulletRow(id){ calcCustomBullets=calcCustomBullets.filter(b=>
 
 function toggleCalcYearSelection(bId, y){ 
     const b = calcCustomBullets.find(x=>x.id===bId); 
-    if(b){ 
-        if(!b.selectedYears) b.selectedYears = [];
-        const i = b.selectedYears.indexOf(y); 
-        i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); 
-        renderCalcBulletsRows(); 
-    } 
+    if(b){ if(!b.selectedYears) b.selectedYears = []; const i = b.selectedYears.indexOf(y); i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); renderCalcBulletsRows(); } 
 }
 
-function updateCalcBullet(id, f, v){ 
-    const b = calcCustomBullets.find(x=>x.id===id); 
-    if(b){ 
-        b[f] = f==='type' ? v : (parseFloat(v)||0); 
-        if(f==='type') renderCalcBulletsRows(); 
-    } 
-}
+function updateCalcBullet(id, f, v){ const b = calcCustomBullets.find(x=>x.id===id); if(b){ b[f] = f==='type' ? v : (parseFloat(v)||0); if(f==='type') renderCalcBulletsRows(); } }
 
 function renderCalcBulletsRows(){ 
     document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row">
@@ -535,8 +507,12 @@ function handleExcelUpload(event) {
                 rows.forEach(row => {
                     let projName = row['Project'] || row['project'] || ''; let devName = row['Developer'] || row['developer'] || ''; if (!projName && !devName) return; let compKey = `${projName}_${devName}`;
                     if (!compoundsToUpload[compKey]) { compoundsToUpload[compKey] = { id: uid(), locationId: subLocId, projectType: 'residential', companyName: String(devName).trim(), projectName: String(projName).trim(), ownerName: '', consultant: String(row['Engineering Consult'] || row['Engineering Consultant'] || '').trim(), pricePerMeterMin: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMax: parseFloat(row['Price Per Meter']) || 0, maintenancePercent: parseFloat(row['Maintenance Fees %']) || 0, projectSize: parseFloat(row['Project area']) || 0, deliveryDate: String(row['Delivery Date'] || '').trim(), finishingStatus: String(row['Finishing type'] || '').toLowerCase().includes('core') ? 'core_shell' : (String(row['Finishing type'] || '').toLowerCase().includes('full') ? 'full' : 'semi'), compoundLocationDetail: String(row['Location On Map'] || '').trim(), locationLink: String(row['Location On Map'] || '').includes('http') ? String(row['Location On Map'] || '').trim() : '', cashDiscount: 0, unitTypes: [], paymentPlans: [], ministerialDecrees: row['قرار وزاري'] ? [{id: uid(), decreeNumber: '', description: String(row['قرار وزاري']), date: ''}] : [] }; }
-                    let area = parseFloat(row['BUA From']) || parseFloat(row['BUA To']) || 0; let price = parseFloat(row['Price From']) || parseFloat(row['Price To']) || 0; let bedStr = String(row['No of Bedrooms'] || '').toLowerCase(); let unitTypeStr = String(row['Unit Type'] || '').toLowerCase(); let bType = 'studio'; if(bedStr.includes('1')) bType = '1br'; else if(bedStr.includes('2')) bType = '2br'; else if(bedStr.includes('3')) bType = '3br'; else if(bedStr.includes('4')) bType = '4br'; else if(bedStr.includes('duplex') || unitTypeStr.includes('duplex')) bType = 'duplex'; else if(bedStr.includes('penthouse') || unitTypeStr.includes('penthouse')) bType = 'penthouse';
-                    if (area > 0 || price > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, area: area, price: price }); }
+                    
+                    let area = parseFloat(row['BUA From']) || parseFloat(row['BUA To']) || parseFloat(row['Area']) || 0; 
+                    let gardenArea = parseFloat(row['Garden Area']) || parseFloat(row['Garden']) || parseFloat(row['جاردن']) || 0;
+                    let price = parseFloat(row['Price From']) || parseFloat(row['Price To']) || 0; 
+                    let bedStr = String(row['No of Bedrooms'] || '').toLowerCase(); let unitTypeStr = String(row['Unit Type'] || '').toLowerCase(); let bType = 'studio'; if(bedStr.includes('1')) bType = '1br'; else if(bedStr.includes('2')) bType = '2br'; else if(bedStr.includes('3')) bType = '3br'; else if(bedStr.includes('4')) bType = '4br'; else if(bedStr.includes('duplex') || unitTypeStr.includes('duplex')) bType = 'duplex'; else if(bedStr.includes('penthouse') || unitTypeStr.includes('penthouse')) bType = 'penthouse'; else if(bedStr.includes('villa') || unitTypeStr.includes('villa')) bType = 'villa'; else if(bedStr.includes('chalet') || unitTypeStr.includes('chalet')) bType = 'chalet';
+                    if (area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, area: area, gardenArea: gardenArea, price: price }); }
                     let planStr = String(row['Payment Plan'] || '').trim(); if (planStr) { if (!compoundsToUpload[compKey].paymentPlans.some(p => p.notes === planStr)) { compoundsToUpload[compKey].paymentPlans.push({ id: uid(), name: "خطة سداد", notes: planStr, discountPercent: parseFloat(row['Cash Discount']) || 0, downPaymentPercent: 0, years: 0, frequency: '12', customBullets: [] }); } }
                 });
             });
