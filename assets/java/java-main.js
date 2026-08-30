@@ -1,12 +1,13 @@
 // --- Theme & Setup ---
-if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; } else { document.getElementById('landingPage').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; }
+function setNavForApp(isAppView) { const links = document.getElementById('siteBarLinks'), loginBtn = document.getElementById('siteBarLoginBtn'); if (links) links.classList.toggle('nav-app-hidden', isAppView); if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); }
+if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPage').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
 function toggleTheme() { document.body.classList.toggle('light-mode'); localStorage.setItem('appTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark'); }
 if (localStorage.getItem('appTheme') === 'light') { document.body.classList.add('light-mode'); }
 let currentLang = 'ar';
 function toggleLanguage() { currentLang = currentLang === 'ar' ? 'en' : 'ar'; document.documentElement.lang = currentLang; document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); }
 function openSystemLogin() { document.getElementById('paywallModal').style.display = 'flex'; }
 function closeLoginModal() { document.getElementById('paywallModal').style.display = 'none'; }
-function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; }
+function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; setNavForApp(false); }
 
 const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", authDomain: "broker-assistant-63277.firebaseapp.com", projectId: "broker-assistant-63277", storageBucket: "broker-assistant-63277.firebasestorage.app", messagingSenderId: "434808917289", appId: "1:434808917289:web:1012be2fa30cf80cfefb38" };
 firebase.initializeApp(firebaseConfig);
@@ -17,6 +18,14 @@ window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) { document.getElementById('loginEmail').value = localStorage.getItem('savedEmail'); document.getElementById('loginPassword').value = localStorage.getItem('savedPassword'); document.getElementById('rememberMe').checked = true; }
     document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
     document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null)); }); });
+    const footerYearEl = document.getElementById('footerYear'); if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    closeAllDropdowns();
+    if (document.getElementById('paywallModal').style.display === 'flex') closeLoginModal();
+    document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay') return; ov.classList.remove('open'); });
 });
 
 function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
@@ -53,8 +62,8 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
     document.getElementById('superAdminActions').style.display = isAdmin ? 'flex' : 'none'; document.getElementById('addMainLocWrap').style.display = isEditor ? 'flex' : 'none'; document.getElementById('adminActions').style.display = isEditor ? 'flex' : 'none';
-    await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex';
-  } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; }
+    await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true);
+  } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; setNavForApp(false); }
 });
 
 function submitLogin() { const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value.trim(); if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; } document.getElementById('rememberMe').checked ? (localStorage.setItem('savedEmail', email), localStorage.setItem('savedPassword', password)) : (localStorage.removeItem('savedEmail'), localStorage.removeItem('savedPassword')); sessionStorage.setItem('isSystemOpen', 'true'); auth.signInWithEmailAndPassword(email, password).catch(err => { sessionStorage.removeItem('isSystemOpen'); alert("بيانات الدخول غير صحيحة."); }); }
@@ -62,8 +71,13 @@ function handleAuthAction() { currentUser ? (auth.signOut(), sessionStorage.remo
 function openUsersManager() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); }
 async function createNewSubscriber() { const email = document.getElementById('newAccEmail').value.trim().toLowerCase(), duration = parseInt(document.getElementById('newAccDuration').value), role = document.getElementById('newAccRole').value; if(!email) { showToast('يرجى كتابة الإيميل!'); return; } const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100), expDate = new Date(); expDate.setDate(expDate.getDate() + duration); try { await secondaryApp.auth().createUserWithEmailAndPassword(email, password); await db.collection('users').doc(email).set({ role: role, expiryDate: expDate.toISOString().split('T')[0] }); await secondaryApp.auth().signOut(); document.getElementById('resEmail').textContent = email; document.getElementById('resPass').textContent = password; document.getElementById('resDate').textContent = expDate.toISOString().split('T')[0]; document.getElementById('newAccResult').style.display = 'block'; showToast('تم تسجيل الحساب بنجاح!'); } catch (error) { alert('حدث خطأ: ' + error.message); } }
 
+function skeletonCardsHtml(count) {
+    let card = `<div class="dossier skeleton-card" aria-hidden="true"><div class="skeleton-line" style="width:40%;height:10px;margin-bottom:10px;"></div><div class="skeleton-line" style="width:75%;height:16px;margin-bottom:14px;"></div><div class="skeleton-line" style="width:55%;height:9px;margin-bottom:8px;"></div><div class="skeleton-line" style="width:45%;height:9px;margin-bottom:8px;"></div><div class="skeleton-line" style="width:60%;height:9px;margin-bottom:14px;"></div><div style="display:flex;gap:10px;"><div class="skeleton-line" style="flex:1;height:34px;"></div><div class="skeleton-line" style="flex:1;height:34px;"></div></div></div>`;
+    return card.repeat(count);
+}
 async function syncCloudData() { 
     document.getElementById('pageSub').textContent = "جاري تحميل البيانات..."; 
+    const grid = document.getElementById('compoundGrid'); if (grid && !grid.children.length) grid.innerHTML = skeletonCardsHtml(6);
     db.collection('system').doc('locations').onSnapshot(doc => { mainLocations = doc.exists ? doc.data().mainLocations || [] : []; renderLocationTree(); applyFilters(); }); 
     db.collection('compounds').onSnapshot(snapshot => { compounds = []; snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); renderLocationTree(); applyFilters(); }); 
 }
@@ -232,6 +246,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
 function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
 function formatNum(n){ return Number(n).toLocaleString('en-US'); }
 function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
 function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
 function populateDeliverySelects(){ const opts = DELIVERY_TIMELINES.map(d=>`<option value="${d.value}">${d.label}</option>`).join(''); document.getElementById('fldDeliveryDate').innerHTML = opts; }
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
@@ -248,10 +263,10 @@ function renderLocationTree(){
   mainLocations.forEach((mainLoc) => { 
       let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
       const isOpen = !!openMainLocIds[mainLoc.id]; const isMainActive = activeLocationIds.includes(mainLoc.id);
-      html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
+      html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)" role="button" tabindex="0" aria-label="عرض الفروع">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')" aria-label="حذف ${escapeHtml(mainLoc.name)}">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
       mainLoc.subLocations.forEach(sub => { 
           const subCount = compounds.filter(c => c.locationId === sub.id).length; const isSubActive = activeLocationIds.includes(sub.id);
-          html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
+          html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')" aria-label="حذف ${escapeHtml(sub.name)}">✕</button>` : ''}</div></div>`; 
       }); 
       html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
   }); 
@@ -273,6 +288,21 @@ async function addSubLocation(mainId){ if(!isEditor) return; const input = docum
 async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
 function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
 
+let searchDebounceTimer = null;
+function handleSearchInput() {
+    const val = document.getElementById('fSearchText').value;
+    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = val ? 'flex' : 'none';
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(applyFilters, 300);
+}
+function clearSearchOnly() {
+    document.getElementById('fSearchText').value = '';
+    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
+    clearTimeout(searchDebounceTimer);
+    applyFilters();
+    document.getElementById('fSearchText').focus();
+}
+
 function applyFilters(){ 
     const checkedTypes = Array.from(document.querySelectorAll('.prop-type-cb:checked')).map(cb => cb.value);
     filters = { 
@@ -291,6 +321,8 @@ function applyFilters(){
 function resetFilters(){ 
     document.getElementById('fSearchText').value = ''; document.getElementById('fMinPrice').value = ''; document.getElementById('fMaxPrice').value = ''; document.getElementById('fDownPayment').value = ''; document.getElementById('fMonthlyInstallment').value = ''; document.getElementById('fSortOrder').value = 'default';
     document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false); document.querySelectorAll('.pill').forEach(p => p.classList.remove('active')); selectedBeds = [];
+    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
+    clearTimeout(searchDebounceTimer);
     applyFilters(); 
 }
 
@@ -305,7 +337,10 @@ function renderGrid(){
     }
     
     if(activeProjectType !== 'all' && (c.projectType || 'residential') !== activeProjectType) return false;
-    if(filters.searchText && !(c.projectName||'').toLowerCase().includes(filters.searchText) && !(c.companyName||'').toLowerCase().includes(filters.searchText)) return false;
+    if(filters.searchText) {
+        const searchable = [c.projectName, c.companyName, c.ownerName, c.consultant, findSubLocationName(c.locationId)].filter(Boolean).join(' ').toLowerCase();
+        if (!searchable.includes(filters.searchText)) return false;
+    }
     
     let cUnits = c.unitTypes||[]; 
     
@@ -377,7 +412,7 @@ function renderGrid(){
   document.getElementById('pageTitle').textContent = pageTitleText;
   document.getElementById('pageSub').textContent = `${list.length} مشروع مسجل بالسحابة`;
   const grid = document.getElementById('compoundGrid');
-  if(!list.length) return grid.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-muted); font-size:16px; font-weight:bold;">لا توجد مشروعات مطابقة</div>`;
+  if(!list.length) return grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-title">لا توجد مشروعات مطابقة</div><div class="empty-state-sub">جرّب تعديل كلمة البحث أو الفلاتر المستخدمة</div><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح كل الفلاتر</button></div>`;
   
   grid.innerHTML = list.map(c=>{
     const minPrice = (c.unitTypes||[]).length ? Math.min(...c.unitTypes.map(u=>u.price||Infinity)) : null;
@@ -386,7 +421,7 @@ function renderGrid(){
         let mins = [c.commercialPrices.adminMin, c.commercialPrices.commMin, c.commercialPrices.clinicMin, c.commercialPrices.recMin].filter(x => x > 0);
         let absoluteMin = mins.length > 0 ? Math.min(...mins) : (c.pricePerMeterMin || 0); pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
     } else { pDisplay = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}` : formatNum(c.pricePerMeterMin||0); }
-    return `<div class="dossier" onclick="openDetail('${c.id}')">${c.ministerialDecrees?.length ? '<div class="stamp">معتمد</div>' : ''}<div class="dossier-company">${escapeHtml(c.companyName||'')}</div><div class="dossier-title">${escapeHtml(c.projectName||'بدون اسم')}</div><div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div><div class="dossier-row"><b>الفرع:</b> <span>${findSubLocationName(c.locationId)}</span></div><div class="dossier-row"><b>المساحة:</b> <span>${c.projectSize ? c.projectSize+' فدان':'-'}</span></div><div class="dossier-row"><b>التسليم:</b> <span>${deliveryLabel(c.deliveryDate)}</span></div><div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${c.projectType === 'commercial' ? 'حسب النشاط' : (FINISHING_TYPES[c.finishingStatus]||'-')}</span></div><div class="dossier-meta"><div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div><div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice!==Infinity ? formatNum(minPrice):'-'}</div></div></div></div>`;
+    return `<div class="dossier" onclick="openDetail('${c.id}')">${c.ministerialDecrees?.length ? '<div class="stamp">معتمد</div>' : ''}<div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div><div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)}</div><div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div><div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div><div class="dossier-row"><b>المساحة:</b> <span>${c.projectSize ? c.projectSize+' فدان':'-'}</span></div><div class="dossier-row"><b>التسليم:</b> <span>${deliveryLabel(c.deliveryDate)}</span></div><div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${c.projectType === 'commercial' ? 'حسب النشاط' : (FINISHING_TYPES[c.finishingStatus]||'-')}</span></div><div class="dossier-meta"><div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div><div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice!==Infinity ? formatNum(minPrice):'-'}</div></div></div></div>`;
   }).join('');
 }
 
@@ -442,7 +477,7 @@ function renderUnitRows(){
                     <input type="number" placeholder="مباني(م²)" style="flex:1; min-width:70px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
                     <input type="number" placeholder="جاردن(م²)" style="flex:1; min-width:70px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
                     <input type="text" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.5; min-width:100px; font-weight:800; color:var(--text-main);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
-                    <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')">✕</button>
+                    <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')" aria-label="حذف الوحدة">✕</button>
                 </div>` 
     }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا يوجد وحدات مضافة</div>'; 
 }
@@ -465,7 +500,7 @@ function renderPlanRows(){
             <input type="number" placeholder="% مقدم" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
             <input type="number" placeholder="سنوات" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
             <select style="min-width:100px; flex-shrink:0;" onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select>
-            <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')">✕</button>
+            <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')" aria-label="حذف الخطة">✕</button>
         </div>
         <input placeholder="ملاحظات" style="width:100%;margin-bottom:8px;padding:12px;border-radius:var(--radius-input);border:1px solid var(--border-color);background:var(--item-bg);color:var(--text-main);" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)" autocomplete="off">
         <div class="bullets-container">
@@ -477,7 +512,7 @@ function renderPlanRows(){
                         <option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option>
                     </select>
                     <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
-                    <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
+                    <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')" aria-label="حذف الدفعة">✕</button>
                 </div>
                 ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
             </div>`).join('')}
@@ -490,7 +525,7 @@ function updatePlan(id, field, val){ const p = tempPlans.find(x=>x.id===id); if(
 function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(field==='type')renderPlanRows();} }
 function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', description:'', date:''}); renderDecreeRows(); }
 function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
-function renderDecreeRows(){ document.getElementById('decreeRows').innerHTML = tempDecrees.map(d=>`<div class="repeat-row"><input placeholder="الرقم" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); }
+function renderDecreeRows(){ document.getElementById('decreeRows').innerHTML = tempDecrees.map(d=>`<div class="repeat-row"><input placeholder="الرقم" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')" aria-label="حذف القرار">✕</button></div>`).join(''); }
 
 function openDetail(id){
   const c = compounds.find(x=>x.id===id); if(!c) return; viewingCompoundId = id;
@@ -574,7 +609,7 @@ function renderCalcBulletsRows(){
                 <option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option>
             </select>
             <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
-            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
+            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')" aria-label="حذف الدفعة">✕</button>
         </div>
         ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     </div>`).join(''); 
@@ -621,8 +656,23 @@ document.addEventListener('click', (e)=>{
     }
 });
 
-function handleExcelUpload(event) {
-    const file = event.target.files[0]; if (!file) return; document.getElementById('loadingOverlay').style.display = 'flex'; document.getElementById('loadingMsg').textContent = "جاري قراءة الشيت وتجهيز المشاريع...";
+let xlsxLoadPromise = null;
+function ensureXLSXLoaded() {
+    if (window.XLSX) return Promise.resolve();
+    if (xlsxLoadPromise) return xlsxLoadPromise;
+    xlsxLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => { xlsxLoadPromise = null; reject(new Error('XLSX load failed')); };
+        document.head.appendChild(script);
+    });
+    return xlsxLoadPromise;
+}
+async function handleExcelUpload(event) {
+    const file = event.target.files[0]; if (!file) return; document.getElementById('loadingOverlay').style.display = 'flex'; document.getElementById('loadingMsg').textContent = "جاري تجهيز أداة قراءة الإكسيل...";
+    try { await ensureXLSXLoaded(); } catch (e) { alert("تعذر تحميل مكتبة قراءة ملفات الإكسيل. تأكد من اتصال الإنترنت وحاول مرة أخرى."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
+    document.getElementById('loadingMsg').textContent = "جاري قراءة الشيت وتجهيز المشاريع...";
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
