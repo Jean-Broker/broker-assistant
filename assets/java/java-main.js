@@ -1,13 +1,12 @@
 // --- Theme & Setup ---
-function setNavForApp(isAppView) { const links = document.getElementById('siteBarLinks'), loginBtn = document.getElementById('siteBarLoginBtn'); if (links) links.classList.toggle('nav-app-hidden', isAppView); if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); }
-if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPage').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
+if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; } else { document.getElementById('landingPage').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; }
 function toggleTheme() { document.body.classList.toggle('light-mode'); localStorage.setItem('appTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark'); }
 if (localStorage.getItem('appTheme') === 'light') { document.body.classList.add('light-mode'); }
 let currentLang = 'ar';
 function toggleLanguage() { currentLang = currentLang === 'ar' ? 'en' : 'ar'; document.documentElement.lang = currentLang; document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); }
 function openSystemLogin() { document.getElementById('paywallModal').style.display = 'flex'; }
 function closeLoginModal() { document.getElementById('paywallModal').style.display = 'none'; }
-function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; setNavForApp(false); }
+function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; }
 
 const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", authDomain: "broker-assistant-63277.firebaseapp.com", projectId: "broker-assistant-63277", storageBucket: "broker-assistant-63277.firebasestorage.app", messagingSenderId: "434808917289", appId: "1:434808917289:web:1012be2fa30cf80cfefb38" };
 firebase.initializeApp(firebaseConfig);
@@ -18,14 +17,6 @@ window.addEventListener('load', () => {
     if(localStorage.getItem('savedEmail')) { document.getElementById('loginEmail').value = localStorage.getItem('savedEmail'); document.getElementById('loginPassword').value = localStorage.getItem('savedPassword'); document.getElementById('rememberMe').checked = true; }
     document.getElementById('fldPriceMeterMin')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldPriceMeterMax')?.addEventListener('input', updatePriceMeterAvg); document.getElementById('fldProjectType')?.addEventListener('change', onProjectTypeChange);
     document.querySelectorAll('.comm-price-input').forEach(el => { el.addEventListener('input', () => { tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null)); }); });
-    const footerYearEl = document.getElementById('footerYear'); if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    closeAllDropdowns();
-    if (document.getElementById('paywallModal').style.display === 'flex') closeLoginModal();
-    document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay') return; ov.classList.remove('open'); });
 });
 
 function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
@@ -62,8 +53,8 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
     document.getElementById('superAdminActions').style.display = isAdmin ? 'flex' : 'none'; document.getElementById('addMainLocWrap').style.display = isEditor ? 'flex' : 'none'; document.getElementById('adminActions').style.display = isEditor ? 'flex' : 'none';
-    await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true);
-  } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; setNavForApp(false); }
+    await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex';
+  } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; }
 });
 
 function submitLogin() { const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value.trim(); if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; } document.getElementById('rememberMe').checked ? (localStorage.setItem('savedEmail', email), localStorage.setItem('savedPassword', password)) : (localStorage.removeItem('savedEmail'), localStorage.removeItem('savedPassword')); sessionStorage.setItem('isSystemOpen', 'true'); auth.signInWithEmailAndPassword(email, password).catch(err => { sessionStorage.removeItem('isSystemOpen'); alert("بيانات الدخول غير صحيحة."); }); }
@@ -71,13 +62,8 @@ function handleAuthAction() { currentUser ? (auth.signOut(), sessionStorage.remo
 function openUsersManager() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); }
 async function createNewSubscriber() { const email = document.getElementById('newAccEmail').value.trim().toLowerCase(), duration = parseInt(document.getElementById('newAccDuration').value), role = document.getElementById('newAccRole').value; if(!email) { showToast('يرجى كتابة الإيميل!'); return; } const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100), expDate = new Date(); expDate.setDate(expDate.getDate() + duration); try { await secondaryApp.auth().createUserWithEmailAndPassword(email, password); await db.collection('users').doc(email).set({ role: role, expiryDate: expDate.toISOString().split('T')[0] }); await secondaryApp.auth().signOut(); document.getElementById('resEmail').textContent = email; document.getElementById('resPass').textContent = password; document.getElementById('resDate').textContent = expDate.toISOString().split('T')[0]; document.getElementById('newAccResult').style.display = 'block'; showToast('تم تسجيل الحساب بنجاح!'); } catch (error) { alert('حدث خطأ: ' + error.message); } }
 
-function skeletonCardsHtml(count) {
-    let card = `<div class="dossier skeleton-card" aria-hidden="true"><div class="skeleton-line" style="width:40%;height:10px;margin-bottom:10px;"></div><div class="skeleton-line" style="width:75%;height:16px;margin-bottom:14px;"></div><div class="skeleton-line" style="width:55%;height:9px;margin-bottom:8px;"></div><div class="skeleton-line" style="width:45%;height:9px;margin-bottom:8px;"></div><div class="skeleton-line" style="width:60%;height:9px;margin-bottom:14px;"></div><div style="display:flex;gap:10px;"><div class="skeleton-line" style="flex:1;height:34px;"></div><div class="skeleton-line" style="flex:1;height:34px;"></div></div></div>`;
-    return card.repeat(count);
-}
 async function syncCloudData() { 
     document.getElementById('pageSub').textContent = "جاري تحميل البيانات..."; 
-    const grid = document.getElementById('compoundGrid'); if (grid && !grid.children.length) grid.innerHTML = skeletonCardsHtml(6);
     db.collection('system').doc('locations').onSnapshot(doc => { mainLocations = doc.exists ? doc.data().mainLocations || [] : []; renderLocationTree(); applyFilters(); }); 
     db.collection('compounds').onSnapshot(snapshot => { compounds = []; snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); renderLocationTree(); applyFilters(); }); 
 }
@@ -98,6 +84,7 @@ function extractValueAfterKeyword(line, keywords) {
     return null;
 }
 
+/* ✨✨✨ الخوارزمية الجبارة اللي بتفهم الـ M و الـ K والاختصارات كلها ✨✨✨ */
 function processMagicPaste() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
@@ -106,9 +93,13 @@ function processMagicPaste() {
     let currentType = 'apartment'; 
     let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
 
+    // تنظيف أول سطر من الإيموجيز و النجوم للحصول على اسم المشروع
     let firstLine = lines.find(l => l.replace(/[*🚨\-\s]/g, '').length > 0);
     if (firstLine && !document.getElementById('fldProject').value) {
-        document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By]/ig, '').trim();
+        let projName = firstLine.replace(/[*🚨\-By]/ig, '')
+                                .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]/g, '') // يمسح الإيموجي
+                                .trim();
+        document.getElementById('fldProject').value = projName;
         fieldsFilled++;
     }
 
@@ -127,6 +118,7 @@ function processMagicPaste() {
         const lowerLine = cleanLine.toLowerCase();
         let processingLine = cleanLine; 
 
+        // 1. البيانات الأساسية
         let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']);
         if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
 
@@ -136,6 +128,7 @@ function processMagicPaste() {
         let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']);
         if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
 
+        // 2. التسليم والتشطيب والصيانة
         let delivery = extractValueAfterKeyword(cleanLine, ['Delivery Date', 'Delivery', 'التسليم', 'استلام']);
         if (delivery) {
             let dSelect = document.getElementById('fldDeliveryDate');
@@ -160,9 +153,25 @@ function processMagicPaste() {
             if (mVal && !document.getElementById('fldMaintenancePercent').value) { document.getElementById('fldMaintenancePercent').value = mVal; fieldsFilled++; }
         }
 
+        // 3. خصم الكاش الشامل للمشروع
+        if (lowerLine.includes('cash discount') || lowerLine.includes('خصم كاش')) {
+            let cdMatch = cleanLine.match(/(\d+(?:\.\d+)?)%/);
+            if (cdMatch && !document.getElementById('fldCashDiscount').value) {
+                document.getElementById('fldCashDiscount').value = cdMatch[1];
+                fieldsFilled++;
+            }
+        }
+
+        // 4. الجراج (بيدعم حرف الـ K)
         if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
-            let pMatch = cleanLine.match(/([\d,]+)\s*(egp|ج|جنيه)/i);
-            if (pMatch && !document.getElementById('fldParkingFee').value) { document.getElementById('fldParkingFee').value = formatNum(pMatch[1].replace(/,/g, '')); fieldsFilled++; }
+            let pMatch = cleanLine.match(/([\d,]+(?:\.\d+)?)\s*(k|egp|ج|جنيه|الف)/i);
+            if (pMatch && !document.getElementById('fldParkingFee').value) { 
+                let pVal = parseFloat(pMatch[1].replace(/,/g, ''));
+                let mult = pMatch[2].toLowerCase();
+                if (mult === 'k' || mult === 'الف') pVal *= 1000;
+                document.getElementById('fldParkingFee').value = formatNum(pVal); 
+                fieldsFilled++; 
+            }
         }
 
         const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i);
@@ -171,11 +180,12 @@ function processMagicPaste() {
         const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/);
         if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
 
+        // 5. استخراج الغرف وفصلها عن المساحة (بيدعم 1br و 2br)
         const bedRegexes = [
-            {regex: /1\s*bed(rooms?)?|غرفة\s*واحدة|1\s*غرف/i, type: '1br'},
-            {regex: /2\s*bed(rooms?)?|غرفتين|2\s*غرف/i, type: '2br'},
-            {regex: /3\s*bed(rooms?)?|3\s*غرف/i, type: '3br'},
-            {regex: /4\s*bed(rooms?)?|4\s*غرف/i, type: '4br'},
+            {regex: /1\s*bed(rooms?)?|1\s*br|غرفة\s*واحدة|1\s*غرف/i, type: '1br'},
+            {regex: /2\s*bed(rooms?)?|2\s*br|غرفتين|2\s*غرف/i, type: '2br'},
+            {regex: /3\s*bed(rooms?)?|3\s*br|3\s*غرف/i, type: '3br'},
+            {regex: /4\s*bed(rooms?)?|4\s*br|4\s*غرف/i, type: '4br'},
             {regex: /penthouse|بنتهاوس/i, type: 'penthouse'},
             {regex: /duplex|دوبلكس/i, type: 'duplex'},
             {regex: /family house|villa|twin|town|فيلا|توين|تاون/i, type: 'villa'},
@@ -191,24 +201,30 @@ function processMagicPaste() {
             }
         }
 
-        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)\s*(?:[mM]2?|m²|م|متر)?\s*(?:\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)?\s*(?:[mM]2?|m²|م|متر)?)?.*?[:=]?\s*([\d,]{5,})/i); 
+        // 6. استخراج المساحة وتجاهل السعر تماماً حسب الطلب
+        // بيفهم علامة الـ → أو / أو : وبياخد المساحة منها حتى لو السعر بالـ M أو K
+        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b)(\d+)\s*(?:[mM]2?|m²|م|متر)?\s*(?:\+\s*(?:garden|roof|جاردن|روف)?\s*(\d+)?\s*(?:[mM]2?|m²|م|متر)?)?.*?[:=→>/-]\s*([\d,]+(?:\.\d+)?)\s*([mMkK]|مليون|الف)?/i); 
         
-        if (unitMatch && parseFloat(unitMatch[3].replace(/,/g, '')) > 1000) {
+        if (unitMatch) {
             const area = parseFloat(unitMatch[1]);
             const garden = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
             
-            tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: '' });
-            unitsAdded++;
+            if (area > 10) { // عشان نتأكد إن دي مساحة مش رقم عشوائي
+                tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: '' });
+                unitsAdded++;
+            }
         }
 
-        // ✨ التعديل السحري: استبعاد سطور التسليم من خطط السداد ✨
+        // 7. استخراج خطط السداد (بيدعم d.p وبيفهم السطور العشوائية)
         if (!lowerLine.includes('delivery') && !lowerLine.includes('تسليم') && !lowerLine.includes('استلام')) {
-            const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
-            if (planMatch && !cleanLine.includes('?')) {
-                const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : '');
-                let dpText = cleanLine.match(/(\d+)%\s*(?:dp|down|مقدم)/i);
-                const dp = dpText ? parseFloat(dpText[1]) : 0;
-                const years = parseFloat(planMatch[4]);
+            const dpMatch = cleanLine.match(/(\d+(?:\.\d+)?)%\s*(?:dp|d\.p|down|مقدم)/i);
+            const yearsMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(?:years?|سن)/i);
+            const discMatch = cleanLine.match(/(\d+(?:\.\d+)?)%\s*(?:discount|خصم)/i);
+
+            if (dpMatch && yearsMatch) {
+                const dp = parseFloat(dpMatch[1]);
+                const years = parseFloat(yearsMatch[1]);
+                const discount = discMatch ? parseFloat(discMatch[1]) : '';
                 
                 if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) {
                     tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
