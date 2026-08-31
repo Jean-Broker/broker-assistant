@@ -99,7 +99,6 @@ function extractValueAfterKeyword(line, keywords) {
     return null;
 }
 
-/* ✨✨✨ الخوارزمية الجبارة للذكاء الاصطناعي ✨✨✨ */
 function processMagicPaste() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
@@ -353,7 +352,6 @@ function resetFilters(){
 
 function findSubLocationName(subId){ for(const m of mainLocations){ const s = m.subLocations.find(x => x.id === subId); if(s) return `${m.name} ⬅️ ${s.name}`; } return '-'; }
 
-/* ✨✨ دوال بناء الكروت العادية والكروت المجمعة ✨✨ */
 function generateDossierHTML(c) {
     const minPrice = (c.unitTypes||[]).length ? Math.min(...c.unitTypes.map(u=>u.price||Infinity)) : null;
     let pDisplay = '';
@@ -379,7 +377,6 @@ function generateMasterDossierHTML(group) {
     </div>`;
 }
 
-/* ✨ دالة عرض شاشة المراحل (Phases Modal) ✨ */
 function openPhasesModal(projName, compName) {
     let group = compounds.filter(c => (c.projectName||'') === projName && (c.companyName||'') === compName);
     document.getElementById('phasesTitle').textContent = `مراحل مشروع: ${projName}`;
@@ -483,7 +480,6 @@ function renderGrid(){
   const grid = document.getElementById('compoundGrid');
   if(!list.length) return grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-title">لا توجد مشروعات مطابقة</div><div class="empty-state-sub">جرّب تعديل كلمة البحث أو الفلاتر المستخدمة</div><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح كل الفلاتر</button></div>`;
   
-  // ✨ خوارزمية التجميع (Smart Grouping) لعرض المراحل مع بعض ✨
   let groups = {};
   list.forEach(c => {
       let key = `${(c.projectName||'').trim().toLowerCase()}|${(c.companyName||'').trim().toLowerCase()}`;
@@ -583,8 +579,11 @@ function renderPlanRows(){
                 <div class="bullet-top" style="display:flex; gap:10px; align-items:center;">
                     <select style="flex:1; min-width:100px;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)">
                         <option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option>
-                        <option value="deferred" ${b.type==='deferred'?'selected':''}>مؤجلة</option>
+                        <option value="deferred" ${b.type==='deferred'?'selected':''}>دفعة مؤجلة</option>
                         <option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option>
+                        <option value="after_3m" ${b.type==='after_3m'?'selected':''}>بعد 3 شهور</option>
+                        <option value="after_6m" ${b.type==='after_6m'?'selected':''}>بعد 6 شهور</option>
+                        <option value="after_9m" ${b.type==='after_9m'?'selected':''}>بعد 9 شهور</option>
                     </select>
                     <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')" aria-label="حذف الدفعة">✕</button>
@@ -615,7 +614,6 @@ function editCurrentCompound(){ const c = compounds.find(x=>x.id===viewingCompou
 function renderDetailModalContent() {
   const c = compounds.find(x => x.id === viewingCompoundId); if (!c) return;
   
-  // دمج اسم المرحلة مع العنوان لو موجودة
   let modalTitle = c.projectName;
   if(c.phaseName) modalTitle += ` - ${c.phaseName}`;
   document.getElementById('detailTitle').textContent = modalTitle;
@@ -635,7 +633,6 @@ function renderDetailModalContent() {
   } else { pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)} ج`; }
   const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; display:inline-block; margin-top:8px; font-weight:bold; background:var(--item-bg); padding:6px 12px; border-radius:50px; border:1px solid var(--primary);">📍 عرض على الخريطة</a>` : '';
   
-  // إضافة عدد الأدوار
   let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري الهندسي</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>المنطقة والفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item" ${c.projectType === 'commercial' ? 'style="align-items:start;"' : ''}><b>سعر المتر</b><span>${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: ${c.maintenancePercent || 0}% | جراج: ${parkingText}</span></div><div class="detail-item"><b>المساحة الإجمالية</b><span>${c.projectSize ? c.projectSize + ' فدان' : '-'}</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span>${c.floors ? 'أرضي + ' + c.floors + ' أدوار' : '-'}</span></div><div class="detail-item full"><b>الموقع بالتفصيل</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
 
   const grouped = {}; (c.unitTypes||[]).forEach(u => { let t = getCorrectedUnitType(u.bedroomType, c.projectType); (grouped[t] = grouped[t] || []).push(u); }); const cats = Object.keys(grouped);
@@ -668,7 +665,39 @@ function renderDetailModalContent() {
   } document.getElementById('detailBody').innerHTML = html;
 }
 
-function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ const discountVal = originalTotal * ((discountPct||0)/100), netTotal = originalTotal - discountVal, downPayment = netTotal * ((downPct||0)/100); let extraPaymentsTotal = 0; let bulletsSummary = []; (customBullets || []).forEach(b => { const pct = parseFloat(b.percent) || 0; if(pct > 0){ if(b.type === 'annual'){ const count = (b.selectedYears || []).length, perYearVal = netTotal * (pct / 100), totalBulletVal = perYearVal * count; extraPaymentsTotal += totalBulletVal; bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); } else { const val = netTotal * (pct / 100); extraPaymentsTotal += val; const name = b.type === 'delivery' ? 'دفعة استلام' : 'دفعة مؤجلة'; bulletsSummary.push({ type: b.type, label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, val }); } } }); const remaining = netTotal - (downPayment + extraPaymentsTotal), monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; }
+function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
+    const discountVal = originalTotal * ((discountPct||0)/100);
+    const netTotal = originalTotal - discountVal;
+    const downPayment = netTotal * ((downPct||0)/100);
+    let extraPaymentsTotal = 0; 
+    let bulletsSummary = []; 
+    
+    (customBullets || []).forEach(b => { 
+        const pct = parseFloat(b.percent) || 0; 
+        if(pct > 0){ 
+            if(b.type === 'annual'){ 
+                const count = (b.selectedYears || []).length;
+                const perYearVal = netTotal * (pct / 100);
+                const totalBulletVal = perYearVal * count; 
+                extraPaymentsTotal += totalBulletVal; 
+                bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); 
+            } else { 
+                const val = netTotal * (pct / 100); 
+                extraPaymentsTotal += val; 
+                let name = 'دفعة مؤجلة';
+                if (b.type === 'delivery') name = 'دفعة استلام';
+                else if (b.type === 'after_3m') name = 'بعد 3 شهور';
+                else if (b.type === 'after_6m') name = 'بعد 6 شهور';
+                else if (b.type === 'after_9m') name = 'بعد 9 شهور';
+                bulletsSummary.push({ type: b.type, label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, val }); 
+            } 
+        } 
+    }); 
+    
+    const remaining = netTotal - (downPayment + extraPaymentsTotal);
+    const monthlyEquivalent = (years || 1) > 0 ? remaining / ((years || 1) * 12) : remaining; 
+    return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
+}
 
 function openCalculator(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>document.getElementById(id).value=''); document.getElementById('calcResult').style.display='none'; renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); }
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
@@ -688,9 +717,12 @@ function renderCalcBulletsRows(){
                 <option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option>
                 <option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option>
                 <option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option>
+                <option value="after_3m" ${b.type=='after_3m'?'selected':''}>بعد 3 شهور</option>
+                <option value="after_6m" ${b.type=='after_6m'?'selected':''}>بعد 6 شهور</option>
+                <option value="after_9m" ${b.type=='after_9m'?'selected':''}>بعد 9 شهور</option>
             </select>
             <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
-            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')" aria-label="حذف الدفعة">✕</button>
+            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
         </div>
         ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     </div>`).join(''); 
@@ -732,7 +764,6 @@ function closeModal(id){
 
 document.addEventListener('click', (e)=>{ 
     if(e.target.classList.contains('overlay')) {
-        // منع القفل بالضغط بره لشاشة المراحل وإضافة مشروع عشان الغلطات
         if(e.target.id === 'formOverlay' || e.target.id === 'phasesOverlay') return; 
         e.target.classList.remove('open');
     }
