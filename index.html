@@ -8,21 +8,7 @@
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#DC2626">
 
-<meta property="og:type" content="website">
-<meta property="og:locale" content="ar_EG">
-<meta property="og:title" content="Broker-Assistant | النظام الذكي لإدارة العقارات">
-<meta property="og:description" content="نظام إدارة المشروعات العقارية وحسابات الأقساط، مصمم خصيصاً للوسطاء والمكاتب العقارية.">
-<meta property="og:image" content="assets/og-image.jpg">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Broker-Assistant | النظام الذكي لإدارة العقارات">
-<meta name="twitter:description" content="نظام إدارة المشروعات العقارية وحسابات الأقساط، مصمم خصيصاً للوسطاء والمكاتب العقارية.">
-<meta name="twitter:image" content="assets/og-image.jpg">
-
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://www.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" defer></script>
@@ -35,14 +21,14 @@
 
   <header class="site-bar">
       <div class="site-bar-brand">Broker-Assistant</div>
-      <nav class="site-bar-links" id="siteBarLinks" aria-label="روابط الصفحة الرئيسية">
+      <nav class="site-bar-links" id="siteBarLinks">
           <a href="#features">المميزات</a>
           <a href="#pricing">الأسعار</a>
       </nav>
       <div class="site-bar-actions">
           <button class="btn btn-primary-style btn-pill site-bar-login" id="siteBarLoginBtn" onclick="openSystemLogin()">دخول للنظام</button>
-          <button class="theme-switcher" onclick="toggleTheme()" aria-label="تبديل المظهر الليلي والنهاري" title="تغيير المظهر">🌓</button>
-          <button class="lang-switcher" onclick="toggleLanguage()" aria-label="Switch language / تغيير اللغة">En / عربي</button>
+          <button class="theme-switcher" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
+          <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
       </div>
   </header>
 
@@ -121,8 +107,8 @@
           <footer class="landing-footer">
               <div class="footer-brand">Broker-Assistant</div>
               <p data-ar="النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني." data-en="The smart system for managing real estate projects and installments — run by Jean Hany.">النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني.</p>
-              <a class="footer-contact" href="https://wa.me/201060205362?text=أهلاً جان، عندي استفسار عن نظام Broker-Assistant" target="_blank" rel="noopener" data-ar="💬 تواصل معنا على واتساب" data-en="💬 Contact us on WhatsApp">💬 تواصل معنا على واتساب</a>
-              <div class="footer-fine">© <span id="footerYear"></span> Broker-Assistant. <span data-ar="جميع الحقوق محفوظة." data-en="All rights reserved.">جميع الحقوق محفوظة.</span></div>
+              <a class="footer-contact" href="https://wa.me/201060205362?text=أهلاً جان، عندي استفسار عن نظام Broker-Assistant" target="_blank" rel="noopener">💬 تواصل معنا على واتساب</a>
+              <div class="footer-fine">© <span id="footerYear"></span> Broker-Assistant. جميع الحقوق محفوظة.</div>
           </footer>
       </div>
   </div>
@@ -175,7 +161,6 @@
       <div class="search-master-container">
           <div class="search-main-row">
               <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <label for="fSearchText" class="sr-only">ابحث باسم المشروع، الشركة المطورة، المنطقة، أو المالك</label>
               <input type="text" id="fSearchText" class="main-search-input" placeholder="ابحث باسم المشروع، الشركة المطورة، أو المنطقة..." oninput="handleSearchInput()" onkeydown="if(event.key==='Enter'){ clearTimeout(searchDebounceTimer); applyFilters(); }" autocomplete="off" spellcheck="false">
               <button type="button" class="search-clear-btn" id="searchClearBtn" onclick="clearSearchOnly()" aria-label="مسح البحث" style="display:none;">✕</button>
           </div>
@@ -222,13 +207,12 @@
                       <input type="text" id="fDownPayment" placeholder="الحد الأقصى للمقدم" class="range-input" style="width:100%; margin-bottom:15px;" oninput="formatInput(this)" autocomplete="off">
                       <div class="filter-menu-title">القسط الشهري</div>
                       <input type="text" id="fMonthlyInstallment" placeholder="الحد الأقصى للقسط" class="range-input" style="width:100%;" oninput="formatInput(this)" autocomplete="off">
-                      
                       <button class="btn btn-primary-style w-100 btn-pill" style="margin-top:15px;" onclick="applyFilters(); closeAllDropdowns();">تطبيق الأسعار</button>
                   </div>
               </div>
 
               <button class="btn btn-primary-style btn-search-action" onclick="applyFilters()">بحث</button>
-              <button class="btn-clear-filters" onclick="resetFilters()" aria-label="مسح الفلاتر" title="مسح الفلاتر">✕</button>
+              <button class="btn-clear-filters" onclick="resetFilters()" title="مسح الفلاتر">✕</button>
           </div>
       </div>
 
@@ -254,13 +238,11 @@
   </div>
 
   <div class="paywall-overlay" id="paywallModal">
-    <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
-      <button class="modal-close login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
-      <h2 id="loginModalTitle">تسجيل الدخول للنظام</h2>
+    <div class="paywall-card">
+      <button class="modal-close login-close-btn" onclick="closeLoginModal()">✕</button>
+      <h2>تسجيل الدخول للنظام</h2>
       <p>برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
-      <label for="loginEmail" class="sr-only">البريد الإلكتروني</label>
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
-      <label for="loginPassword" class="sr-only">كلمة المرور</label>
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password">
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px;">
           <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
@@ -272,10 +254,10 @@
   </div>
 
   <div class="overlay" id="usersOverlay">
-    <div class="modal curved-modal" role="dialog" aria-modal="true" aria-labelledby="usersModalTitle">
+    <div class="modal curved-modal">
       <div class="modal-header">
-        <h3 id="usersModalTitle">إدارة المشتركين</h3>
-        <button class="modal-close" onclick="closeModal('usersOverlay')" aria-label="إغلاق">✕</button>
+        <h3>إدارة المشتركين</h3>
+        <button class="modal-close" onclick="closeModal('usersOverlay')">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid" style="grid-template-columns: 1fr;">
@@ -310,14 +292,13 @@
   </div>
 
   <div class="overlay" id="formOverlay">
-    <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <div class="modal curved-modal" style="max-width:900px;">
       <div class="modal-header">
         <h3 id="formTitle">إضافة مشروع جديد</h3>
-        <button class="modal-close" onclick="closeModal('formOverlay')" aria-label="إغلاق">✕</button>
+        <button class="modal-close" onclick="closeModal('formOverlay')">✕</button>
       </div>
       <div class="modal-body">
         
-        <!-- 🌟 ميزة الاستيراد الذكي (Magic Paste) 🌟 -->
         <div class="magic-paste-box">
             <label for="magicPasteInput">✨ الاستيراد الذكي من الواتساب (انسخ رسالة المشروع بالكامل هنا)</label>
             <textarea id="magicPasteInput" rows="3" placeholder="انسخ تفاصيل المشروع والوحدات وخطط السداد هنا وسيتم استخراجهم تلقائياً..." autocomplete="off"></textarea>
@@ -332,7 +313,12 @@
             </select>
           </div>
           <div class="form-field"><label for="fldCompany">اسم الشركة المطورة</label><input id="fldCompany" placeholder="مثال: سيتي إيدج" autocomplete="off"></div>
-          <div class="form-field"><label for="fldProject">اسم المشروع / الكمبوند</label><input id="fldProject" placeholder="مثال: تاج سيتي" autocomplete="off"></div>
+          <div class="form-field"><label for="fldProject">اسم المشروع / الكمبوند</label><input id="fldProject" placeholder="مثال: G WEST" autocomplete="off"></div>
+          
+          <!-- ✨ الخانات الجديدة للمرحلة وعدد الأدوار ✨ -->
+          <div class="form-field"><label for="fldPhaseName">اسم أو رقم المرحلة (اختياري للمراحل المتعددة)</label><input id="fldPhaseName" placeholder="مثال: Phase 2 أو المرحلة الثانية" autocomplete="off"></div>
+          <div class="form-field"><label for="fldFloors">ارتفاع العمارات (G + ?)</label><input type="number" id="fldFloors" placeholder="مثال: 5" autocomplete="off"></div>
+
           <div class="form-field"><label for="fldOwner">اسم مالك الشركة / رئيس المجلس</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
           
@@ -391,10 +377,10 @@
   </div>
 
   <div class="overlay" id="detailOverlay">
-    <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal curved-modal" style="max-width:900px;">
       <div class="modal-header">
         <h3 id="detailTitle">تفاصيل المشروع</h3>
-        <button class="modal-close" onclick="closeModal('detailOverlay')" aria-label="إغلاق">✕</button>
+        <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
       </div>
       <div class="modal-body" id="detailBody" style="padding-top: 25px;"></div>
       <div class="modal-footer">
@@ -405,11 +391,24 @@
     </div>
   </div>
 
-  <div class="overlay" id="calcOverlay">
-    <div class="modal curved-modal" role="dialog" aria-modal="true" aria-labelledby="calcModalTitle">
+  <!-- ✨ نافذة اختيار المراحل الجديدة ✨ -->
+  <div class="overlay" id="phasesOverlay">
+    <div class="modal curved-modal" style="max-width:750px;">
       <div class="modal-header">
-        <h3 id="calcModalTitle">حاسبة الأقساط الشاملة</h3>
-        <button class="modal-close" onclick="closeModal('calcOverlay')" aria-label="إغلاق">✕</button>
+        <h3 id="phasesTitle">مراحل المشروع</h3>
+        <button class="modal-close" onclick="closeModal('phasesOverlay')">✕</button>
+      </div>
+      <div class="modal-body">
+          <div class="phases-grid" id="phasesBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="calcOverlay">
+    <div class="modal curved-modal">
+      <div class="modal-header">
+        <h3>حاسبة الأقساط الشاملة</h3>
+        <button class="modal-close" onclick="closeModal('calcOverlay')">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
