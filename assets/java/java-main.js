@@ -256,7 +256,6 @@ function processMagicPaste() {
 
         let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
 
-        // ✨ تعديل Regex عشان يسحب مساحة الروف لو لقاها
         const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?)/i); 
         
         if (unitMatch) {
@@ -574,8 +573,6 @@ function openCompoundForm(existing){
 function onProjectTypeChange() { const isComm = document.getElementById('fldProjectType').value === 'commercial'; document.querySelectorAll('.res-price-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.getElementById('commercialPriceWrap').style.display = isComm ? 'block' : 'none'; if (isComm) document.getElementById('priceMeterAvgWrap').style.display = 'none'; renderUnitRows(); }
 function getAverageCommercialPrice(bType) { let min = 0, max = 0; if (bType === 'admin') { min = getRawNum(document.getElementById('fldAdminMin').value); max = getRawNum(document.getElementById('fldAdminMax').value); } else if (bType === 'commercial') { min = getRawNum(document.getElementById('fldCommMin').value); max = getRawNum(document.getElementById('fldCommMax').value); } else if (bType === 'clinic') { min = getRawNum(document.getElementById('fldClinicMin').value); max = getRawNum(document.getElementById('fldClinicMax').value); } else if (bType === 'recreational') { min = getRawNum(document.getElementById('fldRecMin').value); max = getRawNum(document.getElementById('fldRecMax').value); } if (min > 0 && max > 0) return (min + max) / 2; return min || max || getAveragePricePerMeter(); }
 function getAveragePricePerMeter(){ const min = getRawNum(document.getElementById('fldPriceMeterMin').value); const max = getRawNum(document.getElementById('fldPriceMeterMax').value); if(min > 0 && max > 0) return (min + max) / 2; return min || max || 0; }
-
-/* ✨ تحديث حساب أسعار الوحدات ليدعم الروف ✨ */
 function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProjectType').value === 'commercial'; const avg = getAveragePricePerMeter(); const wrap = document.getElementById('priceMeterAvgWrap'); if (wrap) wrap.style.display = (avg > 0 && !isComm) ? 'block' : 'none'; const avgInput = document.getElementById('fldPriceMeterAvg'); if (avgInput) avgInput.value = formatNum(Math.round(avg)) + ' جنيه'; tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null)); }
 
 function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', roofArea:'', price:''}); renderUnitRows(); }
@@ -604,7 +601,6 @@ function updateUnitData(id, field, val) {
     }
 }
 
-/* ✨ تحديث واجهة الوحدات عشان نعرض خانة الروف ✨ */
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
     let optionsHtml = pType === 'commercial' ? `<option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option>` : `<option value="apartment">شقة (Apartment)</option><option value="studio">استوديو (Studio)</option><option value="1br">1 غرفة نوم</option><option value="2br">2 غرفة نوم</option><option value="3br">3 غرف نوم</option><option value="4br">4 غرف نوم</option><option value="villa">فيلا (Villa)</option><option value="twinhouse">توين هاوس</option><option value="townhouse">تاون هاوس</option><option value="duplex">دوبلكس</option><option value="penthouse">بنتهاوس</option><option value="chalet">شاليه</option>`; 
@@ -734,6 +730,7 @@ function renderDetailModalContent() {
   } document.getElementById('detailBody').innerHTML = html;
 }
 
+/* ✨✨ تصحيح الخوارزمية الجبارة عشان تعرض السنين صح ✨✨ */
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = originalTotal * ((discountPct||0)/100);
     const netTotal = originalTotal - discountVal;
@@ -746,10 +743,14 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
         if(pct > 0){ 
             if(b.type === 'annual'){ 
                 const count = (b.selectedYears || []).length;
-                const perYearVal = netTotal * (pct / 100);
-                const totalBulletVal = perYearVal * count; 
-                extraPaymentsTotal += totalBulletVal; 
-                bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${count} سنوات) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); 
+                if (count > 0) {
+                    const perYearVal = netTotal * (pct / 100);
+                    const totalBulletVal = perYearVal * count; 
+                    extraPaymentsTotal += totalBulletVal; 
+                    const yearsStr = [...b.selectedYears].sort((a,b)=>a-b).join(' و ');
+                    const yLabel = count > 1 ? `سنوات: ${yearsStr}` : `سنة: ${yearsStr}`;
+                    bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${yLabel}) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); 
+                }
             } else { 
                 const val = netTotal * (pct / 100); 
                 extraPaymentsTotal += val; 
