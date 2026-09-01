@@ -652,7 +652,7 @@ function renderPlanRows(){
                     <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')" aria-label="حذف الدفعة">✕</button>
                 </div>
-                ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+                ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
             </div>`).join('')}
             <button class="btn btn-outline-light w-100 btn-pill" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
         </div>
@@ -730,7 +730,7 @@ function renderDetailModalContent() {
   } document.getElementById('detailBody').innerHTML = html;
 }
 
-/* ✨✨ تصحيح الخوارزمية الجبارة عشان تعرض السنين صح ✨✨ */
+/* ✨✨✨ الخوارزمية الجبارة لحساب الدفعات المنفصلة بأسماء السنين ✨✨✨ */
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = originalTotal * ((discountPct||0)/100);
     const netTotal = originalTotal - discountVal;
@@ -745,11 +745,15 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
                 const count = (b.selectedYears || []).length;
                 if (count > 0) {
                     const perYearVal = netTotal * (pct / 100);
-                    const totalBulletVal = perYearVal * count; 
-                    extraPaymentsTotal += totalBulletVal; 
-                    const yearsStr = [...b.selectedYears].sort((a,b)=>a-b).join(' و ');
-                    const yLabel = count > 1 ? `سنوات: ${yearsStr}` : `سنة: ${yearsStr}`;
-                    bulletsSummary.push({ type: 'annual', label: `دفعة سنوية: %${pct} (${yLabel}) = ${formatNum(Math.round(totalBulletVal))} ج`, perYearVal }); 
+                    // قاموس تحويل الأرقام لأسماء فصحى شيك
+                    const ordinals = {1: 'الأولى', 2: 'الثانية', 3: 'الثالثة', 4: 'الرابعة', 5: 'الخامسة', 6: 'السادسة', 7: 'السابعة', 8: 'الثامنة', 9: 'التاسعة', 10: 'العاشرة'};
+                    
+                    // السيستم هيفصلهم سطر سطر قدام العميل
+                    [...b.selectedYears].sort((a,b)=>a-b).forEach(yr => {
+                        const yName = ordinals[yr] || yr;
+                        bulletsSummary.push({ type: 'annual', label: `دفعة السنة ${yName}: %${pct} = ${formatNum(Math.round(perYearVal))} ج`, val: perYearVal });
+                        extraPaymentsTotal += perYearVal; // بنجمع الإجمالي ورا الكواليس بس مش بنظهره مجمع للعميل
+                    });
                 }
             } else { 
                 const val = netTotal * (pct / 100); 
@@ -794,7 +798,7 @@ function renderCalcBulletsRows(){
             <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
             <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')" aria-label="حذف الدفعة">✕</button>
         </div>
-        ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+        ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     </div>`).join(''); 
 }
 
