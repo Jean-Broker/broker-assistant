@@ -42,7 +42,7 @@ let tempUnits = [], tempPlans = [], tempDecrees = [], openMainLocIds = {};
 let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = [];
 let activeLocationIds = []; 
 let filters = {};
-let completionFilter = 'all'; // ✨ فلتر جودة البيانات (مكتمل / غير مكتمل) ✨
+let completionFilter = 'all'; 
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
 const BEDROOM_TYPES = { 'apartment': 'شقة', 'villa': 'فيلا', 'twinhouse': 'توين هاوس', 'townhouse': 'تاون هاوس', 'chalet': 'شاليه', studio: 'استوديو (Studio)', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس', commercial: 'تجاري (Commercial)', admin: 'إداري (Admin)', clinic: 'عيادة / طبي (Clinic)', recreational: 'ترفيهي (Recreational)' };
@@ -77,7 +77,6 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
-/* ✨✨✨ الخوارزمية الصارمة لفحص جودة البيانات (14 شرط) ✨✨✨ */
 function isCompoundComplete(c) {
     if (!c.companyName || c.companyName.trim() === '') return false;
     if (!c.projectName || c.projectName.trim() === '') return false;
@@ -86,14 +85,11 @@ function isCompoundComplete(c) {
     if (!c.locationId || c.locationId.trim() === '') return false;
     if (!c.deliveryDate || c.deliveryDate.trim() === '') return false;
     if (!c.projectSize || parseFloat(c.projectSize) <= 0) return false;
-    
-    // قيم ممكن تكون صفر بس لازم متكونش فاضية
     if (c.maintenancePercent === undefined || c.maintenancePercent === null || c.maintenancePercent === '') return false;
     if (c.parkingFee === undefined || c.parkingFee === null || c.parkingFee === '') return false;
     if (c.cashDiscount === undefined || c.cashDiscount === null || c.cashDiscount === '') return false;
     if (!c.finishingStatus || c.finishingStatus.trim() === '') return false;
 
-    // فحص الأسعار بناءً على النوع
     let hasPrice = false;
     if (c.projectType === 'commercial' && c.commercialPrices) {
         if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true;
@@ -102,14 +98,11 @@ function isCompoundComplete(c) {
     }
     if (!hasPrice) return false;
 
-    // فحص القوائم المعقدة (3 مساحات وخطة سداد)
     if (!c.unitTypes || c.unitTypes.length < 3) return false;
     if (!c.paymentPlans || c.paymentPlans.length < 1) return false;
-
     return true;
 }
 
-/* ✨ دالة عرض إحصائيات الإدارة ✨ */
 function renderAdminStats() {
     const board = document.getElementById('adminStatsBoard');
     if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
@@ -124,7 +117,6 @@ function renderAdminStats() {
     document.getElementById('statIncomplete').textContent = incomplete;
 }
 
-/* ✨ فلتر الإدارة ✨ */
 function setCompletionFilter(filterType, btnElem) {
     completionFilter = filterType;
     document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
@@ -264,13 +256,26 @@ function processMagicPaste() {
 
         let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
 
-        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]+(?:\.\d+)?)\s*([mMkK]|مليون|الف)?/i); 
+        // ✨ تعديل Regex عشان يسحب مساحة الروف لو لقاها
+        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?)/i); 
         
         if (unitMatch) {
             const area = parseFloat(unitMatch[1]);
-            const garden = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
+            const extraArea = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
+            
+            let garden = '';
+            let roof = '';
+            
+            if (extraArea) {
+                if (processingLine.match(/roof|روف|بنتهاوس|penthouse/i)) {
+                    roof = extraArea;
+                } else {
+                    garden = extraArea;
+                }
+            }
+
             if (area > 10) { 
-                tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, price: '' });
+                tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, roofArea: roof, price: '' });
                 unitsAdded++;
             }
         }
@@ -307,7 +312,7 @@ async function saveCompoundToCloud() {
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
-    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, price: parseFloat(u.price) || 0 })),
+    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: parseFloat(u.price) || 0 })),
     paymentPlans: tempPlans, ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
   try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); document.getElementById('formOverlay').classList.remove('open'); showToast('تم حفظ المشروع بنجاح'); } 
@@ -445,7 +450,6 @@ function openPhasesModal(projName, compName) {
 
 function renderGrid(){
   let list = compounds.filter(c=>{
-    // ✨ تطبيق فلتر الإدارة ✨
     if (completionFilter === 'completed' && !isCompoundComplete(c)) return false;
     if (completionFilter === 'incomplete' && isCompoundComplete(c)) return false;
 
@@ -570,37 +574,48 @@ function openCompoundForm(existing){
 function onProjectTypeChange() { const isComm = document.getElementById('fldProjectType').value === 'commercial'; document.querySelectorAll('.res-price-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.getElementById('commercialPriceWrap').style.display = isComm ? 'block' : 'none'; if (isComm) document.getElementById('priceMeterAvgWrap').style.display = 'none'; renderUnitRows(); }
 function getAverageCommercialPrice(bType) { let min = 0, max = 0; if (bType === 'admin') { min = getRawNum(document.getElementById('fldAdminMin').value); max = getRawNum(document.getElementById('fldAdminMax').value); } else if (bType === 'commercial') { min = getRawNum(document.getElementById('fldCommMin').value); max = getRawNum(document.getElementById('fldCommMax').value); } else if (bType === 'clinic') { min = getRawNum(document.getElementById('fldClinicMin').value); max = getRawNum(document.getElementById('fldClinicMax').value); } else if (bType === 'recreational') { min = getRawNum(document.getElementById('fldRecMin').value); max = getRawNum(document.getElementById('fldRecMax').value); } if (min > 0 && max > 0) return (min + max) / 2; return min || max || getAveragePricePerMeter(); }
 function getAveragePricePerMeter(){ const min = getRawNum(document.getElementById('fldPriceMeterMin').value); const max = getRawNum(document.getElementById('fldPriceMeterMax').value); if(min > 0 && max > 0) return (min + max) / 2; return min || max || 0; }
+
+/* ✨ تحديث حساب أسعار الوحدات ليدعم الروف ✨ */
 function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProjectType').value === 'commercial'; const avg = getAveragePricePerMeter(); const wrap = document.getElementById('priceMeterAvgWrap'); if (wrap) wrap.style.display = (avg > 0 && !isComm) ? 'block' : 'none'; const avgInput = document.getElementById('fldPriceMeterAvg'); if (avgInput) avgInput.value = formatNum(Math.round(avg)) + ' جنيه'; tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null)); }
 
-function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', price:''}); renderUnitRows(); }
+function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', roofArea:'', price:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 
 function updateUnitData(id, field, val) {
     const u = tempUnits.find(x => x.id === id);
     if (!u) return;
-    if (field === 'bedroomType') { u.bedroomType = val; } else if (field === 'price') { u.price = getRawNum(val); return; } else if (field === 'area' || field === 'gardenArea') { u[field] = parseFloat(val) || 0; }
+    if (field === 'bedroomType') { u.bedroomType = val; } 
+    else if (field === 'price') { u.price = getRawNum(val); return; } 
+    else if (field === 'area' || field === 'gardenArea' || field === 'roofArea') { u[field] = parseFloat(val) || 0; }
 
     const pType = document.getElementById('fldProjectType').value;
     let avg = pType === 'commercial' ? getAverageCommercialPrice(u.bedroomType) : getAveragePricePerMeter();
     
     if (avg > 0) {
-        let mainPrice = (u.area || 0) * avg; let gardenPrice = (u.gardenArea || 0) * (avg / 3); 
-        if (mainPrice > 0 || gardenPrice > 0) {
-            u.price = Math.round(mainPrice + gardenPrice); document.getElementById(`price-input-${u.id}`).value = u.price ? formatNum(u.price) : '';
+        let mainPrice = (u.area || 0) * avg; 
+        let gardenPrice = (u.gardenArea || 0) * (avg / 3); 
+        let roofPrice = (u.roofArea || 0) * (avg / 3);
+        
+        if (mainPrice > 0 || gardenPrice > 0 || roofPrice > 0) {
+            u.price = Math.round(mainPrice + gardenPrice + roofPrice); 
+            let pInput = document.getElementById(`price-input-${u.id}`);
+            if(pInput) pInput.value = formatNum(u.price);
         }
     }
 }
 
+/* ✨ تحديث واجهة الوحدات عشان نعرض خانة الروف ✨ */
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
     let optionsHtml = pType === 'commercial' ? `<option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option>` : `<option value="apartment">شقة (Apartment)</option><option value="studio">استوديو (Studio)</option><option value="1br">1 غرفة نوم</option><option value="2br">2 غرفة نوم</option><option value="3br">3 غرف نوم</option><option value="4br">4 غرف نوم</option><option value="villa">فيلا (Villa)</option><option value="twinhouse">توين هاوس</option><option value="townhouse">تاون هاوس</option><option value="duplex">دوبلكس</option><option value="penthouse">بنتهاوس</option><option value="chalet">شاليه</option>`; 
     document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
         let bType = getCorrectedUnitType(u.bedroomType, pType); 
-        return `<div class="repeat-row" style="display:flex; gap:10px; align-items:center;">
-                    <select style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}</select>
-                    <input type="number" placeholder="مباني(م²)" style="flex:1; min-width:70px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
-                    <input type="number" placeholder="جاردن(م²)" style="flex:1; min-width:70px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
-                    <input type="text" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.5; min-width:100px; font-weight:800; color:var(--text-main);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
+        return `<div class="repeat-row" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <select style="flex:1; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}</select>
+                    <input type="number" placeholder="مباني(م²)" style="flex:1; min-width:60px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
+                    <input type="number" placeholder="جاردن(م²)" style="flex:1; min-width:60px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
+                    <input type="number" placeholder="روف(م²)" style="flex:1; min-width:60px;" value="${u.roofArea||''}" oninput="updateUnitData('${u.id}', 'roofArea', this.value)">
+                    <input type="text" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.5; min-width:90px; font-weight:800; color:var(--text-main);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')" aria-label="حذف الوحدة">✕</button>
                 </div>` 
     }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا يوجد وحدات مضافة</div>'; 
@@ -632,7 +647,7 @@ function renderPlanRows(){
                 <div class="bullet-top" style="display:flex; gap:10px; align-items:center;">
                     <select style="flex:1; min-width:100px;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)">
                         <option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option>
-                        <option value="deferred" ${b.type==='deferred'?'selected':''}>دفعة مؤجلة</option>
+                        <option value="deferred" ${b.type==='deferred'?'selected':''}>مؤجلة</option>
                         <option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option>
                         <option value="after_3m" ${b.type==='after_3m'?'selected':''}>بعد 3 شهور</option>
                         <option value="after_6m" ${b.type==='after_6m'?'selected':''}>بعد 6 شهور</option>
@@ -695,7 +710,8 @@ function renderDetailModalContent() {
     
     html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => {
         let gText = u.gardenArea ? ` + جاردن ${u.gardenArea}م²` : '';
-        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText} | ${formatNum(u.price)} ج</div>`
+        let rText = u.roofArea ? ` + روف ${u.roofArea}م²` : '';
+        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText}${rText} | ${formatNum(u.price)} ج</div>`
     }).join('') + `</div>`;
     
     const sUnit = (c.unitTypes || []).find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
@@ -775,7 +791,7 @@ function renderCalcBulletsRows(){
                 <option value="after_9m" ${b.type=='after_9m'?'selected':''}>بعد 9 شهور</option>
             </select>
             <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
-            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
+            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')" aria-label="حذف الدفعة">✕</button>
         </div>
         ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     </div>`).join(''); 
