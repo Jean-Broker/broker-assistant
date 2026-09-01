@@ -42,6 +42,7 @@ let tempUnits = [], tempPlans = [], tempDecrees = [], openMainLocIds = {};
 let activeDetailCategory = null, activeDetailUnitId = null, calcCustomBullets = [];
 let activeLocationIds = []; 
 let filters = {};
+let completionFilter = 'all'; // ✨ فلتر جودة البيانات (مكتمل / غير مكتمل) ✨
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
 const BEDROOM_TYPES = { 'apartment': 'شقة', 'villa': 'فيلا', 'twinhouse': 'توين هاوس', 'townhouse': 'تاون هاوس', 'chalet': 'شاليه', studio: 'استوديو (Studio)', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس', commercial: 'تجاري (Commercial)', admin: 'إداري (Admin)', clinic: 'عيادة / طبي (Clinic)', recreational: 'ترفيهي (Recreational)' };
@@ -76,11 +77,66 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
+/* ✨✨✨ الخوارزمية الصارمة لفحص جودة البيانات (14 شرط) ✨✨✨ */
+function isCompoundComplete(c) {
+    if (!c.companyName || c.companyName.trim() === '') return false;
+    if (!c.projectName || c.projectName.trim() === '') return false;
+    if (!c.ownerName || c.ownerName.trim() === '') return false;
+    if (!c.consultant || c.consultant.trim() === '') return false;
+    if (!c.locationId || c.locationId.trim() === '') return false;
+    if (!c.deliveryDate || c.deliveryDate.trim() === '') return false;
+    if (!c.projectSize || parseFloat(c.projectSize) <= 0) return false;
+    
+    // قيم ممكن تكون صفر بس لازم متكونش فاضية
+    if (c.maintenancePercent === undefined || c.maintenancePercent === null || c.maintenancePercent === '') return false;
+    if (c.parkingFee === undefined || c.parkingFee === null || c.parkingFee === '') return false;
+    if (c.cashDiscount === undefined || c.cashDiscount === null || c.cashDiscount === '') return false;
+    if (!c.finishingStatus || c.finishingStatus.trim() === '') return false;
+
+    // فحص الأسعار بناءً على النوع
+    let hasPrice = false;
+    if (c.projectType === 'commercial' && c.commercialPrices) {
+        if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true;
+    } else {
+        if (c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) hasPrice = true;
+    }
+    if (!hasPrice) return false;
+
+    // فحص القوائم المعقدة (3 مساحات وخطة سداد)
+    if (!c.unitTypes || c.unitTypes.length < 3) return false;
+    if (!c.paymentPlans || c.paymentPlans.length < 1) return false;
+
+    return true;
+}
+
+/* ✨ دالة عرض إحصائيات الإدارة ✨ */
+function renderAdminStats() {
+    const board = document.getElementById('adminStatsBoard');
+    if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
+    
+    board.style.display = 'flex';
+    let total = compounds.length;
+    let completed = compounds.filter(c => isCompoundComplete(c)).length;
+    let incomplete = total - completed;
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statCompleted').textContent = completed;
+    document.getElementById('statIncomplete').textContent = incomplete;
+}
+
+/* ✨ فلتر الإدارة ✨ */
+function setCompletionFilter(filterType, btnElem) {
+    completionFilter = filterType;
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    btnElem.classList.add('active');
+    renderGrid();
+}
+
 async function syncCloudData() { 
     document.getElementById('pageSub').textContent = "جاري تحميل البيانات..."; 
     const grid = document.getElementById('compoundGrid'); if (grid && !grid.children.length) grid.innerHTML = skeletonCardsHtml(6);
     db.collection('system').doc('locations').onSnapshot(doc => { mainLocations = doc.exists ? doc.data().mainLocations || [] : []; renderLocationTree(); applyFilters(); }); 
-    db.collection('compounds').onSnapshot(snapshot => { compounds = []; snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); renderLocationTree(); applyFilters(); }); 
+    db.collection('compounds').onSnapshot(snapshot => { compounds = []; snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); renderAdminStats(); renderLocationTree(); applyFilters(); }); 
 }
 
 async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collection('system').doc('locations').set({ mainLocations }); } catch (error) { alert('خطأ في الحفظ!'); } } }
@@ -99,7 +155,6 @@ function extractValueAfterKeyword(line, keywords) {
     return null;
 }
 
-/* ✨ الاستيراد الذكي V3 ✨ */
 function processMagicPaste() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
@@ -248,14 +303,7 @@ async function saveCompoundToCloud() {
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
 
   const data = {
-    locationId: document.getElementById('fldLocation').value || '', 
-    projectType: document.getElementById('fldProjectType').value, 
-    companyName: document.getElementById('fldCompany').value.trim(), 
-    projectName: projectName, 
-    phaseName: document.getElementById('fldPhaseName').value.trim(),
-    floors: parseInt(document.getElementById('fldFloors').value) || '',
-    ownerName: document.getElementById('fldOwner').value.trim(), 
-    consultant: document.getElementById('fldConsultant').value.trim(),
+    locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: parseInt(document.getElementById('fldFloors').value) || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
@@ -271,10 +319,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
 function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
 function formatNum(n){ return Number(n).toLocaleString('en-US'); }
 function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-/* ✨ وظيفة تحديد النص للبحث ✨ */
 function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
-
 function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
 function populateDeliverySelects(){ const opts = DELIVERY_TIMELINES.map(d=>`<option value="${d.value}">${d.label}</option>`).join(''); document.getElementById('fldDeliveryDate').innerHTML = opts; }
 function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
@@ -316,7 +361,6 @@ async function addSubLocation(mainId){ if(!isEditor) return; const input = docum
 async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
 function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
 
-/* ✨ دوال تأخير البحث (Debounce) لضمان السرعة في الكتابة ✨ */
 let searchDebounceTimer = null;
 function handleSearchInput() {
     const val = document.getElementById('fSearchText').value;
@@ -357,7 +401,6 @@ function resetFilters(){
 
 function findSubLocationName(subId){ for(const m of mainLocations){ const s = m.subLocations.find(x => x.id === subId); if(s) return `${m.name} ⬅️ ${s.name}`; } return '-'; }
 
-/* ✨ دوال تصميم الكروت والمراحل ✨ */
 function generateDossierHTML(c) {
     const minPrice = (c.unitTypes||[]).length ? Math.min(...c.unitTypes.map(u=>u.price||Infinity)) : null;
     let pDisplay = '';
@@ -402,6 +445,10 @@ function openPhasesModal(projName, compName) {
 
 function renderGrid(){
   let list = compounds.filter(c=>{
+    // ✨ تطبيق فلتر الإدارة ✨
+    if (completionFilter === 'completed' && !isCompoundComplete(c)) return false;
+    if (completionFilter === 'incomplete' && isCompoundComplete(c)) return false;
+
     if (activeLocationIds.length > 0) {
         let parentMain = mainLocations.find(m => m.subLocations.some(s => s.id === c.locationId));
         let parentId = parentMain ? parentMain.id : null;
@@ -486,7 +533,6 @@ function renderGrid(){
   const grid = document.getElementById('compoundGrid');
   if(!list.length) return grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-title">لا توجد مشروعات مطابقة</div><div class="empty-state-sub">جرّب تعديل كلمة البحث أو الفلاتر المستخدمة</div><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح كل الفلاتر</button></div>`;
   
-  // تجميع المراحل
   let groups = {};
   list.forEach(c => {
       let key = `${(c.projectName||'').trim().toLowerCase()}|${(c.companyName||'').trim().toLowerCase()}`;
