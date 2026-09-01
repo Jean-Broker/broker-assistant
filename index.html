@@ -158,6 +158,22 @@
         <button class="btn btn-outline-light btn-pill" onclick="backToLanding()">العودة للرئيسية</button>
       </div>
 
+      <!-- ✨ لوحة تحكم جودة البيانات للمديرين ✨ -->
+      <div id="adminStatsBoard" class="admin-stats-board" style="display: none;">
+          <div class="stat-card stat-total active" onclick="setCompletionFilter('all', this)">
+              <h4>إجمالي المشروعات</h4>
+              <b id="statTotal">0</b>
+          </div>
+          <div class="stat-card stat-success" onclick="setCompletionFilter('completed', this)">
+              <h4>مكتمل البيانات ✅</h4>
+              <b id="statCompleted">0</b>
+          </div>
+          <div class="stat-card stat-warning" onclick="setCompletionFilter('incomplete', this)">
+              <h4>نواقص في الداتا ⏳</h4>
+              <b id="statIncomplete">0</b>
+          </div>
+      </div>
+
       <div class="search-master-container">
           <div class="search-main-row">
               <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -238,11 +254,13 @@
   </div>
 
   <div class="paywall-overlay" id="paywallModal">
-    <div class="paywall-card">
-      <button class="modal-close login-close-btn" onclick="closeLoginModal()">✕</button>
-      <h2>تسجيل الدخول للنظام</h2>
+    <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+      <button class="modal-close login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
+      <h2 id="loginModalTitle">تسجيل الدخول للنظام</h2>
       <p>برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
+      <label for="loginEmail" class="sr-only">البريد الإلكتروني</label>
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
+      <label for="loginPassword" class="sr-only">كلمة المرور</label>
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password">
       <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px;">
           <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
@@ -254,10 +272,10 @@
   </div>
 
   <div class="overlay" id="usersOverlay">
-    <div class="modal curved-modal">
+    <div class="modal curved-modal" role="dialog" aria-modal="true" aria-labelledby="usersModalTitle">
       <div class="modal-header">
-        <h3>إدارة المشتركين</h3>
-        <button class="modal-close" onclick="closeModal('usersOverlay')">✕</button>
+        <h3 id="usersModalTitle">إدارة المشتركين</h3>
+        <button class="modal-close" onclick="closeModal('usersOverlay')" aria-label="إغلاق">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid" style="grid-template-columns: 1fr;">
@@ -292,10 +310,10 @@
   </div>
 
   <div class="overlay" id="formOverlay">
-    <div class="modal curved-modal" style="max-width:900px;">
+    <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true" aria-labelledby="formTitle">
       <div class="modal-header">
         <h3 id="formTitle">إضافة مشروع جديد</h3>
-        <button class="modal-close" onclick="closeModal('formOverlay')">✕</button>
+        <button class="modal-close" onclick="closeModal('formOverlay')" aria-label="إغلاق">✕</button>
       </div>
       <div class="modal-body">
         
@@ -315,7 +333,6 @@
           <div class="form-field"><label for="fldCompany">اسم الشركة المطورة</label><input id="fldCompany" placeholder="مثال: سيتي إيدج" autocomplete="off"></div>
           <div class="form-field"><label for="fldProject">اسم المشروع / الكمبوند</label><input id="fldProject" placeholder="مثال: G WEST" autocomplete="off"></div>
           
-          <!-- ✨ الخانات الجديدة للمرحلة وعدد الأدوار ✨ -->
           <div class="form-field"><label for="fldPhaseName">اسم أو رقم المرحلة (اختياري للمراحل المتعددة)</label><input id="fldPhaseName" placeholder="مثال: Phase 2 أو المرحلة الثانية" autocomplete="off"></div>
           <div class="form-field"><label for="fldFloors">ارتفاع العمارات (G + ?)</label><input type="number" id="fldFloors" placeholder="مثال: 5" autocomplete="off"></div>
 
@@ -377,10 +394,10 @@
   </div>
 
   <div class="overlay" id="detailOverlay">
-    <div class="modal curved-modal" style="max-width:900px;">
+    <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
       <div class="modal-header">
         <h3 id="detailTitle">تفاصيل المشروع</h3>
-        <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
+        <button class="modal-close" onclick="closeModal('detailOverlay')" aria-label="إغلاق">✕</button>
       </div>
       <div class="modal-body" id="detailBody" style="padding-top: 25px;"></div>
       <div class="modal-footer">
@@ -391,7 +408,6 @@
     </div>
   </div>
 
-  <!-- ✨ نافذة اختيار المراحل الجديدة ✨ -->
   <div class="overlay" id="phasesOverlay">
     <div class="modal curved-modal" style="max-width:750px;">
       <div class="modal-header">
@@ -405,10 +421,10 @@
   </div>
 
   <div class="overlay" id="calcOverlay">
-    <div class="modal curved-modal">
+    <div class="modal curved-modal" role="dialog" aria-modal="true" aria-labelledby="calcModalTitle">
       <div class="modal-header">
-        <h3>حاسبة الأقساط الشاملة</h3>
-        <button class="modal-close" onclick="closeModal('calcOverlay')">✕</button>
+        <h3 id="calcModalTitle">حاسبة الأقساط الشاملة</h3>
+        <button class="modal-close" onclick="closeModal('calcOverlay')" aria-label="إغلاق">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
