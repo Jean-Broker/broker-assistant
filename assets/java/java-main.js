@@ -288,7 +288,8 @@ function processMagicPaste() {
                 const years = parseFloat(planMatch[4]);
                 
                 if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) {
-                    tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
+                    // الماجيك بيست هيضيف الخطة بدون سعر متر مخصص، واليوزر ممكن يضيفه مانيوال
+                    tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', pricePerMeter: '', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
                     plansAdded++;
                 }
             }
@@ -312,7 +313,9 @@ async function saveCompoundToCloud() {
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: parseFloat(u.price) || 0 })),
-    paymentPlans: tempPlans, ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
+    // حفظ سعر المتر المخصص للخطة في السحابة
+    paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: parseFloat(p.pricePerMeter) || 0 })), 
+    ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
   try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); document.getElementById('formOverlay').classList.remove('open'); showToast('تم حفظ المشروع بنجاح'); } 
   catch (error) { alert('خطأ! الفايربيز رفض الحفظ.'); }
@@ -617,7 +620,7 @@ function renderUnitRows(){
     }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا يوجد وحدات مضافة</div>'; 
 }
 
-function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', notes:'', customBullets:[]}); renderPlanRows(); }
+function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', pricePerMeter:'', notes:'', customBullets:[]}); renderPlanRows(); }
 function removePlanRow(id){ tempPlans = tempPlans.filter(p=>p.id!==id); renderPlanRows(); }
 function addBulletRow(pId){ tempPlans.find(p=>p.id===pId)?.customBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderPlanRows(); }
 function removeBulletRow(pId, bId){ const p=tempPlans.find(x=>x.id===pId); if(p) p.customBullets=p.customBullets.filter(b=>b.id!==bId); renderPlanRows(); }
@@ -635,6 +638,8 @@ function renderPlanRows(){
             <input type="number" placeholder="% مقدم" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
             <input type="number" placeholder="سنوات" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
             <select style="min-width:100px; flex-shrink:0;" onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select>
+            <!-- ✨ خانة سعر المتر للخطة دي بالذات ✨ -->
+            <input type="text" placeholder="سعر متر الخطة (اختياري)" style="width:140px; flex-shrink:0;" value="${p.pricePerMeter ? formatNum(p.pricePerMeter) : ''}" oninput="formatInput(this); updatePlan('${p.id}','pricePerMeter',this.value)" autocomplete="off">
             <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')" aria-label="حذف الخطة">✕</button>
         </div>
         <input placeholder="ملاحظات" style="width:100%;margin-bottom:8px;padding:12px;border-radius:var(--radius-input);border:1px solid var(--border-color);background:var(--item-bg);color:var(--text-main);" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)" autocomplete="off">
@@ -659,7 +664,19 @@ function renderPlanRows(){
     </div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا توجد خطط سداد</div>'; 
 }
 
-function updatePlan(id, field, val){ const p = tempPlans.find(x=>x.id===id); if(p) p[field] = (field==='name'||field==='notes'||field==='frequency')?val:(parseFloat(val)||0); }
+function updatePlan(id, field, val){ 
+    const p = tempPlans.find(x=>x.id===id); 
+    if(p) {
+        if (field === 'name' || field === 'notes' || field === 'frequency') {
+            p[field] = val;
+        } else if (field === 'pricePerMeter') {
+            p[field] = getRawNum(val);
+        } else {
+            p[field] = parseFloat(val)||0;
+        }
+    } 
+}
+
 function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(field==='type')renderPlanRows();} }
 function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', description:'', date:''}); renderDecreeRows(); }
 function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
@@ -724,13 +741,41 @@ function renderDetailModalContent() {
     }
 
     if(sUnit && c.paymentPlans && c.paymentPlans.length > 0){
-      html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>خصم</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
-      c.paymentPlans.forEach(p => { const r = calcInstallmentWithDiscount(sUnit.price || 0, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); html += `<tr><td>${escapeHtml(p.name)}</td><td>${p.discountPercent ? p.discountPercent + '%' : '-'}</td><td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent || 0})</small></td><td>${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td><td style="color:var(--primary);"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td><td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td></tr>`; }); html += `</table></div>`;
+      // ✨ التعديل السحري لعرض سعر المتر المخصص ✨
+      html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
+      c.paymentPlans.forEach(p => { 
+          // 1. تحديد السعر الأساسي للمرحلة دي
+          let planBasePrice = sUnit.price || 0;
+          let planMeterText = '';
+          
+          if (p.pricePerMeter > 0) {
+              let effArea = (sUnit.area || 0) + (sUnit.gardenArea || 0)/3 + (sUnit.roofArea || 0)/3;
+              planBasePrice = Math.round(effArea * p.pricePerMeter);
+              planMeterText = `<br><span style="color:var(--primary); font-size:10px; font-weight:800; background:var(--item-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
+          }
+          
+          const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
+          
+          let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
+          if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
+          
+          let unitPriceCol = `<b>${formatNum(planBasePrice)} ج</b>`;
+          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:10px;">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold; font-size:14px;">${formatNum(Math.round(r.netTotal))} ج</span>`;
+
+          html += `<tr>
+              <td>${planNameCol}</td>
+              <td>${unitPriceCol}</td>
+              <td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent || 0})</small></td>
+              <td>${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
+              <td style="color:var(--primary);"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
+              <td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
+          </tr>`; 
+      }); 
+      html += `</table></div>`;
     }
   } document.getElementById('detailBody').innerHTML = html;
 }
 
-/* ✨✨✨ الخوارزمية الجبارة لحساب الدفعات المنفصلة بأسماء السنين ✨✨✨ */
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = originalTotal * ((discountPct||0)/100);
     const netTotal = originalTotal - discountVal;
@@ -745,14 +790,12 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
                 const count = (b.selectedYears || []).length;
                 if (count > 0) {
                     const perYearVal = netTotal * (pct / 100);
-                    // قاموس تحويل الأرقام لأسماء فصحى شيك
                     const ordinals = {1: 'الأولى', 2: 'الثانية', 3: 'الثالثة', 4: 'الرابعة', 5: 'الخامسة', 6: 'السادسة', 7: 'السابعة', 8: 'الثامنة', 9: 'التاسعة', 10: 'العاشرة'};
                     
-                    // السيستم هيفصلهم سطر سطر قدام العميل
                     [...b.selectedYears].sort((a,b)=>a-b).forEach(yr => {
                         const yName = ordinals[yr] || yr;
                         bulletsSummary.push({ type: 'annual', label: `دفعة السنة ${yName}: %${pct} = ${formatNum(Math.round(perYearVal))} ج`, val: perYearVal });
-                        extraPaymentsTotal += perYearVal; // بنجمع الإجمالي ورا الكواليس بس مش بنظهره مجمع للعميل
+                        extraPaymentsTotal += perYearVal; 
                     });
                 }
             } else { 
@@ -796,7 +839,7 @@ function renderCalcBulletsRows(){
                 <option value="after_9m" ${b.type=='after_9m'?'selected':''}>بعد 9 شهور</option>
             </select>
             <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
-            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')" aria-label="حذف الدفعة">✕</button>
+            <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
         </div>
         ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     </div>`).join(''); 
