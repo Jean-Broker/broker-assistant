@@ -274,7 +274,7 @@ function processMagicPaste() {
             }
 
             if (area > 10) { 
-                tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, roofArea: roof, price: '' });
+                tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, roofArea: roof, price: '', finishing: '' });
                 unitsAdded++;
             }
         }
@@ -288,7 +288,6 @@ function processMagicPaste() {
                 const years = parseFloat(planMatch[4]);
                 
                 if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) {
-                    // الماجيك بيست هيضيف الخطة بدون سعر متر مخصص، واليوزر ممكن يضيفه مانيوال
                     tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', pricePerMeter: '', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
                     plansAdded++;
                 }
@@ -312,8 +311,8 @@ async function saveCompoundToCloud() {
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenancePercent: parseFloat(document.getElementById('fldMaintenancePercent').value) || 0, parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
-    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: parseFloat(u.price) || 0 })),
-    // حفظ سعر المتر المخصص للخطة في السحابة
+    // ✨ حفظ نوع التشطيب المخصص للوحدة ✨
+    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: parseFloat(u.price) || 0, finishing: u.finishing || '' })),
     paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: parseFloat(p.pricePerMeter) || 0 })), 
     ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
@@ -578,7 +577,7 @@ function getAverageCommercialPrice(bType) { let min = 0, max = 0; if (bType === 
 function getAveragePricePerMeter(){ const min = getRawNum(document.getElementById('fldPriceMeterMin').value); const max = getRawNum(document.getElementById('fldPriceMeterMax').value); if(min > 0 && max > 0) return (min + max) / 2; return min || max || 0; }
 function updatePriceMeterAvg(){ const isComm = document.getElementById('fldProjectType').value === 'commercial'; const avg = getAveragePricePerMeter(); const wrap = document.getElementById('priceMeterAvgWrap'); if (wrap) wrap.style.display = (avg > 0 && !isComm) ? 'block' : 'none'; const avgInput = document.getElementById('fldPriceMeterAvg'); if (avgInput) avgInput.value = formatNum(Math.round(avg)) + ' جنيه'; tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null)); }
 
-function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', roofArea:'', price:''}); renderUnitRows(); }
+function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: pType === 'commercial' ? 'commercial' : 'studio', area:'', gardenArea:'', roofArea:'', price:'', finishing:''}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 
 function updateUnitData(id, field, val) {
@@ -586,6 +585,7 @@ function updateUnitData(id, field, val) {
     if (!u) return;
     if (field === 'bedroomType') { u.bedroomType = val; } 
     else if (field === 'price') { u.price = getRawNum(val); return; } 
+    else if (field === 'finishing') { u.finishing = val; return; }
     else if (field === 'area' || field === 'gardenArea' || field === 'roofArea') { u[field] = parseFloat(val) || 0; }
 
     const pType = document.getElementById('fldProjectType').value;
@@ -604,16 +604,20 @@ function updateUnitData(id, field, val) {
     }
 }
 
+/* ✨ دمج القائمة المنسدلة للتشطيب المخصص للوحدة ✨ */
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
     let optionsHtml = pType === 'commercial' ? `<option value="commercial">تجاري (Commercial)</option><option value="admin">إداري (Admin)</option><option value="clinic">عيادة / طبي (Clinic)</option><option value="recreational">ترفيهي (Recreational)</option>` : `<option value="apartment">شقة (Apartment)</option><option value="studio">استوديو (Studio)</option><option value="1br">1 غرفة نوم</option><option value="2br">2 غرفة نوم</option><option value="3br">3 غرف نوم</option><option value="4br">4 غرف نوم</option><option value="villa">فيلا (Villa)</option><option value="twinhouse">توين هاوس</option><option value="townhouse">تاون هاوس</option><option value="duplex">دوبلكس</option><option value="penthouse">بنتهاوس</option><option value="chalet">شاليه</option>`; 
+    let fOpts = `<option value="">حسب المشروع</option><option value="core_shell">طوب أحمر</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option>`;
+    
     document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
         let bType = getCorrectedUnitType(u.bedroomType, pType); 
-        return `<div class="repeat-row" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <select style="flex:1; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}</select>
+        return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px;">
+                    <select style="flex:1.2; min-width:85px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${optionsHtml.includes(`value="${bType}"`) ? optionsHtml.replace(`value="${bType}"`, `value="${bType}" selected`) : optionsHtml}</select>
                     <input type="number" placeholder="مباني(م²)" style="flex:1; min-width:60px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
                     <input type="number" placeholder="جاردن(م²)" style="flex:1; min-width:60px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
                     <input type="number" placeholder="روف(م²)" style="flex:1; min-width:60px;" value="${u.roofArea||''}" oninput="updateUnitData('${u.id}', 'roofArea', this.value)">
+                    <select style="flex:1; min-width:85px; font-size:11px;" onchange="updateUnitData('${u.id}','finishing',this.value)">${fOpts.replace(`value="${u.finishing||''}"`, `value="${u.finishing||''}" selected`)}</select>
                     <input type="text" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.5; min-width:90px; font-weight:800; color:var(--text-main);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')" aria-label="حذف الوحدة">✕</button>
                 </div>` 
@@ -638,7 +642,6 @@ function renderPlanRows(){
             <input type="number" placeholder="% مقدم" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
             <input type="number" placeholder="سنوات" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
             <select style="min-width:100px; flex-shrink:0;" onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select>
-            <!-- ✨ خانة سعر المتر للخطة دي بالذات ✨ -->
             <input type="text" placeholder="سعر متر الخطة (اختياري)" style="width:140px; flex-shrink:0;" value="${p.pricePerMeter ? formatNum(p.pricePerMeter) : ''}" oninput="formatInput(this); updatePlan('${p.id}','pricePerMeter',this.value)" autocomplete="off">
             <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')" aria-label="حذف الخطة">✕</button>
         </div>
@@ -721,10 +724,14 @@ function renderDetailModalContent() {
     if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) activeDetailUnitId = grouped[activeDetailCategory][0].id;
     html += `<div class="section-label">حساب الأقساط والكاش</div><div class="unit-cat-tabs">` + cats.map(k => `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${BEDROOM_TYPES[k] || k}</button>`).join('') + `</div>`;
     
+    // ✨ إظهار تشطيب الوحدة لو مخصص ✨
+    const fNamesAr = { 'core_shell': 'طوب أحمر', 'semi': 'نصف تشطيب', 'full': 'تشطيب كامل' };
+    
     html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => {
         let gText = u.gardenArea ? ` + جاردن ${u.gardenArea}م²` : '';
         let rText = u.roofArea ? ` + روف ${u.roofArea}م²` : '';
-        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText}${rText} | ${formatNum(u.price)} ج</div>`
+        let fText = u.finishing ? ` | ${fNamesAr[u.finishing]}` : '';
+        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText}${rText}${fText} | ${formatNum(u.price)} ج</div>`
     }).join('') + `</div>`;
     
     const sUnit = (c.unitTypes || []).find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
@@ -741,10 +748,8 @@ function renderDetailModalContent() {
     }
 
     if(sUnit && c.paymentPlans && c.paymentPlans.length > 0){
-      // ✨ التعديل السحري لعرض سعر المتر المخصص ✨
       html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
       c.paymentPlans.forEach(p => { 
-          // 1. تحديد السعر الأساسي للمرحلة دي
           let planBasePrice = sUnit.price || 0;
           let planMeterText = '';
           
@@ -917,7 +922,7 @@ async function handleExcelUpload(event) {
                     let gardenArea = parseFloat(row['Garden Area']) || parseFloat(row['Garden']) || parseFloat(row['جاردن']) || 0;
                     let price = parseFloat(row['Price From']) || parseFloat(row['Price To']) || 0; 
                     let bedStr = String(row['No of Bedrooms'] || '').toLowerCase(); let unitTypeStr = String(row['Unit Type'] || '').toLowerCase(); let bType = 'studio'; if(bedStr.includes('1')) bType = '1br'; else if(bedStr.includes('2')) bType = '2br'; else if(bedStr.includes('3')) bType = '3br'; else if(bedStr.includes('4')) bType = '4br'; else if(bedStr.includes('duplex') || unitTypeStr.includes('duplex')) bType = 'duplex'; else if(bedStr.includes('penthouse') || unitTypeStr.includes('penthouse')) bType = 'penthouse'; else if(bedStr.includes('villa') || unitTypeStr.includes('villa')) bType = 'villa'; else if(bedStr.includes('chalet') || unitTypeStr.includes('chalet')) bType = 'chalet';
-                    if (area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, area: area, gardenArea: gardenArea, price: price }); }
+                    if (area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, area: area, gardenArea: gardenArea, price: price, finishing: '' }); }
                     let planStr = String(row['Payment Plan'] || '').trim(); if (planStr) { if (!compoundsToUpload[compKey].paymentPlans.some(p => p.notes === planStr)) { compoundsToUpload[compKey].paymentPlans.push({ id: uid(), name: "خطة سداد", notes: planStr, discountPercent: parseFloat(row['Cash Discount']) || 0, downPaymentPercent: 0, years: 0, frequency: '12', customBullets: [] }); } }
                 });
             });
