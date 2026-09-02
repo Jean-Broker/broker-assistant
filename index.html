@@ -158,7 +158,6 @@
         <button class="btn btn-outline-light btn-pill" onclick="backToLanding()">العودة للرئيسية</button>
       </div>
 
-      <!-- ✨ لوحة تحكم جودة البيانات للمديرين ✨ -->
       <div id="adminStatsBoard" class="admin-stats-board" style="display: none;">
           <div class="stat-card stat-total active" onclick="setCompletionFilter('all', this)">
               <h4>إجمالي المشروعات</h4>
@@ -343,9 +342,9 @@
           <div class="form-field res-price-field"><label for="fldPriceMeterMax">سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="text" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off"></div>
           <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label for="fldPriceMeterAvg">متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:var(--item-bg); font-weight:bold; color:var(--primary);"></div>
           
-          <div class="form-field res-field"><label for="fldFinishingStatus">حالة التشطيب</label>
+          <div class="form-field res-field"><label for="fldFinishingStatus">حالة التشطيب الرئيسية</label>
             <select id="fldFinishingStatus">
-              <option value="core_shell">Core &amp; Shell (خرسانة وبناء)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
+              <option value="core_shell">Core &amp; Shell (طوب أحمر)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
             </select>
           </div>
           <div class="form-field res-field"><label for="fldParkingFee">سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="text" placeholder="مثال: 150,000" oninput="formatInput(this);" autocomplete="off"></div>
@@ -360,7 +359,18 @@
              </div>
           </div>
 
-          <div class="form-field"><label for="fldMaintenancePercent">نسبة الصيانة (% Maintenance)</label><input id="fldMaintenancePercent" type="number" placeholder="مثال: 8" autocomplete="off"></div>
+          <!-- ✨ تعديل وديعة الصيانة لدعم القيمة الثابتة أو النسبة ✨ -->
+          <div class="form-field">
+              <label>وديعة الصيانة (Maintenance)</label>
+              <div style="display:flex; gap:8px;">
+                  <input type="number" id="fldMaintenanceValue" placeholder="الرقم" autocomplete="off" style="flex:2;">
+                  <select id="fldMaintenanceType" style="flex:1; padding: 12px 5px;">
+                      <option value="percent">نسبة %</option>
+                      <option value="per_meter">جنيه / م²</option>
+                  </select>
+              </div>
+          </div>
+
           <div class="form-field"><label for="fldProjectSize">مساحة المشروع الإجمالية (فدان)</label><input id="fldProjectSize" type="text" autocomplete="off"></div>
           <div class="form-field"><label for="fldDeliveryDate">موعد التسليم</label><select id="fldDeliveryDate"></select></div>
           <div class="form-field"><label for="fldLocationDetail">موقع الكمبوند بالتفصيل</label><input id="fldLocationDetail" placeholder="مثال: امتداد التسعين، بجوار..." autocomplete="off"></div>
