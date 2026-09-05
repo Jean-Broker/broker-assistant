@@ -77,20 +77,23 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
+/* ✨✨ خوارزمية جودة الداتا بعد التحديث ✨✨ */
 function isCompoundComplete(c) {
     if (!c.companyName || c.companyName.trim() === '') return false;
     if (!c.projectName || c.projectName.trim() === '') return false;
+    // ⚠️ المالك والاستشاري لو مش موجودين في الإكسيل هيقفل هنا
     if (!c.ownerName || c.ownerName.trim() === '') return false;
     if (!c.consultant || c.consultant.trim() === '') return false;
     if (!c.locationId || c.locationId.trim() === '') return false;
     if (!c.deliveryDate || c.deliveryDate.trim() === '') return false;
     if (!c.projectSize || parseFloat(c.projectSize) <= 0) return false;
     
-    // ✨ تحديث شرط الفحص للصيانة الجديدة ✨
-    if (c.maintenanceValue === undefined || c.maintenanceValue === null || c.maintenanceValue === '') return false;
+    // تصليح الصيانة لتقبل الصفر وتقرأ الحقل الجديد والقديم
+    let maint = c.maintenanceValue !== undefined ? c.maintenanceValue : c.maintenancePercent;
+    if (maint === undefined || maint === null || String(maint).trim() === '') return false;
     
-    if (c.parkingFee === undefined || c.parkingFee === null || c.parkingFee === '') return false;
-    if (c.cashDiscount === undefined || c.cashDiscount === null || c.cashDiscount === '') return false;
+    if (c.parkingFee === undefined || c.parkingFee === null || String(c.parkingFee).trim() === '') return false;
+    if (c.cashDiscount === undefined || c.cashDiscount === null || String(c.cashDiscount).trim() === '') return false;
     if (!c.finishingStatus || c.finishingStatus.trim() === '') return false;
 
     let hasPrice = false;
@@ -101,8 +104,10 @@ function isCompoundComplete(c) {
     }
     if (!hasPrice) return false;
 
+    // ⚠️ شرط الـ 3 مساحات
     if (!c.unitTypes || c.unitTypes.length < 3) return false;
     if (!c.paymentPlans || c.paymentPlans.length < 1) return false;
+    
     return true;
 }
 
@@ -210,7 +215,6 @@ function processMagicPaste() {
             else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) fSelect.value = 'full';
         }
 
-        // ✨ السحب الذكي للصيانة (رقم ولا نسبة؟) ✨
         let maintenance = extractValueAfterKeyword(cleanLine, ['Maintenance', 'صيانة', 'الصيانة']);
         if (maintenance) {
             let mVal = maintenance.replace(/[^0-9.]/g, '');
@@ -322,10 +326,8 @@ async function saveCompoundToCloud() {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: parseInt(document.getElementById('fldFloors').value) || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
-    // ✨ حفظ وديعة الصيانة بنوعها وقيمتها ✨
     maintenanceValue: parseFloat(document.getElementById('fldMaintenanceValue').value) || 0,
     maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent',
-    
     parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: parseFloat(u.price) || 0, finishing: u.finishing || '' })),
     paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: parseFloat(p.pricePerMeter) || 0 })), 
@@ -581,14 +583,12 @@ function openCompoundForm(existing){
       document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : ''; document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '';
       let cp = existing.commercialPrices || {}; document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell';
       
-      // ✨ فتح وديعة الصيانة ✨
       document.getElementById('fldMaintenanceValue').value = existing.maintenanceValue || existing.maintenancePercent || ''; 
       document.getElementById('fldMaintenanceType').value = existing.maintenanceType || 'percent';
       
       document.getElementById('fldParkingFee').value = existing.parkingFee ? formatNum(existing.parkingFee) : ''; document.getElementById('fldProjectSize').value = existing.projectSize || ''; document.getElementById('fldDeliveryDate').value = existing.deliveryDate || ''; document.getElementById('fldFinishingStatus').value = existing.finishingStatus || 'core_shell'; document.getElementById('fldLocationDetail').value = existing.compoundLocationDetail || ''; document.getElementById('fldLocationLink').value = existing.locationLink || ''; document.getElementById('fldCashDiscount').value = existing.cashDiscount || ''; 
   } else {
       document.getElementById('fldProjectType').value = 'residential'; ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant','fldPriceMeterMin','fldPriceMeterMax','fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax','fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { document.getElementById(id).value = ''; }); ['fldFinishingStatus', 'fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { document.getElementById(id).value = 'core_shell'; });
-      // تصفير الصيانة
       document.getElementById('fldMaintenanceValue').value = '';
       document.getElementById('fldMaintenanceType').value = 'percent';
   }
@@ -739,7 +739,6 @@ function renderDetailModalContent() {
   } else { pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)} ج`; }
   const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; display:inline-block; margin-top:8px; font-weight:bold; background:var(--item-bg); padding:6px 12px; border-radius:50px; border:1px solid var(--primary);">📍 عرض على الخريطة</a>` : '';
   
-  // ✨ عرض الصيانة الجديدة ✨
   let maintText = '';
   if (c.maintenanceValue > 0) {
       maintText = c.maintenanceType === 'per_meter' ? `${formatNum(c.maintenanceValue)} ج/م²` : `${c.maintenanceValue}%`;
