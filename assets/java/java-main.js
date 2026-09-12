@@ -51,28 +51,26 @@ let appSettings = {
 };
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
-// للرجوع للخلف عشان لو القديم كان مسجل بالانجليزي
 const BEDROOM_TYPES = { 'apartment': 'شقة', 'villa': 'فيلا', 'twinhouse': 'توين هاوس', 'townhouse': 'تاون هاوس', 'chalet': 'شاليه', studio: 'استوديو', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس', commercial: 'تجاري', admin: 'إداري', clinic: 'عيادة', recreational: 'ترفيهي' };
 const FINISHING_TYPES = { core_shell: 'Core & Shell', semi: 'نصف تشطيب', full: 'تشطيب كامل' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'تسليم فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'}, ];
 
-/* ✨ تحديث دوال الأرقام عشان تقبل النصوص (Custom Text) ✨ */
+/* ✨ حماية دوال الأرقام عشان تقبل النصوص وماتكسرش الفلاتر الفاضية ✨ */
 function formatInput(el) { 
     let val = el.value.replace(/,/g, ''); 
     if (val.trim() === '') return;
     if (/^-?\d+(\.\d+)?$/.test(val)) {
         el.value = Number(val).toLocaleString('en-US'); 
     } 
-    // لو كتبت حروف (مباع، اتصل بنا) السيستم هيسيبها ومش هيمسحها
 }
 
 function getRawNum(val) { 
-    if(val === null || val === undefined) return 0;
+    if(val === null || val === undefined) return null;
     let str = String(val).replace(/,/g, '').trim();
-    if(str === '') return 0;
+    if(str === '') return null;
     if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str);
-    return str; // لو نص يرجعه زي ما هو
+    return str; // بيرجع النص زي ما هو
 }
 
 auth.onAuthStateChanged(async (user) => {
@@ -134,7 +132,6 @@ function isCompoundComplete(c) {
     let maint = c.maintenanceValue !== undefined ? c.maintenanceValue : c.maintenancePercent;
     if (maint === undefined || maint === null || String(maint).trim() === '') return false;
     
-    // ✨ الجراج ممكن يبقى نص أو صفر عادي بعد التحديث ✨
     if (c.parkingFee === undefined || c.parkingFee === null || String(c.parkingFee).trim() === '') return false;
     if (c.cashDiscount === undefined || c.cashDiscount === null || String(c.cashDiscount).trim() === '') return false;
     if (!c.finishingStatus || c.finishingStatus.trim() === '') return false;
@@ -155,6 +152,7 @@ function isCompoundComplete(c) {
 
 function renderAdminStats() {
     const board = document.getElementById('adminStatsBoard');
+    if (!board) return;
     if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
     
     board.style.display = 'flex';
@@ -178,7 +176,6 @@ async function syncCloudData() {
     document.getElementById('pageSub').textContent = "جاري تحميل البيانات..."; 
     const grid = document.getElementById('compoundGrid'); if (grid && !grid.children.length) grid.innerHTML = skeletonCardsHtml(6);
     
-    // سحب الإعدادات الأولية
     db.collection('system').doc('settings').onSnapshot(doc => { 
         if (doc.exists) { 
             let d = doc.data(); 
@@ -194,7 +191,6 @@ async function syncCloudData() {
 async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collection('system').doc('locations').set({ mainLocations }); } catch (error) { alert('خطأ في الحفظ!'); } } }
 
 function getCorrectedUnitType(typeStr, projectType) { 
-    // التوافق مع الأنواع القديمة والمخصصة
     if (projectType === 'commercial') { 
         if (typeStr === '1br') return 'إداري'; 
         if (typeStr === '2br' || typeStr === 'studio') return 'تجاري'; 
@@ -296,7 +292,6 @@ function processMagicPaste() {
         }
 
         if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
-            // ✨ التعديل الذكي للجراج في الاستيراد ✨
             let pSelect = document.getElementById('fldParkingType');
             if(lowerLine.includes('free') || lowerLine.includes('شامل') || lowerLine.includes('مجان')) {
                 pSelect.value = 'included';
@@ -327,7 +322,6 @@ function processMagicPaste() {
         const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i);
         if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
 
-        // تحديد النوع عشان المساحات
         const bedRegexes = [
             {regex: /\b1\s*bed(rooms?)?|\b1\s*br|غرفة\s*واحدة|\b1\s*غرف/i, type: '1 غرفة نوم'},
             {regex: /\b2\s*bed(rooms?)?|\b2\s*br|غرفتين|\b2\s*غرف/i, type: '2 غرفة نوم'},
@@ -404,7 +398,7 @@ async function saveCompoundToCloud() {
     maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent',
     parkingType: document.getElementById('fldParkingType').value || 'extra',
     parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
-    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: getRawNum(u.price) || 0, finishing: u.finishing || '' })),
+    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: getCorrectedUnitType(u.bedroomType, document.getElementById('fldProjectType').value), area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: getRawNum(u.price) || u.price || 0, finishing: u.finishing || '' })),
     paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: getRawNum(p.pricePerMeter) || 0 })), 
     ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
@@ -417,7 +411,7 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
 function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
 function formatNum(n){ 
     if(n === null || n === undefined || n === '') return '';
-    if(isNaN(n)) return n; // سيب الكلمة زي ما هي
+    if(isNaN(n)) return n; 
     return Number(n).toLocaleString('en-US'); 
 }
 function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -694,7 +688,7 @@ function updateUnitData(id, field, val) {
     if (field === 'bedroomType') { u.bedroomType = val; } 
     else if (field === 'price') { 
         let raw = getRawNum(val);
-        if(raw === 0 || val === '') { u.price = 0; u.lockedPrice = false; } 
+        if(raw === null) { u.price = 0; u.lockedPrice = false; } 
         else if (isNaN(raw)) { u.price = val; u.lockedPrice = true; } 
         else { u.price = raw; u.lockedPrice = true; }
         return; 
@@ -722,7 +716,6 @@ function updateUnitData(id, field, val) {
 
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
-    // ✨ استخدام الأنواع المخصصة ✨
     let optionsHtml = '';
     if(pType === 'commercial') { optionsHtml = appSettings.commTypes.map(t => `<option value="${t}">${t}</option>`).join(''); } 
     else { optionsHtml = appSettings.resTypes.map(t => `<option value="${t}">${t}</option>`).join(''); }
@@ -789,9 +782,13 @@ function renderPlanRows(){
 function updatePlan(id, field, val){ 
     const p = tempPlans.find(x=>x.id===id); 
     if(p) {
-        if (field === 'name' || field === 'notes' || field === 'frequency') { p[field] = val; } 
-        else if (field === 'pricePerMeter') { p[field] = getRawNum(val); } 
-        else { p[field] = parseFloat(val)||0; }
+        if (field === 'name' || field === 'notes' || field === 'frequency') {
+            p[field] = val;
+        } else if (field === 'pricePerMeter') {
+            p[field] = getRawNum(val);
+        } else {
+            p[field] = parseFloat(val)||0;
+        }
     } 
 }
 
@@ -851,7 +848,6 @@ function renderDetailModalContent() {
   if(cats.length){
     if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) activeDetailUnitId = grouped[activeDetailCategory][0].id;
     
-    // ✨ عرض أسماء الأنواع بشكل مباشر من اللي اتسجلت ✨
     html += `<div class="section-label">حساب الأقساط والكاش</div><div class="unit-cat-tabs">` + cats.map(k => {
         let dispType = BEDROOM_TYPES[k] || k;
         return `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${dispType}</button>`;
