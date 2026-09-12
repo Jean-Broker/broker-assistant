@@ -140,8 +140,10 @@
 
       <div class="side-actions" id="adminActions" style="display:none;">
         <button class="btn btn-primary-style w-100 btn-pill" onclick="openCompoundForm()">+ إضافة مشروع</button>
+        <!-- ✨ زرار التحكم في أنواع الوحدات ✨ -->
+        <button class="btn btn-outline-light w-100 btn-pill" onclick="openTypesManager()" style="margin-top:5px;">⚙️ إدارة أنواع الوحدات</button>
         <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelUpload(event)">
-        <button class="btn w-100 btn-pill btn-excel" onclick="document.getElementById('excelFileInput').click()">📊 استيراد إكسيل (Excel)</button>
+        <button class="btn w-100 btn-pill btn-excel" onclick="document.getElementById('excelFileInput').click()" style="margin-top:5px;">📊 استيراد إكسيل (Excel)</button>
       </div>
       
       <div class="side-actions" style="margin-top:10px;">
@@ -308,6 +310,29 @@
     </div>
   </div>
 
+  <!-- ✨ شاشة إدارة أنواع الوحدات المخصصة ✨ -->
+  <div class="overlay" id="typesOverlay">
+    <div class="modal curved-modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>⚙️ إدارة أنواع الوحدات المخصصة</h3>
+        <button class="modal-close" onclick="closeModal('typesOverlay')" aria-label="إغلاق">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
+        
+        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
+        <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+        
+        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
+        <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-light btn-pill" onclick="closeModal('typesOverlay')">إلغاء</button>
+        <button class="btn btn-primary-style btn-pill" onclick="saveCustomTypes()">حفظ الأنواع</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="formOverlay">
     <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true" aria-labelledby="formTitle">
       <div class="modal-header">
@@ -347,7 +372,19 @@
               <option value="core_shell">Core &amp; Shell (طوب أحمر)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
             </select>
           </div>
-          <div class="form-field res-field"><label for="fldParkingFee">سعر الجراج (Parking Fee - جنيه)</label><input id="fldParkingFee" type="text" placeholder="مثال: 150,000" oninput="formatInput(this);" autocomplete="off"></div>
+          
+          <!-- ✨ تحديث الجراج ليقبل اختيارات متعددة ✨ -->
+          <div class="form-field res-field">
+              <label for="fldParkingType">حالة الجراج (Parking)</label>
+              <div style="display:flex; gap:8px;">
+                  <select id="fldParkingType" style="flex:1; padding: 12px 5px;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='extra' ? 'block' : 'none';">
+                      <option value="extra">رسوم إضافية</option>
+                      <option value="included">شامل السعر</option>
+                      <option value="optional">اختياري</option>
+                  </select>
+                  <input id="fldParkingFee" type="text" placeholder="السعر" oninput="formatInput(this);" autocomplete="off" style="flex:1;">
+              </div>
+          </div>
 
           <div id="commercialPriceWrap" class="full" style="display:none;">
              <div class="section-label">أسعار المتر والتشطيب للأنشطة التجارية</div>
@@ -359,7 +396,6 @@
              </div>
           </div>
 
-          <!-- ✨ تعديل وديعة الصيانة لدعم القيمة الثابتة أو النسبة ✨ -->
           <div class="form-field">
               <label>وديعة الصيانة (Maintenance)</label>
               <div style="display:flex; gap:8px;">
