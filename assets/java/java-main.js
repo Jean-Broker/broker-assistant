@@ -55,11 +55,9 @@ const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'تسليم فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'}, ];
 
 function formatInput(el) { 
-    let val = el.value.replace(/,/g, ''); 
+    let val = String(el.value).replace(/,/g, ''); 
     if (val.trim() === '') return;
-    if (/^-?\d+(\.\d+)?$/.test(val)) {
-        el.value = Number(val).toLocaleString('en-US'); 
-    } 
+    if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } 
 }
 
 function getRawNum(val) { 
@@ -99,16 +97,9 @@ async function saveCustomTypes() {
     if(!isEditor) return;
     const r = document.getElementById('resTypesInput').value.split('،').map(s=>s.trim()).filter(Boolean);
     const c = document.getElementById('commTypesInput').value.split('،').map(s=>s.trim()).filter(Boolean);
-    
     appSettings.resTypes = r.length ? r : appSettings.resTypes;
     appSettings.commTypes = c.length ? c : appSettings.commTypes;
-    
-    try {
-        await db.collection('system').doc('settings').set({ resTypes: appSettings.resTypes, commTypes: appSettings.commTypes }, { merge: true });
-        closeModal('typesOverlay');
-        showToast('تم حفظ الأنواع بنجاح!');
-        if(document.getElementById('formOverlay').classList.contains('open')) renderUnitRows();
-    } catch(e) { alert('خطأ في الحفظ!'); }
+    try { await db.collection('system').doc('settings').set({ resTypes: appSettings.resTypes, commTypes: appSettings.commTypes }, { merge: true }); closeModal('typesOverlay'); showToast('تم حفظ الأنواع بنجاح!'); if(document.getElementById('formOverlay').classList.contains('open')) renderUnitRows(); } catch(e) { alert('خطأ في الحفظ!'); }
 }
 
 function skeletonCardsHtml(count) {
@@ -124,25 +115,16 @@ function isCompoundComplete(c) {
     if (!c.locationId || c.locationId.trim() === '') return false;
     if (!c.deliveryDate || c.deliveryDate.trim() === '') return false;
     if (!c.projectSize || parseFloat(c.projectSize) <= 0) return false;
-    
     let maint = c.maintenanceValue !== undefined ? c.maintenanceValue : c.maintenancePercent;
     if (maint === undefined || maint === null || String(maint).trim() === '') return false;
-    
     if (c.parkingFee === undefined || c.parkingFee === null || String(c.parkingFee).trim() === '') return false;
     if (c.cashDiscount === undefined || c.cashDiscount === null || String(c.cashDiscount).trim() === '') return false;
     if (!c.finishingStatus || c.finishingStatus.trim() === '') return false;
-
     let hasPrice = false;
-    if (c.projectType === 'commercial' && c.commercialPrices) {
-        if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true;
-    } else {
-        if (c.pricePerMeterMin !== 0 && c.pricePerMeterMin !== '') hasPrice = true;
-    }
+    if (c.projectType === 'commercial' && c.commercialPrices) { if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true; } else { if (c.pricePerMeterMin !== 0 && c.pricePerMeterMin !== '') hasPrice = true; }
     if (!hasPrice) return false;
-
     if (!c.unitTypes || c.unitTypes.length < 3) return false;
     if (!c.paymentPlans || c.paymentPlans.length < 1) return false;
-    
     return true;
 }
 
@@ -150,12 +132,10 @@ function renderAdminStats() {
     const board = document.getElementById('adminStatsBoard');
     if (!board) return;
     if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
-    
     board.style.display = 'flex';
     let total = compounds.length;
     let completed = compounds.filter(c => isCompoundComplete(c)).length;
     let incomplete = total - completed;
-
     document.getElementById('statTotal').textContent = total;
     document.getElementById('statCompleted').textContent = completed;
     document.getElementById('statIncomplete').textContent = incomplete;
@@ -171,15 +151,7 @@ function setCompletionFilter(filterType, btnElem) {
 async function syncCloudData() { 
     document.getElementById('pageSub').textContent = "جاري تحميل البيانات..."; 
     const grid = document.getElementById('compoundGrid'); if (grid && !grid.children.length) grid.innerHTML = skeletonCardsHtml(6);
-    
-    db.collection('system').doc('settings').onSnapshot(doc => { 
-        if (doc.exists) { 
-            let d = doc.data(); 
-            if(d.resTypes) appSettings.resTypes = d.resTypes; 
-            if(d.commTypes) appSettings.commTypes = d.commTypes; 
-        } 
-    });
-
+    db.collection('system').doc('settings').onSnapshot(doc => { if (doc.exists) { let d = doc.data(); if(d.resTypes) appSettings.resTypes = d.resTypes; if(d.commTypes) appSettings.commTypes = d.commTypes; } });
     db.collection('system').doc('locations').onSnapshot(doc => { mainLocations = doc.exists ? doc.data().mainLocations || [] : []; renderLocationTree(); applyFilters(); }); 
     db.collection('compounds').onSnapshot(snapshot => { compounds = []; snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); renderAdminStats(); renderLocationTree(); applyFilters(); }); 
 }
@@ -201,192 +173,73 @@ function extractValueAfterKeyword(line, keywords) {
 function processMagicPaste() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
-
     let cleanText = text.replace(/[\u200B-\u200D\uFEFF\u2060\u200E\u200F\u00A0]/g, ' ');
     const lines = cleanText.split('\n');
     let currentType = appSettings.resTypes[0] || 'شقة'; 
     let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
-
     let firstLine = lines.find(l => l.replace(/[*🚨\-\s📢🏡]/g, '').length > 0);
-    if (firstLine && !document.getElementById('fldProject').value) {
-        let projName = firstLine.replace(/[*🚨\-By📢🏡]/ig, '')
-                                .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]/g, '')
-                                .trim();
-        document.getElementById('fldProject').value = projName;
-        fieldsFilled++;
-    }
-
+    if (firstLine && !document.getElementById('fldProject').value) { document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By📢🏡]/ig, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]/g, '').trim(); fieldsFilled++; }
     let foundBy = false;
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i].trim().replace(/[*]/g, '');
         if (l.toLowerCase().endsWith('by')) { foundBy = true; continue; }
-        if (foundBy && l) {
-            if (!document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = l; fieldsFilled++; }
-            foundBy = false;
-        }
+        if (foundBy && l) { if (!document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = l; fieldsFilled++; } foundBy = false; }
     }
-
     lines.forEach(line => {
         const cleanLine = line.replace(/[*`~•▫️▶️➡️📍🔧🏢🚨🏡📢]/g, '').trim();
         const lowerLine = cleanLine.toLowerCase();
         if (!cleanLine) return; 
-
-        let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']);
-        if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
-
-        let owner = extractValueAfterKeyword(cleanLine, ['Owner', 'المالك']);
-        if (owner && !document.getElementById('fldOwner').value) { document.getElementById('fldOwner').value = owner; fieldsFilled++; }
-
-        let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']);
-        if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
-
+        let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']); if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
+        let owner = extractValueAfterKeyword(cleanLine, ['Owner', 'المالك']); if (owner && !document.getElementById('fldOwner').value) { document.getElementById('fldOwner').value = owner; fieldsFilled++; }
+        let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']); if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
         let delivery = extractValueAfterKeyword(cleanLine, ['Delivery Date', 'Delivery', 'التسليم', 'استلام']);
-        if (delivery) {
-            let dSelect = document.getElementById('fldDeliveryDate');
-            if (lowerLine.includes('immediate') || lowerLine.includes('فوري')) dSelect.value = 'immediate';
-            else if (lowerLine.includes('1') || lowerLine.includes('one')) dSelect.value = '1y';
-            else if (lowerLine.includes('2') || lowerLine.includes('two')) dSelect.value = '2y';
-            else if (lowerLine.includes('3') || lowerLine.includes('three')) dSelect.value = '3y';
-            else if (lowerLine.includes('4') || lowerLine.includes('four')) dSelect.value = '4y';
-        }
-
+        if (delivery) { let dSelect = document.getElementById('fldDeliveryDate'); if (lowerLine.includes('immediate') || lowerLine.includes('فوري')) dSelect.value = 'immediate'; else if (lowerLine.includes('1') || lowerLine.includes('one')) dSelect.value = '1y'; else if (lowerLine.includes('2') || lowerLine.includes('two')) dSelect.value = '2y'; else if (lowerLine.includes('3') || lowerLine.includes('three')) dSelect.value = '3y'; else if (lowerLine.includes('4') || lowerLine.includes('four')) dSelect.value = '4y'; }
         let finishing = extractValueAfterKeyword(cleanLine, ['Finishing', 'التشطيب', 'تشطيب']);
-        if (finishing) {
-            let fSelect = document.getElementById('fldFinishingStatus');
-            if (lowerLine.includes('core') || lowerLine.includes('shell') || lowerLine.includes('بدون')) fSelect.value = 'core_shell';
-            else if (lowerLine.includes('semi') || lowerLine.includes('نصف')) fSelect.value = 'semi';
-            else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) fSelect.value = 'full';
-        }
-
+        if (finishing) { let fSelect = document.getElementById('fldFinishingStatus'); if (lowerLine.includes('core') || lowerLine.includes('shell') || lowerLine.includes('بدون')) fSelect.value = 'core_shell'; else if (lowerLine.includes('semi') || lowerLine.includes('نصف')) fSelect.value = 'semi'; else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) fSelect.value = 'full'; }
         let maintenance = extractValueAfterKeyword(cleanLine, ['Maintenance', 'صيانة', 'الصيانة']);
-        if (maintenance) {
-            let mVal = maintenance.replace(/[^0-9.]/g, '');
-            if (mVal && !document.getElementById('fldMaintenanceValue').value) { 
-                document.getElementById('fldMaintenanceValue').value = mVal; 
-                if (maintenance.includes('%')) {
-                    document.getElementById('fldMaintenanceType').value = 'percent';
-                } else {
-                    document.getElementById('fldMaintenanceType').value = 'per_meter';
-                }
-                fieldsFilled++; 
-            }
-        }
-
-        if (lowerLine.includes('cash discount') || lowerLine.includes('خصم كاش')) {
-            let cdMatch = cleanLine.match(/(\d+(?:\.\d+)?)%/);
-            if (cdMatch && !document.getElementById('fldCashDiscount').value) { document.getElementById('fldCashDiscount').value = cdMatch[1]; fieldsFilled++; }
-        }
-
+        if (maintenance) { let mVal = maintenance.replace(/[^0-9.]/g, ''); if (mVal && !document.getElementById('fldMaintenanceValue').value) { document.getElementById('fldMaintenanceValue').value = mVal; if (maintenance.includes('%')) { document.getElementById('fldMaintenanceType').value = 'percent'; } else { document.getElementById('fldMaintenanceType').value = 'per_meter'; } fieldsFilled++; } }
+        if (lowerLine.includes('cash discount') || lowerLine.includes('خصم كاش')) { let cdMatch = cleanLine.match(/(\d+(?:\.\d+)?)%/); if (cdMatch && !document.getElementById('fldCashDiscount').value) { document.getElementById('fldCashDiscount').value = cdMatch[1]; fieldsFilled++; } }
         if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
             let pSelect = document.getElementById('fldParkingType');
-            if(lowerLine.includes('free') || lowerLine.includes('شامل') || lowerLine.includes('مجان')) {
-                pSelect.value = 'included';
-                document.getElementById('fldParkingFee').style.display = 'none';
-            } else if (lowerLine.includes('optional') || lowerLine.includes('اختيار')) {
-                pSelect.value = 'optional';
-                document.getElementById('fldParkingFee').style.display = 'none';
-            } else {
-                pSelect.value = 'extra';
-                document.getElementById('fldParkingFee').style.display = 'block';
-                let pMatch = cleanLine.match(/([\d,]+(?:\.\d+)?)\s*(k|egp|ج|جنيه|الف)?/i);
-                if (pMatch && !document.getElementById('fldParkingFee').value) { 
-                    let pVal = parseFloat(pMatch[1].replace(/,/g, ''));
-                    let mult = pMatch[2] ? pMatch[2].toLowerCase() : '';
-                    if (mult === 'k' || mult === 'الف') pVal *= 1000;
-                    document.getElementById('fldParkingFee').value = formatNum(pVal); 
-                    fieldsFilled++; 
-                }
-            }
+            if(lowerLine.includes('free') || lowerLine.includes('شامل') || lowerLine.includes('مجان')) { pSelect.value = 'included'; document.getElementById('fldParkingFee').style.display = 'none'; } 
+            else if (lowerLine.includes('optional') || lowerLine.includes('اختيار')) { pSelect.value = 'optional'; document.getElementById('fldParkingFee').style.display = 'none'; } 
+            else { pSelect.value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block'; let pMatch = cleanLine.match(/([\d,]+(?:\.\d+)?)\s*(k|egp|ج|جنيه|الف)?/i); if (pMatch && !document.getElementById('fldParkingFee').value) { let pVal = parseFloat(pMatch[1].replace(/,/g, '')); let mult = pMatch[2] ? pMatch[2].toLowerCase() : ''; if (mult === 'k' || mult === 'الف') pVal *= 1000; document.getElementById('fldParkingFee').value = formatNum(pVal); fieldsFilled++; } }
         }
-
-        const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i);
-        if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
-
-        const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/);
-        if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
-
-        const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i);
-        if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
-
-        const bedRegexes = [
-            {regex: /\b1\s*bed(rooms?)?|\b1\s*br|غرفة\s*واحدة|\b1\s*غرف/i, type: '1 غرفة نوم'},
-            {regex: /\b2\s*bed(rooms?)?|\b2\s*br|غرفتين|\b2\s*غرف/i, type: '2 غرفة نوم'},
-            {regex: /\b3\s*bed(rooms?)?|\b3\s*br|\b3\s*غرف/i, type: '3 غرف نوم'},
-            {regex: /\b4\s*bed(rooms?)?|\b4\s*br|\b4\s*غرف/i, type: '4 غرف نوم'},
-            {regex: /penthouse|بنتهاوس/i, type: 'بنتهاوس'},
-            {regex: /duplex|دوبلكس/i, type: 'دوبلكس'},
-            {regex: /family house|villa|twin|town|فيلا|توين|تاون/i, type: 'فيلا'},
-            {regex: /chalet|شاليه/i, type: 'شاليه'},
-            {regex: /studio|استوديو/i, type: 'استوديو'}
-        ];
-        
-        for(let br of bedRegexes) {
-            if(br.regex.test(cleanLine)) { currentType = br.type; break; }
-        }
-
+        const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i); if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
+        const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/); if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
+        const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i); if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
+        const bedRegexes = [ {regex: /\b1\s*bed(rooms?)?|\b1\s*br|غرفة\s*واحدة|\b1\s*غرف/i, type: '1 غرفة نوم'}, {regex: /\b2\s*bed(rooms?)?|\b2\s*br|غرفتين|\b2\s*غرف/i, type: '2 غرفة نوم'}, {regex: /\b3\s*bed(rooms?)?|\b3\s*br|\b3\s*غرف/i, type: '3 غرف نوم'}, {regex: /\b4\s*bed(rooms?)?|\b4\s*br|\b4\s*غرف/i, type: '4 غرف نوم'}, {regex: /penthouse|بنتهاوس/i, type: 'بنتهاوس'}, {regex: /duplex|دوبلكس/i, type: 'دوبلكس'}, {regex: /family house|villa|twin|town|فيلا|توين|تاون/i, type: 'فيلا'}, {regex: /chalet|شاليه/i, type: 'شاليه'}, {regex: /studio|استوديو/i, type: 'استوديو'} ];
+        for(let br of bedRegexes) { if(br.regex.test(cleanLine)) { currentType = br.type; break; } }
         let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
-
         const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?|[A-Za-z\u0600-\u06FF]+)/i); 
-        
         if (unitMatch) {
-            const area = parseFloat(unitMatch[1]);
-            const extraArea = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
-            
-            let garden = '';
-            let roof = '';
-            
-            if (extraArea) {
-                if (processingLine.match(/roof|روف|بنتهاوس|penthouse/i)) {
-                    roof = extraArea;
-                } else {
-                    garden = extraArea;
-                }
-            }
-
-            if (area > 10) { 
-                tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, roofArea: roof, price: '', finishing: '' });
-                unitsAdded++;
-            }
+            const area = parseFloat(unitMatch[1]); const extraArea = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
+            let garden = ''; let roof = '';
+            if (extraArea) { if (processingLine.match(/roof|روف|بنتهاوس|penthouse/i)) { roof = extraArea; } else { garden = extraArea; } }
+            if (area > 10) { tempUnits.push({ id: uid(), bedroomType: currentType, area: area, gardenArea: garden, roofArea: roof, price: '', finishing: '' }); unitsAdded++; }
         }
-
         if (!lowerLine.includes('delivery') && !lowerLine.includes('تسليم') && !lowerLine.includes('استلام')) {
             const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|d\.p|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
             if (planMatch && !cleanLine.includes('?')) {
-                const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : '');
-                let dpText = cleanLine.match(/(\d+)%\s*(?:dp|d\.p|down|مقدم)/i);
-                const dp = dpText ? parseFloat(dpText[1]) : 0;
-                const years = parseFloat(planMatch[4]);
-                
-                if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) {
-                    tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', pricePerMeter: '', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] });
-                    plansAdded++;
-                }
+                const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : ''); let dpText = cleanLine.match(/(\d+)%\s*(?:dp|d\.p|down|مقدم)/i); const dp = dpText ? parseFloat(dpText[1]) : 0; const years = parseFloat(planMatch[4]);
+                if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) { tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', pricePerMeter: '', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] }); plansAdded++; }
             }
         }
     });
-
-    renderUnitRows();
-    renderPlanRows();
-    document.getElementById('magicPasteInput').value = '';
-    showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} مساحة، و ${plansAdded} خطة بنجاح! 🚀`);
+    renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم سحب ${fieldsFilled} بيانات أساسية، ${unitsAdded} مساحة، و ${plansAdded} خطة بنجاح! 🚀`);
 }
 
 async function saveCompoundToCloud() {
   if(!isEditor) return;
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
-
   const data = {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: document.getElementById('fldFloors').value.trim() || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
-    maintenanceValue: document.getElementById('fldMaintenanceValue').value.trim() || '',
-    maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent',
-    parkingType: document.getElementById('fldParkingType').value || 'extra',
-    parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
+    maintenanceValue: document.getElementById('fldMaintenanceValue').value.trim() || '', maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent', parkingType: document.getElementById('fldParkingType').value || 'extra', parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: u.bedroomType || '', area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: getRawNum(u.price) || u.price || 0, finishing: u.finishing || '' })),
-    paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: getRawNum(p.pricePerMeter) || 0 })), 
-    ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
+    paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: getRawNum(p.pricePerMeter) || 0 })), ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
   try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); document.getElementById('formOverlay').classList.remove('open'); showToast('تم حفظ المشروع بنجاح'); } 
   catch (error) { alert('خطأ! الفايربيز رفض الحفظ.'); }
@@ -395,11 +248,7 @@ async function saveCompoundToCloud() {
 async function deleteCurrentCompoundFromCloud() { if(!isEditor || !confirm('متأكد من الحذف؟')) return; await db.collection('compounds').doc(viewingCompoundId).delete(); document.getElementById('detailOverlay').classList.remove('open'); showToast('تم الحذف'); }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
-function formatNum(n){ 
-    if(n === null || n === undefined || n === '') return '';
-    if(isNaN(n)) return n; 
-    return Number(n).toLocaleString('en-US'); 
-}
+function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
 function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
 function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
@@ -414,16 +263,16 @@ function toggleMobileLoc() {
 
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree'); const isAllActive = activeLocationIds.length === 0;
-  let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${compounds.length}</span></div>`;
+  let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span class="num">${compounds.length}</span></div>`;
   mainLocations.forEach((mainLoc) => { 
       let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
       const isOpen = !!openMainLocIds[mainLoc.id]; const isMainActive = activeLocationIds.includes(mainLoc.id);
-      html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)" role="button" tabindex="0" aria-label="عرض الفروع">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')" aria-label="حذف ${escapeHtml(mainLoc.name)}">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
+      html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="color:var(--text-muted); font-weight:bold;">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)" role="button" tabindex="0">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
       mainLoc.subLocations.forEach(sub => { 
           const subCount = compounds.filter(c => c.locationId === sub.id).length; const isSubActive = activeLocationIds.includes(sub.id);
-          html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')" aria-label="حذف ${escapeHtml(sub.name)}">✕</button>` : ''}</div></div>`; 
+          html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
       }); 
-      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
+      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px; font-family:cursive;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
   }); 
   wrap.innerHTML = html; 
   if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
@@ -446,7 +295,7 @@ function selectProjectType(type, btnElem){ activeProjectType = type; document.qu
 let searchDebounceTimer = null;
 function handleSearchInput() {
     const val = document.getElementById('fSearchText').value;
-    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = val ? 'flex' : 'none';
+    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = val ? 'block' : 'none';
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(applyFilters, 300);
 }
@@ -483,29 +332,63 @@ function resetFilters(){
 
 function findSubLocationName(subId){ for(const m of mainLocations){ const s = m.subLocations.find(x => x.id === subId); if(s) return `${m.name} ⬅️ ${s.name}`; } return '-'; }
 
+/* ✨ توليد الورق الملون السحري (Skeuomorphic Notes) ✨ */
 function generateDossierHTML(c) {
     const validPrices = (c.unitTypes||[]).map(u=>getRawNum(u.price)).filter(p => p !== null && !isNaN(p) && p > 0);
     const minPrice = validPrices.length ? Math.min(...validPrices) : null;
     let pDisplay = '';
+    let sortPrice = c.pricePerMeterMin || 0; // للاعتماد عليه في الألوان
+    
     if (c.projectType === 'commercial' && c.commercialPrices) {
         let mins = [c.commercialPrices.adminMin, c.commercialPrices.commMin, c.commercialPrices.clinicMin, c.commercialPrices.recMin].filter(x => x > 0);
-        let absoluteMin = mins.length > 0 ? Math.min(...mins) : (c.pricePerMeterMin || 0); pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
-    } else { pDisplay = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}` : formatNum(c.pricePerMeterMin||0); }
+        let absoluteMin = mins.length > 0 ? Math.min(...mins) : (c.pricePerMeterMin || 0); 
+        pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
+        sortPrice = absoluteMin;
+    } else { 
+        pDisplay = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}` : formatNum(c.pricePerMeterMin||0); 
+        sortPrice = getRawNum(c.pricePerMeterMax) || getRawNum(c.pricePerMeterMin) || 0;
+    }
     
+    // ✨ الألوان والدبابيس بناءً على السعر ✨
+    let noteTheme = 'note-green';
+    let pinColor = 'pin-green';
+    if (sortPrice > 60000) { noteTheme = 'note-red'; pinColor = 'pin-red'; }
+    else if (sortPrice > 30000) { noteTheme = 'note-blue'; pinColor = 'pin-blue'; }
+    else if (sortPrice === 0) { noteTheme = 'note-yellow'; pinColor = 'pin-yellow'; }
+
     let phaseTag = c.phaseName ? `<span class="phase-tag">${escapeHtml(c.phaseName)}</span>` : '';
     
-    return `<div class="dossier" onclick="openDetail('${c.id}')">${c.ministerialDecrees?.length ? '<div class="stamp">معتمد</div>' : ''}<div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div><div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)} ${phaseTag}</div><div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div><div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div><div class="dossier-row"><b>ارتفاع العمارات:</b> <span>${c.floors ? 'G + '+c.floors : '-'}</span></div><div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${c.projectType === 'commercial' ? 'حسب النشاط' : (FINISHING_TYPES[c.finishingStatus]||'-')}</span></div><div class="dossier-meta"><div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div><div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice ? formatNum(minPrice) : '-'}</div></div></div></div>`;
+    return `<div class="dossier ${noteTheme}" onclick="openDetail('${c.id}')">
+                <div class="pin ${pinColor}"></div>
+                ${c.ministerialDecrees?.length ? '<div class="stamp">معتمد ✓</div>' : ''}
+                <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
+                <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)} ${phaseTag}</div>
+                <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
+                <div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div>
+                <div class="dossier-row"><b>عمارات:</b> <span>${c.floors ? 'G + '+c.floors : '-'}</span></div>
+                <div class="dossier-row" style="border-bottom:none;"><b>تشطيب:</b> <span>${c.projectType === 'commercial' ? 'متنوع' : (FINISHING_TYPES[c.finishingStatus]||'-')}</span></div>
+                <div class="dossier-meta">
+                    <div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div>
+                    <div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice ? formatNum(minPrice) : '-'}</div></div>
+                </div>
+            </div>`;
 }
 
 function generateMasterDossierHTML(group) {
     let c = group[0]; 
     return `<div class="dossier master-dossier" onclick="openPhasesModal('${escapeHtml(c.projectName)}', '${escapeHtml(c.companyName)}')">
+        <div class="pin pin-yellow"></div>
         <div class="master-badge">مراحل متعددة</div>
         <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
-        <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)} <span class="phase-tag" style="background:#3B82F6;">${group.length} مراحل</span></div>
+        <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)} <span class="phase-tag" style="border-color:#333; color:#333;">${group.length} مراحل</span></div>
         <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
         <div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div>
-        <div class="dossier-meta" style="margin-top:15px;"><div class="meta-chip" style="grid-column: 1 / -1; display:flex; justify-content:space-between; align-items:center; border-color:#3B82F6; background:rgba(59,130,246,0.1);"><span>اضغط لعرض المراحل والتفاصيل</span><div style="font-size:16px; color:#3B82F6;">➤</div></div></div>
+        <div class="dossier-meta" style="margin-top:15px; grid-template-columns: 1fr;">
+            <div class="meta-chip" style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.05); border:1px dashed #333;">
+                <span>اضغط لعرض المراحل والتفاصيل</span>
+                <div style="font-size:16px;">➤</div>
+            </div>
+        </div>
     </div>`;
 }
 
@@ -514,11 +397,9 @@ function openPhasesModal(projName, compName) {
     document.getElementById('phasesTitle').textContent = `مراحل مشروع: ${projName}`;
     
     let html = group.map(c => {
-        return `<div class="dossier mini-phase" onclick="closeModal('phasesOverlay'); setTimeout(()=>openDetail('${c.id}'), 300)">
-            <div class="dossier-title" style="color:var(--primary); font-size:18px;">${escapeHtml(c.phaseName || 'المرحلة الأساسية')}</div>
-            <div class="dossier-row"><b>ارتفاع العمارات:</b> <span>${c.floors ? 'G + ' + c.floors : '-'}</span></div>
-            <div class="dossier-row"><b>التسليم:</b> <span>${deliveryLabel(c.deliveryDate)}</span></div>
-            <div class="dossier-row" style="border-bottom:none;"><b>المساحة:</b> <span>${c.projectSize ? c.projectSize+' فدان':'-'}</span></div>
+        return `<div class="detail-item" style="cursor:pointer; border-left:3px solid var(--danger); margin-bottom:10px; background:rgba(0,0,0,0.02);" onclick="closeModal('phasesOverlay'); setTimeout(()=>openDetail('${c.id}'), 300)">
+            <div style="font-family:'Lemonada', cursive; color:var(--danger); font-size:18px; font-weight:800; margin-bottom:5px;">${escapeHtml(c.phaseName || 'المرحلة الأساسية')}</div>
+            <div style="font-family:'Cairo'; font-size:12px; color:var(--text-muted);">عمارات: ${c.floors ? 'G + ' + c.floors : '-'} | تسليم: ${deliveryLabel(c.deliveryDate)}</div>
         </div>`;
     }).join('');
     
@@ -621,9 +502,9 @@ function renderGrid(){
   }
   
   document.getElementById('pageTitle').textContent = pageTitleText;
-  document.getElementById('pageSub').textContent = `${list.length} مشروع مسجل بالسحابة`;
+  document.getElementById('pageSub').textContent = `${list.length} مشروع معلق باللوحة`;
   const grid = document.getElementById('compoundGrid');
-  if(!list.length) return grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-title">لا توجد مشروعات مطابقة</div><div class="empty-state-sub">جرّب تعديل كلمة البحث أو الفلاتر المستخدمة</div><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح كل الفلاتر</button></div>`;
+  if(!list.length) return grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; font-family:'Lemonada'; color:var(--text-muted); font-size:18px;">اللوحة فاضية هنا.. مفيش مشاريع مطابقة! 📌</div>`;
   
   let groups = {};
   list.forEach(c => {
@@ -633,11 +514,8 @@ function renderGrid(){
   });
    
   grid.innerHTML = Object.values(groups).map(group => {
-      if(group.length === 1) {
-          return generateDossierHTML(group[0]);
-      } else {
-          return generateMasterDossierHTML(group);
-      }
+      if(group.length === 1) { return generateDossierHTML(group[0]); } 
+      else { return generateMasterDossierHTML(group); }
   }).join('');
 }
 
@@ -682,7 +560,6 @@ function updateUnitData(id, field, val) {
     const u = tempUnits.find(x => x.id === id);
     if (!u) return;
     
-    // ✨ حيلة فتح مدير الأنواع من القائمة ✨
     if (field === 'bedroomType') { 
         if (val === '__manage__') {
             openTypesManager();
@@ -719,7 +596,6 @@ function updateUnitData(id, field, val) {
     }
 }
 
-// ✨ دالة بناء القائمة المنسدلة للأنواع بالاضافة لزر الإدارة ✨
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
     let typeOptions = pType === 'commercial' ? appSettings.commTypes : appSettings.resTypes;
@@ -729,13 +605,13 @@ function renderUnitRows(){
     document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
         
         let selectOptions = `<option value="" disabled ${!u.bedroomType ? 'selected' : ''}>اختر النوع...</option>`;
-        if (u.bedroomType && !typeOptions.includes(u.bedroomType)) {
+        if (u.bedroomType && !typeOptions.includes(u.bedroomType) && u.bedroomType !== '__manage__') {
              selectOptions += `<option value="${escapeHtml(u.bedroomType)}" selected>${escapeHtml(u.bedroomType)}</option>`;
         }
         selectOptions += typeOptions.map(t => `<option value="${escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
         selectOptions += `<option value="__manage__" style="color:var(--primary); font-weight:bold;">+ إضافة/حذف نوع ⚙️</option>`;
 
-        return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px;">
+        return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                     <select style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${selectOptions}</select>
                     <input type="number" placeholder="مباني(م²)" style="flex:1; min-width:60px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
                     <input type="number" placeholder="جاردن(م²)" style="flex:1; min-width:60px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
@@ -744,7 +620,7 @@ function renderUnitRows(){
                     <input type="text" id="price-input-${u.id}" placeholder="إجمالي السعر" style="flex:1.5; min-width:90px; font-weight:800; color:var(--text-main);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')" aria-label="حذف الوحدة">✕</button>
                 </div>` 
-    }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا يوجد وحدات مضافة</div>'; 
+    }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px; font-family:cursive;">الورقة دي فاضية، مفيش وحدات!</div>'; 
 }
 
 function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', pricePerMeter:'', notes:'', customBullets:[]}); renderPlanRows(); }
@@ -765,10 +641,10 @@ function renderPlanRows(){
             <input type="number" placeholder="% مقدم" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
             <input type="number" placeholder="سنوات" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
             <select style="min-width:100px; flex-shrink:0;" onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select>
-            <input type="text" placeholder="سعر متر الخطة (اختياري)" style="width:140px; flex-shrink:0;" value="${p.pricePerMeter ? formatNum(p.pricePerMeter) : ''}" oninput="formatInput(this); updatePlan('${p.id}','pricePerMeter',this.value)" autocomplete="off">
-            <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')" aria-label="حذف الخطة">✕</button>
+            <input type="text" placeholder="سعر متر (اختياري)" style="width:140px; flex-shrink:0;" value="${p.pricePerMeter ? formatNum(p.pricePerMeter) : ''}" oninput="formatInput(this); updatePlan('${p.id}','pricePerMeter',this.value)" autocomplete="off">
+            <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')">✕</button>
         </div>
-        <input placeholder="ملاحظات" style="width:100%;margin-bottom:8px;padding:12px;border-radius:var(--radius-input);border:1px solid var(--border-color);background:var(--item-bg);color:var(--text-main);" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)" autocomplete="off">
+        <input placeholder="ملاحظات" style="width:100%;margin-top:10px;padding:8px;" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)" autocomplete="off">
         <div class="bullets-container">
             ${p.customBullets.map(b=>`<div class="bullet-row">
                 <div class="bullet-top" style="display:flex; gap:10px; align-items:center;">
@@ -781,32 +657,28 @@ function renderPlanRows(){
                         <option value="after_9m" ${b.type==='after_9m'?'selected':''}>بعد 9 شهور</option>
                     </select>
                     <input type="number" placeholder="%" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
-                    <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')" aria-label="حذف الدفعة">✕</button>
+                    <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
                 </div>
                 ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
             </div>`).join('')}
-            <button class="btn btn-outline-light w-100 btn-pill" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
+            <button class="btn btn-outline-light w-100 btn-pill" onclick="addBulletRow('${p.id}')" style="margin-top:5px; font-family:cursive;">+ دفعة خاصة</button>
         </div>
-    </div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">لا توجد خطط سداد</div>'; 
+    </div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px; font-family:cursive;">مفيش خطط سداد متسجلة!</div>'; 
 }
 
 function updatePlan(id, field, val){ 
     const p = tempPlans.find(x=>x.id===id); 
     if(p) {
-        if (field === 'name' || field === 'notes' || field === 'frequency') {
-            p[field] = val;
-        } else if (field === 'pricePerMeter') {
-            p[field] = getRawNum(val);
-        } else {
-            p[field] = parseFloat(val)||0;
-        }
+        if (field === 'name' || field === 'notes' || field === 'frequency') { p[field] = val; } 
+        else if (field === 'pricePerMeter') { p[field] = getRawNum(val); } 
+        else { p[field] = parseFloat(val)||0; }
     } 
 }
 
 function updateBullet(pId, bId, field, val){ const b = tempPlans.find(x=>x.id===pId)?.customBullets.find(x=>x.id===bId); if(b){ b[field] = field==='type'?val:(parseFloat(val)||0); if(field==='type')renderPlanRows();} }
 function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', description:'', date:''}); renderDecreeRows(); }
 function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
-function renderDecreeRows(){ document.getElementById('decreeRows').innerHTML = tempDecrees.map(d=>`<div class="repeat-row"><input placeholder="الرقم" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')" aria-label="حذف القرار">✕</button></div>`).join(''); }
+function renderDecreeRows(){ document.getElementById('decreeRows').innerHTML = tempDecrees.map(d=>`<div class="repeat-row"><input placeholder="الرقم" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); }
 
 function openDetail(id){
   const c = compounds.find(x=>x.id===id); if(!c) return; viewingCompoundId = id;
@@ -844,7 +716,7 @@ function renderDetailModalContent() {
       if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> ${formatNum(cp.recMin)} - ${formatNum(cp.recMax)} <span style="color:var(--primary); font-size:11px;">(${fName[cp.recFinish||'core_shell']})</span>`);
       pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:6px; font-size:13px; margin-top:4px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||0)} ج`);
   } else { pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)} ج`; }
-  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:12px; text-decoration:none; display:inline-block; margin-top:8px; font-weight:bold; background:var(--item-bg); padding:6px 12px; border-radius:50px; border:1px solid var(--primary);">📍 عرض على الخريطة</a>` : '';
+  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-family:'Cairo'; font-size:12px; text-decoration:none; display:inline-block; margin-top:8px; font-weight:bold; background:rgba(0,0,0,0.05); padding:6px 12px; border-radius:4px; border:1px solid var(--primary);">📍 عرض على الخريطة</a>` : '';
   
   let maintText = '';
   if (c.maintenanceValue) {
@@ -859,8 +731,9 @@ function renderDetailModalContent() {
   if(cats.length){
     if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) activeDetailUnitId = grouped[activeDetailCategory][0].id;
     
-    html += `<div class="section-label">حساب الأقساط والكاش للوحدات المتاحة</div><div class="unit-cat-tabs">` + cats.map(k => {
-        return `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${escapeHtml(k)}</button>`;
+    html += `<div class="section-label hand-font" style="font-size:22px;">الأسعار للكاش والتقسيط</div><div class="unit-cat-tabs">` + cats.map(k => {
+        let dispType = k;
+        return `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${escapeHtml(dispType)}</button>`;
     }).join('') + `</div>`;
     
     const fNamesAr = { 'core_shell': 'طوب أحمر', 'semi': 'نصف تشطيب', 'full': 'تشطيب كامل' };
@@ -870,7 +743,7 @@ function renderDetailModalContent() {
         let rText = u.roofArea ? ` + روف ${u.roofArea}م²` : '';
         let fText = u.finishing ? ` | ${fNamesAr[u.finishing]}` : '';
         let pText = u.price ? formatNum(u.price) + ' ج' : 'حسب المتر';
-        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText}${rText}${fText} | ${pText}</div>`
+        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText}${rText}${fText} | <span style="font-family:'Caveat'; font-size:16px;">${pText}</span></div>`
     }).join('') + `</div>`;
     
     const sUnit = (c.unitTypes || []).find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
@@ -886,10 +759,10 @@ function renderDetailModalContent() {
     if (sUnit && !isTextPrice && cashDiscount > 0 && sUnitNumericPrice > 0) {
         let discountAmount = sUnitNumericPrice * (cashDiscount / 100);
         let finalCashPrice = sUnitNumericPrice - discountAmount;
-        html += `<div class="cash-discount-box">
-                    <div class="cash-row"><span>السعر الأساسي</span><b>${formatNum(sUnitNumericPrice)} ج</b></div>
-                    <div class="cash-row highlight"><span>قيمة خصم الكاش (${cashDiscount}%)</span><b>- ${formatNum(Math.round(discountAmount))} ج</b></div>
-                    <div class="cash-row final"><span>السعر النهائي (كاش)</span><b>${formatNum(Math.round(finalCashPrice))} ج</b></div>
+        html += `<div style="border:2px dashed var(--primary); padding:15px; background:rgba(0,0,0,0.02); display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
+                    <div style="text-align:center;"><span style="font-family:cursive; font-size:11px;">السعر الأساسي</span><br><b style="font-family:'Caveat'; font-size:22px;">${formatNum(sUnitNumericPrice)} ج</b></div>
+                    <div style="text-align:center; color:var(--danger);"><span style="font-family:cursive; font-size:11px;">قيمة خصم الكاش (${cashDiscount}%)</span><br><b style="font-family:'Caveat'; font-size:22px;">- ${formatNum(Math.round(discountAmount))} ج</b></div>
+                    <div style="text-align:center; color:var(--success);"><span style="font-family:cursive; font-size:11px;">السعر النهائي (كاش)</span><br><b style="font-family:'Caveat'; font-size:26px;">${formatNum(Math.round(finalCashPrice))} ج</b></div>
                  </div>`;
     }
 
@@ -902,36 +775,36 @@ function renderDetailModalContent() {
           if (p.pricePerMeter > 0) {
               let effArea = (sUnit.area || 0) + (sUnit.gardenArea || 0)/3 + (sUnit.roofArea || 0)/3;
               planBasePrice = Math.round(effArea * p.pricePerMeter);
-              planMeterText = `<br><span style="color:var(--primary); font-size:10px; font-weight:800; background:var(--item-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
+              planMeterText = `<br><span style="color:var(--primary); font-family:'Cairo'; font-size:10px; font-weight:800; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px; border:1px dashed var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
           }
           
           const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
           
-          let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
-          if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
+          let planNameCol = `<b style="font-family:'Lemonada', cursive;">${escapeHtml(p.name)}</b>${planMeterText}`;
+          if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-family:'Cairo'; font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
           
           let unitPriceCol = `<b>${formatNum(planBasePrice)} ج</b>`;
-          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:10px;">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold; font-size:14px;">${formatNum(Math.round(r.netTotal))} ج</span>`;
+          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:10px;">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-family:'Caveat', cursive; font-weight:bold; font-size:18px;">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
           html += `<tr>
               <td>${planNameCol}</td>
-              <td>${unitPriceCol}</td>
-              <td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent || 0})</small></td>
+              <td style="font-family:'Caveat', cursive; font-size:18px;">${unitPriceCol}</td>
+              <td><span style="font-family:'Caveat', cursive; font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small style="font-family:'Cairo';">(%${p.downPaymentPercent || 0})</small></td>
               <td>${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
-              <td style="color:var(--primary);"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
-              <td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
+              <td style="color:var(--primary); font-family:'Caveat', cursive; font-size:20px;"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
+              <td style="font-family:'Caveat', cursive; font-size:18px;"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
           </tr>`; 
       }); 
       html += `</table></div>`;
     }
   } 
   
-  html += `<div class="section-label" style="margin-top:40px; background:#10B981; border-color:#10B981;">حاسبة المشروع السريعة 🧮</div>
-           <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">اكتب المساحة عشان تحسبلها الأقساط على كل خطط السداد الخاصة بالمشروع ده فوراً.</p>
-           <div style="display:flex; gap:10px; background:var(--item-bg); padding:15px; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:20px; align-items:center; flex-wrap:wrap;">
-               <input type="number" id="miniCalcArea" placeholder="مساحة المباني (م²)" style="flex:1; min-width:120px; padding:10px; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
-               <input type="number" id="miniCalcGarden" placeholder="جاردن (م²)" style="flex:1; min-width:100px; padding:10px; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
-               <input type="number" id="miniCalcRoof" placeholder="روف (م²)" style="flex:1; min-width:100px; padding:10px; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
+  html += `<div class="section-label hand-font" style="margin-top:40px; color:#10B981; border-color:#10B981; font-size:22px;">🧮 الحاسبة السريعة للمشروع</div>
+           <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px; font-family:'Cairo';">اكتب المساحة عشان تحسبلها الأقساط على كل خطط السداد الخاصة بالمشروع ده فوراً.</p>
+           <div style="display:flex; gap:10px; background:transparent; border-bottom:2px dashed var(--border-color); padding-bottom:15px; margin-bottom:20px; align-items:center; flex-wrap:wrap;">
+               <input type="number" id="miniCalcArea" placeholder="مساحة المباني (م²)" style="flex:1; min-width:120px; padding:10px; border-radius:4px; background:rgba(0,0,0,0.03); border:1px dashed var(--border-color); color:var(--text-main); outline:none; font-family:'Caveat'; font-size:18px;" oninput="runProjectMiniCalc('${c.id}')">
+               <input type="number" id="miniCalcGarden" placeholder="جاردن (م²)" style="flex:1; min-width:100px; padding:10px; border-radius:4px; background:rgba(0,0,0,0.03); border:1px dashed var(--border-color); color:var(--text-main); outline:none; font-family:'Caveat'; font-size:18px;" oninput="runProjectMiniCalc('${c.id}')">
+               <input type="number" id="miniCalcRoof" placeholder="روف (م²)" style="flex:1; min-width:100px; padding:10px; border-radius:4px; background:rgba(0,0,0,0.03); border:1px dashed var(--border-color); color:var(--text-main); outline:none; font-family:'Caveat'; font-size:18px;" oninput="runProjectMiniCalc('${c.id}')">
            </div>
            <div id="miniCalcResult"></div>`;
 
@@ -950,7 +823,7 @@ window.runProjectMiniCalc = function(cId) {
     if(area === 0 && garden === 0 && roof === 0) { resultDiv.innerHTML = ''; return; }
 
     let avgPrice = (getRawNum(c.pricePerMeterMin) + getRawNum(c.pricePerMeterMax)) / 2 || getRawNum(c.pricePerMeterMin) || getRawNum(c.pricePerMeterMax) || 0;
-    if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:10px; background:rgba(220,38,38,0.1); border-radius:8px; text-align:center;">لا يوجد متوسط سعر متر مسجل لهذا المشروع لحساب الأقساط.</div>'; return; }
+    if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:10px; background:rgba(220,38,38,0.1); border:1px dashed var(--danger); text-align:center; font-family:cursive;">لا يوجد متوسط سعر متر مسجل لهذا المشروع לחساب الأقساط.</div>'; return; }
 
     let effArea = area + (garden/3) + (roof/3);
     let basePrice = Math.round(effArea * avgPrice);
@@ -961,10 +834,10 @@ window.runProjectMiniCalc = function(cId) {
     if (cashDiscount > 0) {
         let discountAmount = basePrice * (cashDiscount / 100);
         let finalCashPrice = basePrice - discountAmount;
-        html += `<div class="cash-discount-box" style="border-color:#10B981; box-shadow:0 0 15px rgba(16,185,129,0.2);">
-                    <div class="cash-row"><span>السعر الأساسي</span><b>${formatNum(basePrice)} ج</b></div>
-                    <div class="cash-row highlight"><span>قيمة خصم الكاش (${cashDiscount}%)</span><b>- ${formatNum(Math.round(discountAmount))} ج</b></div>
-                    <div class="cash-row final"><span style="color:#10B981;">السعر النهائي (كاش)</span><b style="color:#10B981;">${formatNum(Math.round(finalCashPrice))} ج</b></div>
+        html += `<div style="border:2px dashed #10B981; padding:15px; background:rgba(16,185,129,0.05); display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
+                    <div style="text-align:center;"><span style="font-family:cursive; font-size:11px;">السعر الأساسي</span><br><b style="font-family:'Caveat'; font-size:22px;">${formatNum(basePrice)} ج</b></div>
+                    <div style="text-align:center; color:var(--danger);"><span style="font-family:cursive; font-size:11px;">قيمة خصم الكاش (${cashDiscount}%)</span><br><b style="font-family:'Caveat'; font-size:22px;">- ${formatNum(Math.round(discountAmount))} ج</b></div>
+                    <div style="text-align:center; color:#10B981;"><span style="font-family:cursive; font-size:11px;">السعر النهائي (كاش)</span><br><b style="font-family:'Caveat'; font-size:26px;">${formatNum(Math.round(finalCashPrice))} ج</b></div>
                  </div>`;
     }
 
@@ -976,29 +849,29 @@ window.runProjectMiniCalc = function(cId) {
           
           if (p.pricePerMeter > 0) {
               planBasePrice = Math.round(effArea * p.pricePerMeter);
-              planMeterText = `<br><span style="color:var(--primary); font-size:10px; font-weight:800; background:var(--item-bg); padding:2px 6px; border-radius:4px; border:1px solid var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
+              planMeterText = `<br><span style="color:var(--primary); font-family:'Cairo'; font-size:10px; font-weight:800; background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:4px; border:1px dashed var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
           }
           
           const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
           
-          let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
-          if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
+          let planNameCol = `<b style="font-family:'Lemonada', cursive;">${escapeHtml(p.name)}</b>${planMeterText}`;
+          if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-family:'Cairo'; font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
           
           let unitPriceCol = `<b>${formatNum(planBasePrice)} ج</b>`;
-          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:10px;">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold; font-size:14px;">${formatNum(Math.round(r.netTotal))} ج</span>`;
+          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:10px;">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-family:'Caveat', cursive; font-weight:bold; font-size:18px;">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
           html += `<tr>
               <td>${planNameCol}</td>
-              <td>${unitPriceCol}</td>
-              <td>${formatNum(Math.round(r.downPayment))} ج<br><small>(%${p.downPaymentPercent || 0})</small></td>
+              <td style="font-family:'Caveat', cursive; font-size:18px;">${unitPriceCol}</td>
+              <td><span style="font-family:'Caveat', cursive; font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small style="font-family:'Cairo';">(%${p.downPaymentPercent || 0})</small></td>
               <td>${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
-              <td style="color:var(--primary);"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
-              <td><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
+              <td style="color:var(--primary); font-family:'Caveat', cursive; font-size:20px;"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
+              <td style="font-family:'Caveat', cursive; font-size:18px;"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
           </tr>`; 
       }); 
       html += `</table></div>`;
     } else {
-        html += `<div style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد خطط سداد مسجلة لهذا المشروع.</div>`;
+        html += `<div style="text-align:center; padding:20px; color:var(--text-muted); font-family:cursive;">الورقة دي فاضية، مفيش خطط سداد.</div>`;
     }
 
     resultDiv.innerHTML = html;
@@ -1022,19 +895,19 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
                     
                     [...b.selectedYears].sort((a,b)=>a-b).forEach(yr => {
                         const yName = ordinals[yr] || yr;
-                        bulletsSummary.push({ type: 'annual', label: `دفعة السنة ${yName}: %${pct} = ${formatNum(Math.round(perYearVal))} ج`, val: perYearVal });
+                        bulletsSummary.push({ type: 'annual', label: `<span style="font-family:'Cairo'; font-size:12px;">سنة ${yName}:</span> <span style="font-family:'Caveat', cursive; font-size:16px;">%${pct} = ${formatNum(Math.round(perYearVal))} ج</span>`, val: perYearVal });
                         extraPaymentsTotal += perYearVal; 
                     });
                 }
             } else { 
                 const val = netTotal * (pct / 100); 
                 extraPaymentsTotal += val; 
-                let name = 'دفعة مؤجلة';
-                if (b.type === 'delivery') name = 'دفعة استلام';
+                let name = 'مؤجلة';
+                if (b.type === 'delivery') name = 'استلام';
                 else if (b.type === 'after_3m') name = 'بعد 3 شهور';
                 else if (b.type === 'after_6m') name = 'بعد 6 شهور';
                 else if (b.type === 'after_9m') name = 'بعد 9 شهور';
-                bulletsSummary.push({ type: b.type, label: `${name}: %${pct} = ${formatNum(Math.round(val))} ج`, val }); 
+                bulletsSummary.push({ type: b.type, label: `<span style="font-family:'Cairo'; font-size:12px;">${name}:</span> <span style="font-family:'Caveat', cursive; font-size:16px;">%${pct} = ${formatNum(Math.round(val))} ج</span>`, val }); 
             } 
         } 
     }); 
@@ -1084,9 +957,9 @@ function runUniversalCalculator(){
     box.style.display='grid'; 
     
     let bulletsHtml = r.bulletsSummary.length > 0 
-        ? `<div class="calc-item" style="grid-column: 1 / -1; background: var(--bg-main); padding: 12px; border-radius: var(--radius-input); border: 1px dashed var(--primary); text-align:right;">
-            <span style="display:block; margin-bottom:6px; color:var(--primary); font-weight:800;">الدفعات الخاصة المحسوبة:</span>
-            ${r.bulletsSummary.map(b => `<div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">• ${b.label}</div>`).join('')}
+        ? `<div class="calc-item" style="grid-column: 1 / -1; border: 2px dashed var(--primary); text-align:right;">
+            <span style="display:block; margin-bottom:6px; color:var(--primary); font-weight:800; font-family:'Lemonada', cursive;">الدفعات الخاصة المحسوبة:</span>
+            ${r.bulletsSummary.map(b => `<div style="margin-bottom:4px;">• ${b.label}</div>`).join('')}
            </div>` 
         : '';
 
@@ -1095,8 +968,8 @@ function runUniversalCalculator(){
         <div class="calc-item"><span>المقدم</span><b>${formatNum(Math.round(r.downPayment))} ج</b></div>
         ${bulletsHtml}
         <div class="calc-highlight"><span>القسط الشهري</span><b>${formatNum(Math.round(r.monthlyEquivalent))} جنيه</b></div>
-        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط ربع سنوي</span><b style="color:var(--text-main); font-size:16px;">${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></div>
-        <div class="calc-item" style="background: var(--bg-main); padding: 10px; border-radius: var(--radius-input);"><span>قسط سنوي</span><b style="color:var(--text-main); font-size:16px;">${formatNum(Math.round(r.monthlyEquivalent * 12))} ج</b></div>
+        <div class="calc-item" style="background: rgba(0,0,0,0.02);"><span>قسط ربع سنوي</span><b style="color:var(--text-main);">${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></div>
+        <div class="calc-item" style="background: rgba(0,0,0,0.02);"><span>قسط سنوي</span><b style="color:var(--text-main);">${formatNum(Math.round(r.monthlyEquivalent * 12))} ج</b></div>
     `; 
 }
 
