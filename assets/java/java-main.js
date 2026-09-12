@@ -8,8 +8,8 @@ function openSystemLogin() { document.getElementById('paywallModal').style.displ
 function closeLoginModal() { document.getElementById('paywallModal').style.display = 'none'; }
 function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'block'; setNavForApp(false); }
 
-// لغينا زرار الدارك مود لأن اللوحة الفلين ليها ستايل واحد واقعي
-function toggleTheme() { alert("وضع الإضاءة ثابت للحفاظ على واقعية اللوحة الخشبية 📌"); }
+function toggleTheme() { document.body.classList.toggle('light-mode'); localStorage.setItem('appTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark'); }
+if (localStorage.getItem('appTheme') === 'light') { document.body.classList.add('light-mode'); }
 
 const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", authDomain: "broker-assistant-63277.firebaseapp.com", projectId: "broker-assistant-63277", storageBucket: "broker-assistant-63277.firebasestorage.app", messagingSenderId: "434808917289", appId: "1:434808917289:web:1012be2fa30cf80cfefb38" };
 firebase.initializeApp(firebaseConfig);
@@ -25,10 +25,16 @@ window.addEventListener('load', () => {
 
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    closeAllDropdowns();
     if (document.getElementById('paywallModal').style.display === 'flex') closeLoginModal();
     document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay' || ov.id === 'typesOverlay') return; ov.classList.remove('open'); });
 });
 
+function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
+function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
+document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper')) { closeAllDropdowns(); } });
+
+let selectedBeds = [];
 function selectPill(groupId, val) { const el = event.target; el.classList.toggle('active'); if (el.classList.contains('active')) { selectedBeds.push(val); } else { selectedBeds = selectedBeds.filter(v => v !== val); } applyFilters(); }
 
 let currentUser = null, isAdmin = false, isEditor = false;
@@ -137,7 +143,7 @@ function processMagicPaste() {
     let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
 
     let firstLine = lines.find(l => l.replace(/[*🚨\-\s📢🏡]/g, '').length > 0);
-    if (firstLine && !document.getElementById('fldProject').value) { document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By📢🏡]/ig, '').trim(); fieldsFilled++; }
+    if (firstLine && !document.getElementById('fldProject').value) { document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By📢🏡]/ig, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]/g, '').trim(); fieldsFilled++; }
     let foundBy = false;
     for (let i = 0; i < lines.length; i++) {
         let l = lines[i].trim().replace(/[*]/g, '');
@@ -165,8 +171,7 @@ function processMagicPaste() {
         const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i); if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
         const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/); if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
         const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i); if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
-        const bedRegexes = [ {regex: /\b1\s*bed(rooms?)?|\b1\s*br|غرفة\s*واحدة|\b1\s*غرف/i, type: '1 غرفة نوم'}, {regex: /\b2\s*bed(rooms?)?|\b2\s*br|غرفتين|\b2\s*غرف/i, type: '2 غرفة نوم'}, {regex: /\b3\s*bed(rooms?)?|\b3\s*br|\b3\s*غرف/i, type: '3 غرف نوم'}, {regex: /\b4\s*bed(rooms?)?|\b4\s*br|\b4\s*غرف/i, type: '4 غرف نوم'}, {regex: /penthouse|بنتهاوس/i, type: 'بنتهاوس'}, {regex: /duplex|دوبلكس/i, type: 'دوبلكس'}, {regex: /family house|villa|twin|town|فيلا|توين|تاون/i, type: 'فيلا'}, {regex: /chalet|شاليه/i, type: 'شاليه'}, {regex: /studio|استوديو/i, type: 'استوديو'} ];
-        for(let br of bedRegexes) { if(br.regex.test(cleanLine)) { currentType = br.type; break; } }
+        
         let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
         const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?|[A-Za-z\u0600-\u06FF]+)/i); 
         if (unitMatch) {
@@ -199,7 +204,7 @@ async function saveCompoundToCloud() {
     paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: getRawNum(p.pricePerMeter) || 0 })), ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
   try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); document.getElementById('formOverlay').classList.remove('open'); showToast('تم الحفظ 💾'); } 
-  catch (error) { alert('خطأ في الحفظ!'); }
+  catch (error) { alert('خطأ! الفايربيز رفض الحفظ.'); }
 }
 
 async function deleteCurrentCompoundFromCloud() { if(!isEditor || !confirm('متأكد من الحذف؟')) return; await db.collection('compounds').doc(viewingCompoundId).delete(); document.getElementById('detailOverlay').classList.remove('open'); showToast('تم الحذف'); }
@@ -220,7 +225,7 @@ function toggleMobileLoc() {
 
 function renderLocationTree(){
   const wrap = document.getElementById('locationTree'); const isAllActive = activeLocationIds.length === 0;
-  let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span class="num">${compounds.length}</span></div>`;
+  let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span style="font-family:'Cairo'; font-weight:bold;">🌐 كل المشروعات</span><span class="num">${compounds.length}</span></div>`;
   mainLocations.forEach((mainLoc) => { 
       let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
       const isOpen = !!openMainLocIds[mainLoc.id]; const isMainActive = activeLocationIds.includes(mainLoc.id);
@@ -229,7 +234,7 @@ function renderLocationTree(){
           const subCount = compounds.filter(c => c.locationId === sub.id).length; const isSubActive = activeLocationIds.includes(sub.id);
           html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
       }); 
-      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="sketch-btn" style="padding:4px 12px; font-size:10px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
+      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')" class="sketch-input hand-font"><button class="sketch-btn" style="padding:4px 12px; font-size:10px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
   }); 
   wrap.innerHTML = html; 
   if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
@@ -558,7 +563,7 @@ function renderUnitRows(){
     const pType = document.getElementById('fldProjectType').value; 
     let typeOptions = pType === 'commercial' ? appSettings.commTypes : appSettings.resTypes;
     
-    let fOpts = `<option value="">تشطيب المشروع</option><option value="core_shell">طوب أحمر</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option>`;
+    let fOpts = `<option value="">حسب المشروع</option><option value="core_shell">طوب أحمر</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option>`;
     
     document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
         
@@ -567,7 +572,7 @@ function renderUnitRows(){
              selectOptions += `<option value="${escapeHtml(u.bedroomType)}" selected>${escapeHtml(u.bedroomType)}</option>`;
         }
         selectOptions += typeOptions.map(t => `<option value="${escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
-        selectOptions += `<option value="__manage__" style="color:var(--primary); font-weight:bold;">+ إضافة/حذف نوع ⚙️</option>`;
+        selectOptions += `<option value="__manage__" style="color:var(--danger); font-weight:bold;">+ إضافة/حذف نوع ⚙️</option>`;
 
         return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                     <select class="sketch-input" style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${selectOptions}</select>
@@ -592,9 +597,9 @@ function toggleYearSelection(pId, bId, y){
 }
 
 function renderPlanRows(){ 
-    document.getElementById('planRows').innerHTML = tempPlans.map(p=>`<div class="plan-card" style="border:2px dashed #ccc; padding:15px; margin-bottom:15px; background:rgba(0,0,0,0.02);">
+    document.getElementById('planRows').innerHTML = tempPlans.map(p=>`<div class="plan-card" style="border:2px dashed var(--border-color); padding:15px; margin-bottom:15px; background:rgba(0,0,0,0.02);">
         <div class="plan-card-header" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <input placeholder="اسم الخطة" class="sketch-input" style="flex:2; min-width:120px;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)" autocomplete="off">
+            <input placeholder="اسم الخطة" class="sketch-input hand-font" style="flex:2; min-width:120px;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)" autocomplete="off">
             <input type="number" placeholder="% خصم" class="sketch-input num" style="width:70px; flex-shrink:0;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)">
             <input type="number" placeholder="% مقدم" class="sketch-input num" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
             <input type="number" placeholder="سنوات" class="sketch-input num" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
@@ -616,7 +621,7 @@ function renderPlanRows(){
                     <input type="number" placeholder="%" class="sketch-input num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
                 </div>
-                ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+                ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="sketch-pill ${(b.selectedYears || []).includes(yr)?'active':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
             `).join('')}
             <button class="sketch-btn w-100" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
         </div>
@@ -665,20 +670,20 @@ function renderDetailModalContent() {
   else parkingText = c.parkingFee ? formatNum(c.parkingFee) + ' ج' : 'لا يوجد';
 
   if (c.projectType === 'commercial') {
-      finishText = 'حسب النشاط';
+      finishText = 'متنوع (بالأسعار)';
       let cp = c.commercialPrices || {}; let parts = []; const fName = { core_shell: 'طوب', semi: 'نصف', full: 'كامل' };
-      if (cp.adminMin || cp.adminMax) parts.push(`<b>إداري:</b> ${formatNum(cp.adminMin)} - ${formatNum(cp.adminMax)} <span>(${fName[cp.adminFinish||'core_shell']})</span>`);
-      if (cp.commMin || cp.commMax) parts.push(`<b>تجاري:</b> ${formatNum(cp.commMin)} - ${formatNum(cp.commMax)} <span>(${fName[cp.commFinish||'core_shell']})</span>`);
-      if (cp.clinicMin || cp.clinicMax) parts.push(`<b>طبي:</b> ${formatNum(cp.clinicMin)} - ${formatNum(cp.clinicMax)} <span>(${fName[cp.clinicFinish||'core_shell']})</span>`);
-      if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> ${formatNum(cp.recMin)} - ${formatNum(cp.recMax)} <span>(${fName[cp.recFinish||'core_shell']})</span>`);
-      pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:12px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||0)} ج`);
-  } else { pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)} ج` : `${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)} ج`; }
+      if (cp.adminMin || cp.adminMax) parts.push(`<b>إداري:</b> <span class="num">${formatNum(cp.adminMin)} - ${formatNum(cp.adminMax)}</span> <span style="font-size:10px;">(${fName[cp.adminFinish||'core_shell']})</span>`);
+      if (cp.commMin || cp.commMax) parts.push(`<b>تجاري:</b> <span class="num">${formatNum(cp.commMin)} - ${formatNum(cp.commMax)}</span> <span style="font-size:10px;">(${fName[cp.commFinish||'core_shell']})</span>`);
+      if (cp.clinicMin || cp.clinicMax) parts.push(`<b>طبي:</b> <span class="num">${formatNum(cp.clinicMin)} - ${formatNum(cp.clinicMax)}</span> <span style="font-size:10px;">(${fName[cp.clinicFinish||'core_shell']})</span>`);
+      if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> <span class="num">${formatNum(cp.recMin)} - ${formatNum(cp.recMax)}</span> <span style="font-size:10px;">(${fName[cp.recFinish||'core_shell']})</span>`);
+      pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:14px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `<span class="num">${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}</span> ج` : `<span class="num">${formatNum(c.pricePerMeterMin||0)}</span> ج`);
+  } else { pText = (c.pricePerMeterMin && c.pricePerMeterMax) ? `<span class="num">${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}</span> ج` : `<span class="num">${formatNum(c.pricePerMeterMin||c.pricePerMeter||0)}</span> ج`; }
   
-  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-family:'Cairo'; font-size:12px; text-decoration:none; display:inline-block; margin-top:8px; font-weight:bold; background:rgba(0,0,0,0.05); padding:6px 12px; border-radius:4px; border:1px dashed var(--primary);">📍 عرض على الخريطة</a>` : '';
+  const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-family:'Cairo'; font-size:12px; text-decoration:none; display:inline-block; margin-top:8px; font-weight:bold; background:rgba(0,0,0,0.05); padding:6px 12px; border-radius:4px; border:1px dashed var(--primary);">📍 الخريطة</a>` : '';
   
   let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
 
-  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span class="hand-font">${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span class="hand-font">${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span class="hand-font">${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span class="hand-font">${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span class="hand-font">${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span class="hand-font">${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>سعر المتر</b><span class="num" style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span class="hand-font">صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة</b><span class="hand-font"><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>عمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع</b><span class="hand-font">${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span class="hand-font">${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span class="hand-font">${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span class="hand-font">${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري الهندسي</b><span class="hand-font">${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>المنطقة والفرع</b><span class="hand-font">${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span class="hand-font">${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item" ${c.projectType === 'commercial' ? 'style="align-items:start;"' : ''}><b>سعر المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span class="hand-font">صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span class="hand-font"><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع بالتفصيل</b><span class="hand-font">${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
 
   const grouped = {}; (c.unitTypes||[]).forEach(u => { let t = u.bedroomType; (grouped[t] = grouped[t] || []).push(u); }); const cats = Object.keys(grouped);
   if(cats.length){
@@ -691,11 +696,11 @@ function renderDetailModalContent() {
     const fNamesAr = { 'core_shell': 'طوب أحمر', 'semi': 'نصف تشطيب', 'full': 'تشطيب كامل' };
     
     html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).map(u => {
-        let gText = u.gardenArea ? ` + جاردن ${u.gardenArea}م²` : '';
-        let rText = u.roofArea ? ` + روف ${u.roofArea}م²` : '';
+        let gText = u.gardenArea ? ` + جاردن <span class="num">${u.gardenArea}</span>م²` : '';
+        let rText = u.roofArea ? ` + روف <span class="num">${u.roofArea}</span>م²` : '';
         let fText = u.finishing ? ` | ${fNamesAr[u.finishing]}` : '';
         let pText = u.price ? formatNum(u.price) + ' ج' : 'حسب المتر';
-        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')">${u.area}م²${gText}${rText}${fText} | <span class="num">${pText}</span></div>`
+        return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')"><span class="num">${u.area}</span>م²${gText}${rText}${fText} | <span class="num">${pText}</span></div>`
     }).join('') + `</div>`;
     
     const sUnit = (c.unitTypes || []).find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
@@ -754,7 +759,7 @@ function renderDetailModalContent() {
   html += `<div class="section-label hand-font" style="margin-top:40px; color:var(--success); border-color:var(--success); font-size:22px;">🧮 الحاسبة السريعة للمشروع</div>
            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px; font-family:'Cairo';">اكتب المساحة عشان تحسبلها الأقساط على كل خطط السداد الخاصة بالمشروع ده فوراً.</p>
            <div style="display:flex; gap:10px; background:transparent; border-bottom:2px dashed var(--border-color); padding-bottom:15px; margin-bottom:20px; align-items:center; flex-wrap:wrap;">
-               <input type="number" id="miniCalcArea" placeholder="مساحة المباني (م²)" class="sketch-input num" style="flex:1; min-width:120px;" oninput="runProjectMiniCalc('${c.id}')">
+               <input type="number" id="miniCalcArea" placeholder="مباني (م²)" class="sketch-input num" style="flex:1; min-width:120px;" oninput="runProjectMiniCalc('${c.id}')">
                <input type="number" id="miniCalcGarden" placeholder="جاردن (م²)" class="sketch-input num" style="flex:1; min-width:100px;" oninput="runProjectMiniCalc('${c.id}')">
                <input type="number" id="miniCalcRoof" placeholder="روف (م²)" class="sketch-input num" style="flex:1; min-width:100px;" oninput="runProjectMiniCalc('${c.id}')">
            </div>
@@ -892,7 +897,7 @@ function renderCalcBulletsRows(){
             <input type="number" placeholder="%" class="sketch-input num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
             <button class="row-del" style="flex-shrink:0;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
         </div>
-        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears || []).includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="sketch-pill ${b.selectedYears.includes(yr)?'active':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     `).join(''); 
 }
 
@@ -952,8 +957,8 @@ function ensureXLSXLoaded() {
 }
 async function handleExcelUpload(event) {
     const file = event.target.files[0]; if (!file) return; document.getElementById('loadingOverlay').style.display = 'flex'; document.getElementById('loadingMsg').textContent = "جاري تجهيز أداة قراءة الإكسيل...";
-    try { await ensureXLSXLoaded(); } catch (e) { alert("تعذر تحميل مكتبة قراءة ملفات الإكسيل. تأكد من اتصال الإنترنت وحاول مرة أخرى."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
-    document.getElementById('loadingMsg').textContent = "جاري قراءة الشيت وتجهيز المشاريع...";
+    try { await ensureXLSXLoaded(); } catch (e) { alert("تعذر تحميل مكتبة قراءة ملفات الإكسيل."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
+    document.getElementById('loadingMsg').textContent = "جاري قراءة الشيت...";
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
@@ -973,14 +978,14 @@ async function handleExcelUpload(event) {
                 });
             });
             const projectsArray = Object.values(compoundsToUpload);
-            if (projectsArray.length === 0) { alert("لم يتم العثور على مشاريع أو البيانات غير متطابقة مع أسماء العواميد المطلوبة."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
-            if (!confirm(`تم تجهيز وتجميع ${projectsArray.length} مشروع من ملف الإكسيل. هل تريد رفعهم للسيستم؟`)) { document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
-            document.getElementById('loadingMsg').textContent = "جاري الحفظ في قاعدة البيانات...";
+            if (projectsArray.length === 0) { alert("مفيش داتا متوافقة."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
+            if (!confirm(`تم تجهيز ${projectsArray.length} مشروع. هل تريد الرفع؟`)) { document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
+            document.getElementById('loadingMsg').textContent = "جاري الحفظ...";
             if(excelMainLoc.subLocations.length > 0){ mainLocations.push(excelMainLoc); await db.collection('system').doc('locations').set({ mainLocations }); }
             let batch = db.batch(), count = 0, totalUploaded = 0;
             for (let i = 0; i < projectsArray.length; i++) { let proj = projectsArray[i]; proj.timestamp = firebase.firestore.FieldValue.serverTimestamp(); let docRef = db.collection("compounds").doc(proj.id); batch.set(docRef, proj); count++; totalUploaded++; if (count === 400 || i === projectsArray.length - 1) { await batch.commit(); batch = db.batch(); count = 0; } }
-            showToast(`✅ تم استيراد ${totalUploaded} مشروع من الإكسيل بنجاح!`); event.target.value = ''; setTimeout(() => { location.reload(); }, 2000);
-        } catch (error) { console.error("Error parsing Excel:", error); alert("حدث خطأ أثناء معالجة ملف الإكسيل. برجاء التأكد من تطابق أسماء العواميد مع النظام."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; }
+            showToast(`✅ تم استيراد ${totalUploaded} مشروع!`); event.target.value = ''; setTimeout(() => { location.reload(); }, 2000);
+        } catch (error) { alert("حدث خطأ."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; }
     }; reader.readAsArrayBuffer(file);
 }
 populateDeliverySelects();
