@@ -10,7 +10,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- خطوط اليد والخطوط الاحترافية -->
+<!-- خطوط اليد للوحة وخطوط رسمية للواجهة -->
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Lemonada:wght@300..700&family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" defer></script>
@@ -21,7 +21,7 @@
 </head>
 <body>
 
-  <!-- ================= LANDING PAGE (الواجهة الاحترافية النظيفة) ================= -->
+  <!-- ================= LANDING PAGE ================= -->
   <div id="landingPageContainer">
       <header class="site-bar">
           <div class="site-bar-brand">Broker-Assistant</div>
@@ -30,7 +30,7 @@
               <a href="#pricing">الأسعار</a>
           </nav>
           <div class="site-bar-actions">
-              <button class="btn btn-primary-style btn-pill site-bar-login" id="siteBarLoginBtn" onclick="openSystemLogin()">دخول للنظام</button>
+              <button class="btn btn-primary-style btn-pill" id="siteBarLoginBtn" onclick="openSystemLogin()">دخول للنظام</button>
               <button class="theme-switcher" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
               <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
           </div>
@@ -55,6 +55,23 @@
                   <div class="feature-card"><h3>💰 حاسبة دقيقة للأقساط</h3><p>احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية.</p></div>
                   <div class="feature-card"><h3>⚡ سرعة واحترافية</h3><p>واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p></div>
               </div>
+
+              <div class="pricing-section" id="pricing">
+                  <h2>باقات الاشتراكات المتاحة</h2>
+                  <p style="color: var(--text-muted); margin-bottom: 30px;">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
+                  <div class="pricing-cards">
+                      <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه)" class="price-card">
+                          <h3>باقة شهر واحد</h3><div class="price-val">500 جنيه</div><p style="color:var(--text-muted); font-size:13px;">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
+                      </a>
+                      <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه)" class="price-card featured-plan">
+                          <h3>باقة 3 شهور</h3><div class="price-val">1200 جنيه</div><p style="color:var(--text-muted); font-size:13px;">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
+                      </a>
+                      <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه)" class="price-card">
+                          <h3>باقة 6 شهور</h3><div class="price-val">2000 جنيه</div><p style="color:var(--text-muted); font-size:13px;">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
+                      </a>
+                  </div>
+              </div>
+
               <footer class="landing-footer">
                   <div class="footer-brand">Broker-Assistant</div>
                   <p>النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني.</p>
@@ -64,46 +81,52 @@
       </div>
   </div>
 
-  <!-- ================= SYSTEM APP (لوحة الفلين الواقعية) ================= -->
+  <!-- ================= SYSTEM APP (CORKBOARD) ================= -->
   <div class="app-corkboard-wrapper" id="systemApp" style="display:none;">
     
-    <!-- اليمين: مناطق الإدارة والبحث (ورقة دفتر) -->
+    <!-- يمين: ورقة المناطق والأدوات -->
     <aside class="sidebar paper-strip-right">
-      <div class="brand">Broker-Assistant<br><small>إدارة: جان هاني</small></div>
+      <div class="brand">Broker-Assistant<br><small style="font-family:'Cairo';">إدارة: جان هاني</small></div>
       <div class="auth-badge">
-        <span id="userEmailLabel" style="font-family:'Cairo'; font-size:11px;">يرجى تسجيل الدخول</span>
-        <button class="sketch-btn" onclick="handleAuthAction()" id="authActionBtn">خروج</button>
+        <span id="userEmailLabel" style="font-family:'Cairo'; font-size:11px; font-weight:bold;">يرجى تسجيل الدخول</span>
+        <button class="sketch-btn" onclick="handleAuthAction()" id="authActionBtn" style="padding:2px 8px; font-size:10px;">خروج</button>
       </div>
 
       <div class="location-container">
-        <div class="side-section-title hand-font" style="font-size:16px;">📌 المناطق الرئيسية</div>
-        <div class="location-tree" id="locationTree"></div>
-        <div class="add-loc-form" id="addMainLocWrap" style="display:none;">
-          <input id="newMainLocInput" placeholder="+ منطقة جديدة" onkeydown="if(event.key==='Enter') addMainLocation()" autocomplete="off" class="hand-font">
-          <button class="sketch-btn" onclick="addMainLocation()">إضافة</button>
+        <button class="btn-loc-toggle-mobile" id="mobileLocToggleBtn" onclick="toggleMobileLoc()">📍 تصفية بالمناطق والمدن ▼</button>
+        <div class="loc-wrapper-mobile" id="locWrapperMobile">
+          <div class="side-section-title desktop-only hand-font" style="font-size:16px; margin-bottom:15px;">📌 المناطق والمدن</div>
+          <div class="location-tree" id="locationTree"></div>
+          <div class="add-loc-form" id="addMainLocWrap" style="display:none; margin-top:15px;">
+            <input id="newMainLocInput" placeholder="+ منطقة جديدة" onkeydown="if(event.key==='Enter') addMainLocation()" autocomplete="off" class="sketch-input hand-font">
+            <button class="sketch-btn" onclick="addMainLocation()">إضافة</button>
+          </div>
         </div>
       </div>
 
-      <div class="side-actions" id="adminActions" style="display:none; margin-top:20px;">
-        <button class="sketch-btn primary-sketch" onclick="openCompoundForm()">+ إضافة مشروع جديد</button>
-        <button class="sketch-btn" onclick="openTypesManager()">⚙️ إدارة أنواع الوحدات</button>
+      <div class="side-actions" id="superAdminActions" style="display:none; margin-top:20px;">
+        <button class="sketch-btn w-100" onclick="openUsersManager()">👥 إدارة المشتركين</button>
+      </div>
+
+      <div class="side-actions" id="adminActions" style="display:none; margin-top:10px;">
+        <button class="sketch-btn primary-sketch w-100" onclick="openCompoundForm()">+ إضافة مشروع جديد</button>
+        <button class="sketch-btn w-100" onclick="openTypesManager()" style="margin-top:10px;">⚙️ إدارة أنواع الوحدات</button>
         <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelUpload(event)">
-        <button class="sketch-btn success-sketch" onclick="document.getElementById('excelFileInput').click()">📊 استيراد إكسيل</button>
-        <button class="sketch-btn" onclick="openUsersManager()" id="superAdminActions" style="display:none;">👥 إدارة المشتركين</button>
+        <button class="sketch-btn success-sketch w-100" onclick="document.getElementById('excelFileInput').click()" style="margin-top:10px;">📊 استيراد إكسيل</button>
       </div>
       
       <div class="side-actions" style="margin-top:auto; padding-top:20px;">
-        <button class="sketch-btn primary-sketch" style="font-size:18px;" onclick="openCalculator()">🧮 حاسبة الأقساط</button>
-        <button class="sketch-btn" style="margin-top:10px;" onclick="backToLanding()">العودة للرئيسية 🚪</button>
+        <button class="sketch-btn primary-sketch w-100" style="font-size:18px;" onclick="openCalculator()">🧮 حاسبة الأقساط</button>
+        <button class="sketch-btn w-100" style="margin-top:10px;" onclick="backToLanding()">العودة للرئيسية 🚪</button>
       </div>
     </aside>
 
-    <!-- المنتصف: لوحة الفلين (Corkboard) اللي عليها الدبابيس -->
+    <!-- منتصف: لوحة الفلين للمشاريع -->
     <main class="main corkboard-area">
-      <!-- لوحة إحصائيات المديرين (متعلقة فوق كأنها كارت) -->
+      <!-- الإحصائيات (ورقة لاصقة بالعرض) -->
       <div id="adminStatsBoard" class="admin-stats-board sticky-stats" style="display: none;">
           <div class="stat-card stat-total active" onclick="setCompletionFilter('all', this)">
-              <h4>كل المشروعات</h4><b id="statTotal">0</b>
+              <h4>إجمالي المشروعات</h4><b id="statTotal">0</b>
           </div>
           <div class="stat-card stat-success" onclick="setCompletionFilter('completed', this)">
               <h4>مكتمل ✅</h4><b id="statCompleted">0</b>
@@ -116,13 +139,24 @@
       <div class="grid" id="compoundGrid"></div>
     </main>
 
-    <!-- اليسار: ورقة متقطعة فيها أدوات البحث والفلاتر زي الصورة بالظبط -->
+    <!-- يسار: ورقة الفلاتر والبحث -->
     <aside class="left-toolbar torn-paper-left">
-        <h3 class="hand-font" style="text-align:center; font-size:22px; border-bottom:2px dashed #ccc; padding-bottom:10px; margin-bottom:20px; color:#333;">🔍 أدوات البحث</h3>
+        <h3 class="hand-font" style="text-align:center; font-size:22px; border-bottom:2px dashed var(--border-color); padding-bottom:10px; margin-bottom:20px; color:var(--text-main);">🔍 أدوات البحث</h3>
         
         <div class="search-box">
-            <input type="text" id="fSearchText" class="hand-font sketch-input" placeholder="ابحث باسم المشروع أو الشركة..." oninput="handleSearchInput()" onkeydown="if(event.key==='Enter'){ clearTimeout(searchDebounceTimer); applyFilters(); }" autocomplete="off" spellcheck="false">
-            <button type="button" class="sketch-btn-icon" id="searchClearBtn" onclick="clearSearchOnly()" style="display:none;">✕</button>
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="fSearchText" class="hand-font sketch-input" placeholder="اسم المشروع أو الشركة..." oninput="handleSearchInput()" onkeydown="if(event.key==='Enter'){ clearTimeout(searchDebounceTimer); applyFilters(); }" autocomplete="off" spellcheck="false" style="padding-right:30px;">
+            <button type="button" class="sketch-btn" id="searchClearBtn" onclick="clearSearchOnly()" style="display:none; position:absolute; left:0; border:none; box-shadow:none; color:var(--danger);">✕</button>
+        </div>
+
+        <div class="filter-group">
+            <label class="hand-font">تصنيف النشاط:</label>
+            <div class="sketch-checkboxes" style="display:flex; flex-wrap:wrap; gap:8px;">
+                <button class="sketch-pill active type-nav-btn" onclick="selectProjectType('all', this)">الكل</button>
+                <button class="sketch-pill type-nav-btn" onclick="selectProjectType('residential', this)">سكني</button>
+                <button class="sketch-pill type-nav-btn" onclick="selectProjectType('commercial', this)">تجاري/إداري</button>
+                <button class="sketch-pill type-nav-btn" onclick="selectProjectType('hotel', this)">فندقي</button>
+            </div>
         </div>
 
         <div class="filter-group">
@@ -149,9 +183,10 @@
 
         <div class="filter-group">
             <label class="hand-font">الفلاتر المالية:</label>
-            <input type="text" id="fMinPrice" placeholder="السعر من" class="sketch-input hand-font num" oninput="formatInput(this)">
-            <input type="text" id="fMaxPrice" placeholder="السعر إلى" class="sketch-input hand-font num" oninput="formatInput(this)">
-            <input type="text" id="fDownPayment" placeholder="الحد الأقصى للمقدم" class="sketch-input hand-font num" oninput="formatInput(this)">
+            <input type="text" id="fMinPrice" placeholder="السعر من" class="sketch-input num" oninput="formatInput(this)" style="margin-bottom:10px;">
+            <input type="text" id="fMaxPrice" placeholder="السعر إلى" class="sketch-input num" oninput="formatInput(this)" style="margin-bottom:10px;">
+            <input type="text" id="fDownPayment" placeholder="أقصى مقدم" class="sketch-input num" oninput="formatInput(this)" style="margin-bottom:10px;">
+            <input type="text" id="fMonthlyInstallment" placeholder="أقصى قسط شهري" class="sketch-input num" oninput="formatInput(this)">
         </div>
 
         <div class="filter-group">
@@ -163,23 +198,25 @@
             </select>
         </div>
 
-        <button class="sketch-btn primary-sketch w-100" style="margin-top:10px;" onclick="applyFilters()">تطبيق البحث 🔎</button>
-        <button class="sketch-btn w-100" style="margin-top:10px; color:#d9381e;" onclick="resetFilters()">مسح الفلاتر 🗑️</button>
+        <button class="sketch-btn primary-sketch w-100" style="margin-top:15px; font-size:16px;" onclick="applyFilters()">تطبيق البحث 🔎</button>
+        <button class="sketch-btn w-100" style="margin-top:10px; color:var(--danger); border-color:var(--danger); box-shadow: 2px 2px 0 var(--danger);" onclick="resetFilters()">مسح الفلاتر 🗑️</button>
     </aside>
   </div>
 
   <!-- ================= النوافذ المنبثقة (Whiteboards) ================= -->
+  
   <div class="paywall-overlay" id="paywallModal">
-    <div class="whiteboard-modal" style="max-width: 400px;">
-      <button class="modal-close login-close-btn" onclick="closeLoginModal()">✕</button>
-      <h2 class="hand-font" style="font-size:24px; color:#333; border-bottom:2px dashed #ccc; padding-bottom:10px;">تسجيل الدخول</h2>
-      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username" class="sketch-input" style="width:100%; margin-top:20px;">
-      <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password" class="sketch-input" style="width:100%; margin-top:15px;">
+    <div class="paywall-card">
+      <button class="login-close-btn" onclick="closeLoginModal()">✕</button>
+      <h2>تسجيل الدخول للنظام</h2>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">برجاء إدخال بيانات حسابك المعتمدة.</p>
+      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
+      <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password">
       <div style="display:flex; align-items:center; gap:8px; margin:15px 0;">
           <input type="checkbox" id="rememberMe">
-          <label for="rememberMe" class="hand-font" style="color:#555;">تذكر بيانات الدخول</label>
+          <label for="rememberMe" style="color:var(--text-muted); font-weight:bold; cursor:pointer;">تذكر بيانات الدخول</label>
       </div>
-      <button class="sketch-btn primary-sketch w-100" onclick="submitLogin()">دخول 🔓</button>
+      <button class="btn btn-primary-style btn-pill w-100" style="font-size:16px; padding:12px;" onclick="submitLogin()">دخول</button>
     </div>
   </div>
 
@@ -191,15 +228,15 @@
       </div>
       <div class="modal-body">
         <div class="form-grid" style="grid-template-columns: 1fr;">
-          <div class="form-field"><label>إيميل المشترك</label><input type="email" id="newAccEmail" class="sketch-input"></div>
+          <div class="form-field"><label>إيميل المشترك (صحيح)</label><input type="email" id="newAccEmail" class="sketch-input"></div>
           <div class="form-field"><label>المدة</label><select id="newAccDuration" class="sketch-input"><option value="30">شهر</option><option value="90">3 شهور</option><option value="180">6 شهور</option><option value="365">سنة</option></select></div>
           <div class="form-field"><label>الصلاحية</label><select id="newAccRole" class="sketch-input"><option value="viewer">متفرج</option><option value="editor">محرر</option></select></div>
         </div>
         <button class="sketch-btn primary-sketch w-100" style="margin-top: 20px;" onclick="createNewSubscriber()">إنشاء الحساب</button>
-        <div id="newAccResult" style="display:none; margin-top: 20px; padding: 15px; border:2px dashed #228b22; background:rgba(34,139,34,0.1);">
-            <b style="color: #228b22; font-family:'Lemonada';">✅ تم إنشاء الحساب بنجاح!</b>
-            <div style="font-family: 'IBM Plex Mono', monospace; font-size:16px; margin-top:10px;">
-                الإيميل: <span id="resEmail"></span><br>الباسورد: <span id="resPass" style="color:red; font-weight:bold;"></span>
+        <div id="newAccResult" style="display:none; margin-top: 20px; padding: 15px; border:2px dashed var(--success); background:rgba(16,185,129,0.1);">
+            <b style="color: var(--success); font-family:'Lemonada';">✅ تم إنشاء الحساب بنجاح!</b>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size:16px; margin-top:10px; color:var(--text-main);">
+                الإيميل: <span id="resEmail"></span><br>الباسورد: <span id="resPass" style="color:var(--danger); font-weight:bold;"></span><br>ينتهي: <span id="resDate"></span>
             </div>
         </div>
       </div>
@@ -213,9 +250,10 @@
         <button class="modal-close" onclick="closeModal('typesOverlay')">✕</button>
       </div>
       <div class="modal-body">
-        <label class="hand-font" style="color:#d32f2f;">🏢 الأنواع السكنية (افصل بـ ،)</label>
+        <p class="hand-font" style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع مفصولة بعلامة الفاصلة ، أو دوس Enter.</p>
+        <label class="hand-font" style="color:var(--danger); font-size:14px; font-weight:bold;">🏢 الأنواع السكنية (افصل بـ ،)</label>
         <textarea id="resTypesInput" rows="4" class="sketch-input" style="width:100%; margin-bottom:20px;"></textarea>
-        <label class="hand-font" style="color:#1976d2;">🏪 الأنواع التجارية (افصل بـ ،)</label>
+        <label class="hand-font" style="color:#1976d2; font-size:14px; font-weight:bold;">🏪 الأنواع التجارية (افصل بـ ،)</label>
         <textarea id="commTypesInput" rows="3" class="sketch-input" style="width:100%;"></textarea>
       </div>
       <div class="modal-footer">
@@ -232,9 +270,10 @@
         <button class="modal-close" onclick="closeModal('formOverlay')">✕</button>
       </div>
       <div class="modal-body" style="padding-top:10px;">
-        <div style="background:rgba(211,47,47,0.05); border:2px dashed #d32f2f; padding:15px; margin-bottom:20px;">
-            <label class="hand-font" style="color:#d32f2f; font-size:18px;">✨ استيراد ذكي من الواتس</label>
-            <textarea id="magicPasteInput" rows="3" class="sketch-input" style="width:100%; background:#fff; margin:10px 0;"></textarea>
+        
+        <div style="background:rgba(220,38,38,0.05); border:2px dashed var(--danger); padding:15px; margin-bottom:20px; border-radius:8px;">
+            <label class="hand-font" style="color:var(--danger); font-size:18px;">✨ استيراد ذكي من الواتس</label>
+            <textarea id="magicPasteInput" rows="3" class="sketch-input" placeholder="انسخ رسالة المشروع هنا..." style="width:100%; background:var(--card-bg); margin:10px 0; border:1px solid var(--border-color);"></textarea>
             <button class="sketch-btn primary-sketch w-100" onclick="processMagicPaste()">سحب الداتا 🚀</button>
         </div>
 
@@ -247,56 +286,58 @@
           <div class="form-field"><label>العمارات (G + ?)</label><input type="text" id="fldFloors" class="sketch-input"></div>
           <div class="form-field"><label>المالك</label><input id="fldOwner" class="sketch-input"></div>
           <div class="form-field"><label>الاستشاري</label><input id="fldConsultant" class="sketch-input"></div>
-          <div class="form-field res-price-field"><label>سعر المتر (من)</label><input id="fldPriceMeterMin" type="text" class="sketch-input" oninput="formatInput(this); updatePriceMeterAvg();"></div>
-          <div class="form-field res-price-field"><label>سعر المتر (إلى)</label><input id="fldPriceMeterMax" type="text" class="sketch-input" oninput="formatInput(this); updatePriceMeterAvg();"></div>
+          <div class="form-field res-price-field"><label>سعر المتر (من)</label><input id="fldPriceMeterMin" type="text" class="sketch-input num" oninput="formatInput(this); updatePriceMeterAvg();"></div>
+          <div class="form-field res-price-field"><label>سعر المتر (إلى)</label><input id="fldPriceMeterMax" type="text" class="sketch-input num" oninput="formatInput(this); updatePriceMeterAvg();"></div>
+          
           <div class="form-field res-field"><label>التشطيب الرئيسي</label><select id="fldFinishingStatus" class="sketch-input"><option value="core_shell">طوب أحمر</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
           
           <div class="form-field res-field">
               <label>الجراج (Parking)</label>
               <div style="display:flex; gap:8px;">
                   <select id="fldParkingType" class="sketch-input" style="flex:1;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='extra' ? 'block' : 'none';"><option value="extra">رسوم</option><option value="included">شامل</option><option value="optional">اختياري</option></select>
-                  <input id="fldParkingFee" type="text" class="sketch-input" placeholder="السعر" oninput="formatInput(this);" style="flex:1;">
+                  <input id="fldParkingFee" type="text" class="sketch-input num" placeholder="السعر" oninput="formatInput(this);" style="flex:1;">
               </div>
           </div>
 
-          <div id="commercialPriceWrap" class="full" style="display:none; border:2px dashed #1976d2; padding:15px; margin:15px 0;">
+          <div id="commercialPriceWrap" class="full" style="display:none; border:2px dashed #1976d2; padding:15px; margin:15px 0; border-radius:8px;">
              <div class="hand-font" style="color:#1976d2; margin-bottom:10px; font-size:18px;">أسعار التجارى</div>
              <div class="form-grid">
-                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" class="sketch-input" oninput="formatInput(this);"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" class="sketch-input" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيبه</label><select id="fldAdminFinish" class="sketch-input"><option value="core_shell">طوب</option><option value="semi">نصف</option><option value="full">كامل</option></select></div>
-                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" class="sketch-input" oninput="formatInput(this);"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" class="sketch-input" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيبه</label><select id="fldCommFinish" class="sketch-input"><option value="core_shell">طوب</option><option value="semi">نصف</option><option value="full">كامل</option></select></div>
-                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" class="sketch-input" oninput="formatInput(this);"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" class="sketch-input" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيبه</label><select id="fldClinicFinish" class="sketch-input"><option value="core_shell">طوب</option><option value="semi">نصف</option><option value="full">كامل</option></select></div>
+                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيبه</label><select id="fldAdminFinish" class="sketch-input"><option value="core_shell">طوب</option><option value="semi">نصف</option><option value="full">كامل</option></select></div>
+                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيبه</label><select id="fldCommFinish" class="sketch-input"><option value="core_shell">طوب</option><option value="semi">نصف</option><option value="full">كامل</option></select></div>
+                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيبه</label><select id="fldClinicFinish" class="sketch-input"><option value="core_shell">طوب</option><option value="semi">نصف</option><option value="full">كامل</option></select></div>
+                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" class="sketch-input num" oninput="formatInput(this);"></div><div class="form-field"><label>تشطيبه</label><select id="fldRecFinish" class="sketch-input"><option value="core_shell">طوب</option><option value="semi">نصف</option><option value="full">كامل</option></select></div>
              </div>
           </div>
 
           <div class="form-field">
               <label>وديعة الصيانة</label>
               <div style="display:flex; gap:8px;">
-                  <input type="text" id="fldMaintenanceValue" class="sketch-input" placeholder="الرقم" style="flex:2;">
+                  <input type="text" id="fldMaintenanceValue" class="sketch-input" placeholder="مثال: 10 أو 1500" style="flex:2;">
                   <select id="fldMaintenanceType" class="sketch-input" style="flex:1;"><option value="percent">%</option><option value="per_meter">ج/م²</option></select>
               </div>
           </div>
 
-          <div class="form-field"><label>مساحة المشروع (فدان)</label><input id="fldProjectSize" type="text" class="sketch-input"></div>
+          <div class="form-field"><label>مساحة المشروع (فدان)</label><input id="fldProjectSize" type="text" class="sketch-input num"></div>
           <div class="form-field"><label>التسليم</label><select id="fldDeliveryDate" class="sketch-input"></select></div>
           <div class="form-field"><label>الموقع التفصيلي</label><input id="fldLocationDetail" class="sketch-input"></div>
           <div class="form-field"><label>رابط الخريطة</label><input id="fldLocationLink" dir="ltr" class="sketch-input"></div>
         </div>
 
-        <div class="hand-font" style="font-size:22px; color:#333; margin:20px 0 10px; border-bottom:2px dashed #ccc;">الوحدات والمساحات</div>
+        <div class="hand-font" style="font-size:22px; color:var(--primary); margin:20px 0 10px; border-bottom:2px dashed var(--border-color);">الوحدات والمساحات</div>
         <div id="unitRows"></div>
-        <button class="sketch-btn w-100" style="margin-top:10px;" onclick="addUnitRow()">+ مساحة جديدة</button>
+        <button class="sketch-btn w-100" style="margin-top:15px; border-style:dashed;" onclick="addUnitRow()">+ إضافة مساحة</button>
         
-        <div class="hand-font" style="font-size:22px; color:#333; margin:30px 0 10px; border-bottom:2px dashed #ccc;">خطط السداد</div>
+        <div class="hand-font" style="font-size:22px; color:var(--primary); margin:30px 0 10px; border-bottom:2px dashed var(--border-color);">خطط السداد</div>
         <div class="form-field full" style="margin-bottom: 15px;">
             <label>خصم الكاش العام (%)</label>
-            <input type="number" id="fldCashDiscount" class="sketch-input">
+            <input type="number" id="fldCashDiscount" class="sketch-input num">
         </div>
         <div id="planRows"></div>
-        <button class="sketch-btn w-100" style="margin-top:10px;" onclick="addPlanRow()">+ خطة سداد جديدة</button>
+        <button class="sketch-btn w-100" style="margin-top:15px; border-style:dashed;" onclick="addPlanRow()">+ إضافة خطة سداد</button>
 
-        <div class="hand-font" style="font-size:22px; color:#333; margin:30px 0 10px; border-bottom:2px dashed #ccc;">قرارات وزارية</div>
+        <div class="hand-font" style="font-size:22px; color:var(--primary); margin:30px 0 10px; border-bottom:2px dashed var(--border-color);">قرارات وزارية</div>
         <div id="decreeRows"></div>
-        <button class="sketch-btn w-100" style="margin-top:10px;" onclick="addDecreeRow()">+ قرار وزاري</button>
+        <button class="sketch-btn w-100" style="margin-top:15px; border-style:dashed;" onclick="addDecreeRow()">+ قرار وزاري</button>
       </div>
       <div class="modal-footer">
         <button class="sketch-btn" onclick="closeModal('formOverlay')">إلغاء</button>
@@ -308,12 +349,12 @@
   <div class="overlay" id="detailOverlay">
     <div class="whiteboard-modal" style="max-width:950px;">
       <div class="modal-header">
-        <h3 id="detailTitle" class="hand-font" style="font-size:28px; color:#000;">تفاصيل المشروع</h3>
+        <h3 id="detailTitle" class="hand-font" style="font-size:28px; color:var(--primary);">تفاصيل المشروع</h3>
         <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
       </div>
       <div class="modal-body" id="detailBody" style="padding-top: 25px;"></div>
       <div class="modal-footer">
-        <button class="sketch-btn" style="color:red; margin-left:auto;" id="btnDeleteCompound" onclick="deleteCurrentCompoundFromCloud()">حذف 🗑️</button>
+        <button class="sketch-btn" style="color:var(--danger); border-color:var(--danger); margin-left:auto;" id="btnDeleteCompound" onclick="deleteCurrentCompoundFromCloud()">حذف 🗑️</button>
         <button class="sketch-btn" id="btnEditCompound" onclick="editCurrentCompound()">تعديل ✏️</button>
         <button class="sketch-btn primary-sketch" onclick="closeModal('detailOverlay')">إغلاق</button>
       </div>
@@ -335,20 +376,20 @@
   <div class="overlay" id="calcOverlay">
     <div class="whiteboard-modal" style="max-width:500px;">
       <div class="modal-header">
-        <h3 class="hand-font" style="font-size:24px;">🧮 الحاسبة المستقلة</h3>
+        <h3 class="hand-font" style="font-size:24px;">🧮 الحاسبة الشاملة</h3>
         <button class="modal-close" onclick="closeModal('calcOverlay')">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
-          <div class="form-field full"><label>إجمالي السعر</label><input id="calcTotal" type="text" class="sketch-input" oninput="formatInput(this);"></div>
-          <div class="form-field"><label>خصم %</label><input id="calcDiscountPct" type="number" class="sketch-input"></div>
-          <div class="form-field"><label>مقدم %</label><input id="calcDownPct" type="number" class="sketch-input"></div>
-          <div class="form-field full"><label>سنوات التقسيط</label><input id="calcYears" type="number" class="sketch-input"></div>
+          <div class="form-field full"><label>إجمالي السعر</label><input id="calcTotal" type="text" class="sketch-input num" oninput="formatInput(this);"></div>
+          <div class="form-field"><label>خصم %</label><input id="calcDiscountPct" type="number" class="sketch-input num"></div>
+          <div class="form-field"><label>مقدم %</label><input id="calcDownPct" type="number" class="sketch-input num"></div>
+          <div class="form-field full"><label>سنوات التقسيط</label><input id="calcYears" type="number" class="sketch-input num"></div>
         </div>
-        <div style="margin-top:20px; border:2px dashed #ccc; padding:15px; background:rgba(0,0,0,0.02);">
-          <div class="hand-font" style="font-size:18px; margin-bottom:10px;">الدفعات الخاصة:</div>
+        <div style="margin-top:20px; border:2px dashed var(--border-color); padding:15px; background:rgba(0,0,0,0.02); border-radius:8px;">
+          <div class="hand-font" style="font-size:18px; margin-bottom:10px; color:var(--text-main);">الدفعات الخاصة:</div>
           <div id="calcBulletsRows"></div>
-          <button class="sketch-btn w-100" style="margin-top:10px;" onclick="addCalcBulletRow()">+ إضافة دفعة</button>
+          <button class="sketch-btn w-100" style="margin-top:10px; border-style:dashed;" onclick="addCalcBulletRow()">+ إضافة دفعة</button>
         </div>
         <button class="sketch-btn primary-sketch w-100" style="margin-top:25px; font-size:20px;" onclick="runUniversalCalculator()">احسب الأقساط</button>
         <div id="calcResult" style="margin-top:20px; display:none;"></div>
