@@ -253,7 +253,6 @@
     </main>
   </div>
 
-  <!-- النوافذ المنبثقة -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
       <button class="modal-close login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
@@ -306,26 +305,6 @@
                 ينتهي في: <span id="resDate" style="font-weight:bold;"></span>
             </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="overlay" id="typesOverlay">
-    <div class="modal curved-modal" style="max-width: 600px;">
-      <div class="modal-header">
-        <h3>⚙️ إدارة أنواع الوحدات المخصصة</h3>
-        <button class="modal-close" onclick="closeModal('typesOverlay')" aria-label="إغلاق">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
-        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
-        <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
-        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
-        <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline-light btn-pill" onclick="closeModal('typesOverlay')">إلغاء</button>
-        <button class="btn btn-primary-style btn-pill" onclick="saveCustomTypes()">حفظ الأنواع</button>
       </div>
     </div>
   </div>
@@ -411,6 +390,9 @@
         </div>
 
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
+        <!-- قوائم مخفية عشان الـ Datalist تشتغل -->
+        <datalist id="dl_residential"></datalist>
+        <datalist id="dl_commercial"></datalist>
         <div id="unitRows"></div>
         <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:15px;" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
         
@@ -482,6 +464,27 @@
         </div>
         <button class="btn btn-primary-style w-100 btn-pill" style="margin-top:25px; padding:14px; font-size:15px;" onclick="runUniversalCalculator()">احسب الأقساط الآن</button>
         <div class="calc-result" id="calcResult" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✨ شاشة إدارة الأنواع أخدت VIP Z-Index وبقت آخر حاجة في الكود ✨ -->
+  <div class="overlay" id="typesOverlay" style="z-index: 1100;">
+    <div class="modal curved-modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>⚙️ إدارة أنواع الوحدات المخصصة</h3>
+        <button class="modal-close" onclick="closeModal('typesOverlay')" aria-label="إغلاق">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
+        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
+        <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
+        <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-light btn-pill" onclick="closeModal('typesOverlay')">إلغاء</button>
+        <button class="btn btn-primary-style btn-pill" onclick="saveCustomTypes()">حفظ الأنواع</button>
       </div>
     </div>
   </div>
