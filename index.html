@@ -10,7 +10,6 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- خطوط اليد للوحة وخطوط رسمية للواجهة -->
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Lemonada:wght@300..700&family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
 
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" defer></script>
@@ -84,7 +83,6 @@
   <!-- ================= SYSTEM APP (CORKBOARD) ================= -->
   <div class="app-corkboard-wrapper" id="systemApp" style="display:none;">
     
-    <!-- يمين: ورقة المناطق والأدوات -->
     <aside class="sidebar paper-strip-right">
       <div class="brand">Broker-Assistant<br><small style="font-family:'Cairo';">إدارة: جان هاني</small></div>
       <div class="auth-badge">
@@ -121,9 +119,7 @@
       </div>
     </aside>
 
-    <!-- منتصف: لوحة الفلين للمشاريع -->
     <main class="main corkboard-area">
-      <!-- الإحصائيات (ورقة لاصقة بالعرض) -->
       <div id="adminStatsBoard" class="admin-stats-board sticky-stats" style="display: none;">
           <div class="stat-card stat-total active" onclick="setCompletionFilter('all', this)">
               <h4>إجمالي المشروعات</h4><b id="statTotal">0</b>
@@ -139,7 +135,6 @@
       <div class="grid" id="compoundGrid"></div>
     </main>
 
-    <!-- يسار: ورقة الفلاتر والبحث -->
     <aside class="left-toolbar torn-paper-left">
         <h3 class="hand-font" style="text-align:center; font-size:22px; border-bottom:2px dashed var(--border-color); padding-bottom:10px; margin-bottom:20px; color:var(--text-main);">🔍 أدوات البحث</h3>
         
@@ -203,20 +198,27 @@
     </aside>
   </div>
 
-  <!-- ================= النوافذ المنبثقة (Whiteboards) ================= -->
+  <!-- ================= النوافذ المنبثقة ================= -->
   
+  <!-- ✨ شاشة تسجيل الدخول الجديدة الفخمة ✨ -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card">
       <button class="login-close-btn" onclick="closeLoginModal()">✕</button>
-      <h2>تسجيل الدخول للنظام</h2>
-      <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">برجاء إدخال بيانات حسابك المعتمدة.</p>
-      <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
-      <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password">
-      <div style="display:flex; align-items:center; gap:8px; margin:15px 0;">
-          <input type="checkbox" id="rememberMe">
-          <label for="rememberMe" style="color:var(--text-muted); font-weight:bold; cursor:pointer;">تذكر بيانات الدخول</label>
+      <div class="login-icon">🔒</div>
+      <h2>تسجيل الدخول</h2>
+      <p style="color:var(--text-muted); font-size:14px; margin-bottom:25px;">مرحباً بك مجدداً! برجاء إدخال بياناتك للمتابعة.</p>
+      
+      <div style="text-align: right;">
+          <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
+          <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitLogin()">
       </div>
-      <button class="btn btn-primary-style btn-pill w-100" style="font-size:16px; padding:12px;" onclick="submitLogin()">دخول</button>
+      
+      <div style="display:flex; align-items:center; gap:10px; margin:5px 0 25px 0; justify-content: flex-start;">
+          <input type="checkbox" id="rememberMe">
+          <label for="rememberMe" style="color:var(--text-muted); font-weight:700; cursor:pointer; font-size:14px;">تذكر بيانات الدخول</label>
+      </div>
+      
+      <button class="btn btn-primary-style btn-pill w-100" id="loginSubmitBtn" style="font-size:18px; padding:15px; font-weight:800;" onclick="submitLogin()">تسجيل الدخول</button>
     </div>
   </div>
 
@@ -312,7 +314,7 @@
           <div class="form-field">
               <label>وديعة الصيانة</label>
               <div style="display:flex; gap:8px;">
-                  <input type="text" id="fldMaintenanceValue" class="sketch-input" placeholder="مثال: 10 أو 1500" style="flex:2;">
+                  <input type="text" id="fldMaintenanceValue" class="sketch-input" placeholder="الرقم" style="flex:2;">
                   <select id="fldMaintenanceType" class="sketch-input" style="flex:1;"><option value="percent">%</option><option value="per_meter">ج/م²</option></select>
               </div>
           </div>
