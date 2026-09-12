@@ -59,6 +59,25 @@ const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m',
 function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
 function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return str; }
 
+// ✨ زرار الدخول اللي اتصلح ✨
+function submitLogin() { 
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim(); 
+    const btn = document.getElementById('loginSubmitBtn');
+    if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; } 
+    
+    if (btn) btn.innerHTML = 'جاري الدخول... ⏳';
+    
+    document.getElementById('rememberMe').checked ? (localStorage.setItem('savedEmail', email), localStorage.setItem('savedPassword', password)) : (localStorage.removeItem('savedEmail'), localStorage.removeItem('savedPassword')); 
+    sessionStorage.setItem('isSystemOpen', 'true'); 
+    
+    auth.signInWithEmailAndPassword(email, password).catch(err => { 
+        sessionStorage.removeItem('isSystemOpen'); 
+        if (btn) btn.innerHTML = 'تسجيل الدخول';
+        alert("بيانات الدخول غير صحيحة."); 
+    }); 
+}
+
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     if (sessionStorage.getItem('isSystemOpen') !== 'true') { auth.signOut(); return; }
@@ -69,11 +88,13 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
     document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
     document.getElementById('superAdminActions').style.display = isAdmin ? 'flex' : 'none'; document.getElementById('addMainLocWrap').style.display = isEditor ? 'flex' : 'none'; document.getElementById('adminActions').style.display = isEditor ? 'flex' : 'none';
+    
+    if(document.getElementById('loginSubmitBtn')) document.getElementById('loginSubmitBtn').innerHTML = 'تسجيل الدخول';
+    
     await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true);
   } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'block'; setNavForApp(false); }
 });
 
-function submitLogin() { const email = document.getElementById('loginEmail').value.trim(), password = document.getElementById('loginPassword').value.trim(); if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; } document.getElementById('rememberMe').checked ? (localStorage.setItem('savedEmail', email), localStorage.setItem('savedPassword', password)) : (localStorage.removeItem('savedEmail'), localStorage.removeItem('savedPassword')); sessionStorage.setItem('isSystemOpen', 'true'); auth.signInWithEmailAndPassword(email, password).catch(err => { sessionStorage.removeItem('isSystemOpen'); alert("بيانات الدخول غير صحيحة."); }); }
 function handleAuthAction() { currentUser ? (auth.signOut(), sessionStorage.removeItem('isSystemOpen'), backToLanding()) : document.getElementById('paywallModal').style.display = 'flex'; }
 function openUsersManager() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); }
 async function createNewSubscriber() { const email = document.getElementById('newAccEmail').value.trim().toLowerCase(), duration = parseInt(document.getElementById('newAccDuration').value), role = document.getElementById('newAccRole').value; if(!email) { showToast('يرجى كتابة الإيميل!'); return; } const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100), expDate = new Date(); expDate.setDate(expDate.getDate() + duration); try { await secondaryApp.auth().createUserWithEmailAndPassword(email, password); await db.collection('users').doc(email).set({ role: role, expiryDate: expDate.toISOString().split('T')[0] }); await secondaryApp.auth().signOut(); document.getElementById('resEmail').textContent = email; document.getElementById('resPass').textContent = password; document.getElementById('resDate').textContent = expDate.toISOString().split('T')[0]; document.getElementById('newAccResult').style.display = 'block'; showToast('تم تسجيل الحساب بنجاح!'); } catch (error) { alert('حدث خطأ: ' + error.message); } }
@@ -171,7 +192,8 @@ function processMagicPaste() {
         const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i); if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
         const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/); if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
         const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i); if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
-        
+        const bedRegexes = [ {regex: /\b1\s*bed(rooms?)?|\b1\s*br|غرفة\s*واحدة|\b1\s*غرف/i, type: '1 غرفة نوم'}, {regex: /\b2\s*bed(rooms?)?|\b2\s*br|غرفتين|\b2\s*غرف/i, type: '2 غرفة نوم'}, {regex: /\b3\s*bed(rooms?)?|\b3\s*br|\b3\s*غرف/i, type: '3 غرف نوم'}, {regex: /\b4\s*bed(rooms?)?|\b4\s*br|\b4\s*غرف/i, type: '4 غرف نوم'}, {regex: /penthouse|بنتهاوس/i, type: 'بنتهاوس'}, {regex: /duplex|دوبلكس/i, type: 'دوبلكس'}, {regex: /family house|villa|twin|town|فيلا|توين|تاون/i, type: 'فيلا'}, {regex: /chalet|شاليه/i, type: 'شاليه'}, {regex: /studio|استوديو/i, type: 'استوديو'} ];
+        for(let br of bedRegexes) { if(br.regex.test(cleanLine)) { currentType = br.type; break; } }
         let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
         const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?|[A-Za-z\u0600-\u06FF]+)/i); 
         if (unitMatch) {
@@ -204,7 +226,7 @@ async function saveCompoundToCloud() {
     paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: getRawNum(p.pricePerMeter) || 0 })), ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
   };
   try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); document.getElementById('formOverlay').classList.remove('open'); showToast('تم الحفظ 💾'); } 
-  catch (error) { alert('خطأ! الفايربيز رفض الحفظ.'); }
+  catch (error) { alert('خطأ في الحفظ!'); }
 }
 
 async function deleteCurrentCompoundFromCloud() { if(!isEditor || !confirm('متأكد من الحذف؟')) return; await db.collection('compounds').doc(viewingCompoundId).delete(); document.getElementById('detailOverlay').classList.remove('open'); showToast('تم الحذف'); }
@@ -311,7 +333,7 @@ function generateDossierHTML(c) {
         sortPrice = getRawNum(c.pricePerMeterMax) || getRawNum(c.pricePerMeterMin) || 0;
     }
     
-    // ✨ الألوان والدبابيس بناءً على السعر (زي المطلوب بالظبط) ✨
+    // ✨ الألوان والدبابيس بناءً على السعر ✨
     let noteTheme = 'note-yellow';
     let pinColor = 'pin-yellow';
     
@@ -323,7 +345,7 @@ function generateDossierHTML(c) {
     
     return `<div class="dossier ${noteTheme}" onclick="openDetail('${c.id}')">
                 <div class="pin ${pinColor}"></div>
-                ${c.ministerialDecrees?.length ? '<div class="stamp">معتمد</div>' : ''}
+                ${c.ministerialDecrees?.length ? '<div class="stamp">معتمد ✓</div>' : ''}
                 <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
                 <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)} ${phaseTag}</div>
                 <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
@@ -349,7 +371,7 @@ function generateMasterDossierHTML(group) {
         <div class="dossier-meta" style="margin-top:15px; grid-template-columns: 1fr;">
             <div class="meta-chip" style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.05); border:1px dashed #333;">
                 <span style="font-size:12px; color:#111;">اضغط لاختيار المرحلة (${group.length})</span>
-                <div style="font-size:16px;">➤</div>
+                <div style="font-size:16px; color:#111;">➤</div>
             </div>
         </div>
     </div>`;
@@ -362,7 +384,7 @@ function openPhasesModal(projName, compName) {
     let html = group.map(c => {
         return `<div class="detail-item" style="cursor:pointer; border-left:3px solid var(--danger); margin-bottom:10px; background:rgba(0,0,0,0.02);" onclick="closeModal('phasesOverlay'); setTimeout(()=>openDetail('${c.id}'), 300)">
             <div style="font-family:'Lemonada', cursive; color:var(--danger); font-size:18px; font-weight:800; margin-bottom:5px;">${escapeHtml(c.phaseName || 'المرحلة الأساسية')}</div>
-            <div style="font-family:'Cairo'; font-size:12px; color:var(--text-muted);">عمارات: ${c.floors ? c.floors : '-'} | تسليم: ${deliveryLabel(c.deliveryDate)}</div>
+            <div style="font-family:'Cairo'; font-size:12px; color:var(--text-muted);">عمارات: <span class="num">${c.floors ? c.floors : '-'}</span> | تسليم: ${deliveryLabel(c.deliveryDate)}</div>
         </div>`;
     }).join('');
     
@@ -467,7 +489,7 @@ function renderGrid(){
   document.getElementById('pageTitle').textContent = pageTitleText;
   document.getElementById('pageSub').textContent = `${list.length} مشروع متعلق باللوحة`;
   const grid = document.getElementById('compoundGrid');
-  if(!list.length) return grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; font-family:'Lemonada'; color:var(--text-main); font-size:22px;">اللوحة فاضية هنا.. مفيش مشاريع مطابقة! 📌</div>`;
+  if(!list.length) return grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; font-family:'Lemonada'; color:var(--text-main); font-size:22px; text-shadow:0 0 5px rgba(255,255,255,0.5);">اللوحة فاضية هنا.. مفيش مشاريع مطابقة! 📌</div>`;
   
   let groups = {};
   list.forEach(c => {
@@ -562,28 +584,26 @@ function updateUnitData(id, field, val) {
 function renderUnitRows(){ 
     const pType = document.getElementById('fldProjectType').value; 
     let typeOptions = pType === 'commercial' ? appSettings.commTypes : appSettings.resTypes;
-    
-    let fOpts = `<option value="">حسب المشروع</option><option value="core_shell">طوب أحمر</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option>`;
+    let fOpts = `<option value="">تشطيب المشروع</option><option value="core_shell">طوب أحمر</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option>`;
     
     document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
-        
         let selectOptions = `<option value="" disabled ${!u.bedroomType ? 'selected' : ''}>اختر النوع...</option>`;
         if (u.bedroomType && !typeOptions.includes(u.bedroomType) && u.bedroomType !== '__manage__') {
              selectOptions += `<option value="${escapeHtml(u.bedroomType)}" selected>${escapeHtml(u.bedroomType)}</option>`;
         }
         selectOptions += typeOptions.map(t => `<option value="${escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
-        selectOptions += `<option value="__manage__" style="color:var(--danger); font-weight:bold;">+ إضافة/حذف نوع ⚙️</option>`;
+        selectOptions += `<option value="__manage__" style="color:var(--danger); font-weight:bold;">+ إدارة الأنواع ⚙️</option>`;
 
-        return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        return `<div class="repeat-row">
                     <select class="sketch-input" style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${selectOptions}</select>
                     <input type="number" class="sketch-input num" placeholder="مباني(م²)" style="flex:1; min-width:60px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
                     <input type="number" class="sketch-input num" placeholder="جاردن(م²)" style="flex:1; min-width:60px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
                     <input type="number" class="sketch-input num" placeholder="روف(م²)" style="flex:1; min-width:60px;" value="${u.roofArea||''}" oninput="updateUnitData('${u.id}', 'roofArea', this.value)">
                     <select class="sketch-input" style="flex:1; min-width:85px; font-size:11px;" onchange="updateUnitData('${u.id}','finishing',this.value)">${fOpts.replace(`value="${u.finishing||''}"`, `value="${u.finishing||''}" selected`)}</select>
                     <input type="text" id="price-input-${u.id}" class="sketch-input num" placeholder="إجمالي السعر" style="flex:1.5; min-width:90px; color:var(--primary);" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
-                    <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')" aria-label="حذف الوحدة">✕</button>
+                    <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')">✕</button>
                 </div>` 
-    }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px; font-family:cursive;">الورقة دي فاضية، مفيش وحدات!</div>'; 
+    }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px; font-family:cursive;">مفيش وحدات مسجلة!</div>'; 
 }
 
 function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', pricePerMeter:'', notes:'', customBullets:[]}); renderPlanRows(); }
@@ -621,7 +641,7 @@ function renderPlanRows(){
                     <input type="number" placeholder="%" class="sketch-input num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
                     <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
                 </div>
-                ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="sketch-pill ${(b.selectedYears || []).includes(yr)?'active':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+                ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="sketch-pill ${b.selectedYears.includes(yr)?'active':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
             `).join('')}
             <button class="sketch-btn w-100" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
         </div>
@@ -665,7 +685,7 @@ function renderDetailModalContent() {
   let finishText = FINISHING_TYPES[c.finishingStatus] || '-'; let pText = '';
   
   let parkingText = '';
-  if (c.parkingType === 'included') parkingText = 'شامل سعر الوحدة';
+  if (c.parkingType === 'included') parkingText = 'شامل السعر';
   else if (c.parkingType === 'optional') parkingText = 'اختياري';
   else parkingText = c.parkingFee ? formatNum(c.parkingFee) + ' ج' : 'لا يوجد';
 
@@ -683,7 +703,7 @@ function renderDetailModalContent() {
   
   let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
 
-  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span class="hand-font">${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span class="hand-font">${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span class="hand-font">${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري الهندسي</b><span class="hand-font">${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>المنطقة والفرع</b><span class="hand-font">${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span class="hand-font">${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item" ${c.projectType === 'commercial' ? 'style="align-items:start;"' : ''}><b>سعر المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span class="hand-font">صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span class="hand-font"><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع بالتفصيل</b><span class="hand-font">${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span class="hand-font">${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span class="hand-font">${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span class="hand-font">${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span class="hand-font">${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span class="hand-font">${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span class="hand-font">${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>سعر المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span class="hand-font">صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة</b><span class="hand-font"><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>عمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع</b><span class="hand-font">${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
 
   const grouped = {}; (c.unitTypes||[]).forEach(u => { let t = u.bedroomType; (grouped[t] = grouped[t] || []).push(u); }); const cats = Object.keys(grouped);
   if(cats.length){
@@ -756,7 +776,7 @@ function renderDetailModalContent() {
     }
   } 
   
-  html += `<div class="section-label hand-font" style="margin-top:40px; color:var(--success); border-color:var(--success); font-size:22px;">🧮 الحاسبة السريعة للمشروع</div>
+  html += `<div class="section-label hand-font" style="margin-top:40px; color:var(--success); border-color:var(--success); font-size:22px;">🧮 الحاسبة السريعة</div>
            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px; font-family:'Cairo';">اكتب المساحة عشان تحسبلها الأقساط على كل خطط السداد الخاصة بالمشروع ده فوراً.</p>
            <div style="display:flex; gap:10px; background:transparent; border-bottom:2px dashed var(--border-color); padding-bottom:15px; margin-bottom:20px; align-items:center; flex-wrap:wrap;">
                <input type="number" id="miniCalcArea" placeholder="مباني (م²)" class="sketch-input num" style="flex:1; min-width:120px;" oninput="runProjectMiniCalc('${c.id}')">
