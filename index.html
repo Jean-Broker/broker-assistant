@@ -159,7 +159,6 @@
         <button class="btn btn-outline-light btn-pill" onclick="backToLanding()">العودة للرئيسية</button>
       </div>
 
-      <!-- ✨ لوحة الإدارة ✨ -->
       <div id="adminStatsBoard" class="admin-stats-board" style="display: none;">
           <div class="stat-card stat-total active" onclick="setCompletionFilter('all', this)">
               <h4>إجمالي المشروعات</h4>
@@ -254,8 +253,7 @@
     </main>
   </div>
 
-  <!-- ✨ النوافذ المنبثقة ✨ -->
-
+  <!-- النوافذ المنبثقة -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
       <button class="modal-close login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
@@ -320,10 +318,8 @@
       </div>
       <div class="modal-body">
         <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
-        
         <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
         <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
-        
         <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
         <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
       </div>
@@ -359,7 +355,8 @@
           <div class="form-field"><label for="fldProject">اسم المشروع / الكمبوند</label><input id="fldProject" placeholder="مثال: G WEST" autocomplete="off"></div>
           
           <div class="form-field"><label for="fldPhaseName">اسم أو رقم المرحلة (اختياري للمراحل المتعددة)</label><input id="fldPhaseName" placeholder="مثال: Phase 2 أو المرحلة الثانية" autocomplete="off"></div>
-          <div class="form-field"><label for="fldFloors">ارتفاع العمارات (G + ?)</label><input type="number" id="fldFloors" placeholder="مثال: 5" autocomplete="off"></div>
+          <!-- ✨ تحديث خانة العمارات عشان تقبل حروف وأرقام ✨ -->
+          <div class="form-field"><label for="fldFloors">ارتفاع العمارات (G + ?)</label><input type="text" id="fldFloors" placeholder="مثال: 5 أو Ground + 4" autocomplete="off"></div>
 
           <div class="form-field"><label for="fldOwner">اسم مالك الشركة / رئيس المجلس</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
@@ -396,10 +393,11 @@
              </div>
           </div>
 
+          <!-- ✨ تحديث خانة الصيانة عشان تقبل حروف وأرقام بحرية ✨ -->
           <div class="form-field">
               <label>وديعة الصيانة (Maintenance)</label>
               <div style="display:flex; gap:8px;">
-                  <input type="number" id="fldMaintenanceValue" placeholder="الرقم" autocomplete="off" style="flex:2;">
+                  <input type="text" id="fldMaintenanceValue" placeholder="مثال: 10 أو 1500" autocomplete="off" style="flex:2;">
                   <select id="fldMaintenanceType" style="flex:1; padding: 12px 5px;">
                       <option value="percent">نسبة %</option>
                       <option value="per_meter">جنيه / م²</option>
@@ -415,6 +413,9 @@
         </div>
 
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
+        <!-- قوائم مخفية عشان الـ Datalist تشتغل -->
+        <datalist id="dl_residential"></datalist>
+        <datalist id="dl_commercial"></datalist>
         <div id="unitRows"></div>
         <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:15px;" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
         
