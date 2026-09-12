@@ -355,7 +355,6 @@
           <div class="form-field"><label for="fldProject">اسم المشروع / الكمبوند</label><input id="fldProject" placeholder="مثال: G WEST" autocomplete="off"></div>
           
           <div class="form-field"><label for="fldPhaseName">اسم أو رقم المرحلة (اختياري للمراحل المتعددة)</label><input id="fldPhaseName" placeholder="مثال: Phase 2 أو المرحلة الثانية" autocomplete="off"></div>
-          <!-- ✨ تحديث خانة العمارات عشان تقبل حروف وأرقام ✨ -->
           <div class="form-field"><label for="fldFloors">ارتفاع العمارات (G + ?)</label><input type="text" id="fldFloors" placeholder="مثال: 5 أو Ground + 4" autocomplete="off"></div>
 
           <div class="form-field"><label for="fldOwner">اسم مالك الشركة / رئيس المجلس</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
@@ -393,7 +392,6 @@
              </div>
           </div>
 
-          <!-- ✨ تحديث خانة الصيانة عشان تقبل حروف وأرقام بحرية ✨ -->
           <div class="form-field">
               <label>وديعة الصيانة (Maintenance)</label>
               <div style="display:flex; gap:8px;">
@@ -413,9 +411,6 @@
         </div>
 
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
-        <!-- قوائم مخفية عشان الـ Datalist تشتغل -->
-        <datalist id="dl_residential"></datalist>
-        <datalist id="dl_commercial"></datalist>
         <div id="unitRows"></div>
         <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:15px;" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
         
