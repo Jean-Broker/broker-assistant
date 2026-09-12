@@ -50,11 +50,11 @@ let appSettings = {
 };
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
+const BEDROOM_TYPES = { 'apartment': 'شقة', 'villa': 'فيلا', 'twinhouse': 'توين هاوس', 'townhouse': 'تاون هاوس', 'chalet': 'شاليه', studio: 'استوديو', '1br': '1 غرفة نوم', '2br': '2 غرفة نوم', '3br': '3 غرف نوم', '4br': '4 غرف نوم', duplex: 'دوبلكس', penthouse: 'بنتهاوس', commercial: 'تجاري', admin: 'إداري', clinic: 'عيادة', recreational: 'ترفيهي' };
 const FINISHING_TYPES = { core_shell: 'Core & Shell', semi: 'نصف تشطيب', full: 'تشطيب كامل' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'تسليم فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'}, ];
 
-/* ✨ حماية دوال الأرقام تقبل نصوص أو أرقام براحة المستخدم ✨ */
 function formatInput(el) { 
     let val = el.value.replace(/,/g, ''); 
     if (val.trim() === '') return;
@@ -186,6 +186,36 @@ async function syncCloudData() {
 }
 
 async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collection('system').doc('locations').set({ mainLocations }); } catch (error) { alert('خطأ في الحفظ!'); } } }
+
+// ✨ تصحيح التوافق مع الأنواع عشان الشاشة تفتح صح وميحصلش Crash ✨
+function getCorrectedUnitType(typeStr, projectType) { 
+    if (!typeStr || typeStr.trim() === '') {
+        return projectType === 'commercial' ? 'تجاري' : 'شقة';
+    }
+    // دعم المسميات القديمة في قاعدة البيانات عشان متبوظش
+    if (projectType === 'commercial') { 
+        if (typeStr === '1br') return 'إداري'; 
+        if (typeStr === '2br' || typeStr === 'studio' || typeStr === 'commercial') return 'تجاري'; 
+        if (typeStr === 'clinic') return 'عيادة';
+        if (typeStr === 'recreational') return 'ترفيهي';
+    } else { 
+        if (['commercial', 'admin', 'clinic', 'recreational'].includes(typeStr)) return 'استوديو'; 
+        if (typeStr === 'apartment') return 'شقة';
+        if (typeStr === 'villa') return 'فيلا';
+        if (typeStr === 'twinhouse') return 'توين هاوس';
+        if (typeStr === 'townhouse') return 'تاون هاوس';
+        if (typeStr === 'chalet') return 'شاليه';
+        if (typeStr === 'studio') return 'استوديو';
+        if (typeStr === 'duplex') return 'دوبلكس';
+        if (typeStr === 'penthouse') return 'بنتهاوس';
+        if (typeStr === '1br') return '1 غرفة نوم';
+        if (typeStr === '2br') return '2 غرفة نوم';
+        if (typeStr === '3br') return '3 غرف نوم';
+        if (typeStr === '4br') return '4 غرف نوم';
+    } 
+    // لو ملقاش القديم يرجع الكلمة المخصصة الجديدة زي ما هي
+    return typeStr; 
+}
 
 function extractValueAfterKeyword(line, keywords) {
     const lowerLine = line.toLowerCase();
@@ -548,23 +578,31 @@ function renderGrid(){
     
     if(filters.propertyTypes) {
         cUnits = cUnits.filter(u => {
-            let t = u.bedroomType;
-            if (filters.propertyTypes.includes('apartment') && ['1br', '2br', '3br', '4br', 'apartment'].includes(t)) return true;
-            if (filters.propertyTypes.includes('commercial') && ['commercial', 'admin', 'clinic', 'recreational'].includes(t)) return true;
-            return filters.propertyTypes.includes(t);
+            let t = getCorrectedUnitType(u.bedroomType, c.projectType);
+            if (filters.propertyTypes.includes('apartment') && ['1 غرفة نوم', '2 غرفة نوم', '3 غرف نوم', '4 غرف نوم', 'شقة'].includes(t)) return true;
+            if (filters.propertyTypes.includes('commercial') && ['تجاري', 'إداري', 'عيادة', 'ترفيهي'].includes(t)) return true;
+            
+            if (filters.propertyTypes.includes('villa') && t === 'فيلا') return true;
+            if (filters.propertyTypes.includes('twinhouse') && t === 'توين هاوس') return true;
+            if (filters.propertyTypes.includes('townhouse') && t === 'تاون هاوس') return true;
+            if (filters.propertyTypes.includes('duplex') && t === 'دوبلكس') return true;
+            if (filters.propertyTypes.includes('penthouse') && t === 'بنتهاوس') return true;
+            if (filters.propertyTypes.includes('studio') && t === 'استوديو') return true;
+            if (filters.propertyTypes.includes('chalet') && t === 'شاليه') return true;
+            return false;
         });
         if(cUnits.length === 0) return false;
     }
     
     if(filters.bedrooms) {
         cUnits = cUnits.filter(u => {
-            let t = u.bedroomType;
-            if (t === 'studio' && filters.bedrooms.includes('1')) return true;
-            if (t === '1br' && filters.bedrooms.includes('1')) return true;
-            if (t === '2br' && filters.bedrooms.includes('2')) return true;
-            if (t === '3br' && filters.bedrooms.includes('3')) return true;
-            if (t === '4br' && filters.bedrooms.includes('4')) return true;
-            if (['duplex', 'penthouse', 'villa', 'twinhouse', 'townhouse'].includes(t) && filters.bedrooms.includes('5+')) return true;
+            let t = getCorrectedUnitType(u.bedroomType, c.projectType);
+            if (t === 'استوديو' && filters.bedrooms.includes('1')) return true;
+            if (t === '1 غرفة نوم' && filters.bedrooms.includes('1')) return true;
+            if (t === '2 غرفة نوم' && filters.bedrooms.includes('2')) return true;
+            if (t === '3 غرف نوم' && filters.bedrooms.includes('3')) return true;
+            if (t === '4 غرف نوم' && filters.bedrooms.includes('4')) return true;
+            if (['دوبلكس', 'بنتهاوس', 'فيلا', 'توين هاوس', 'تاون هاوس'].includes(t) && filters.bedrooms.includes('5+')) return true;
             return false;
         });
         if(cUnits.length === 0) return false;
@@ -659,11 +697,10 @@ function openCompoundForm(existing){
       document.getElementById('fldParkingType').value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block';
   }
   
-  // بناء القوائم المنسدلة للأنواع
   document.getElementById('dl_residential').innerHTML = appSettings.resTypes.map(t=>`<option value="${t}">`).join('');
   document.getElementById('dl_commercial').innerHTML = appSettings.commTypes.map(t=>`<option value="${t}">`).join('');
 
-  onProjectTypeChange(); tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : []; if (existing) { tempUnits.forEach(u => { u.bedroomType = u.bedroomType; }); } tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : []; tempDecrees = existing ? JSON.parse(JSON.stringify(existing.ministerialDecrees||[])) : []; updatePriceMeterAvg(); renderUnitRows(); renderPlanRows(); renderDecreeRows(); document.getElementById('formOverlay').classList.add('open');
+  onProjectTypeChange(); tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : []; if (existing) { tempUnits.forEach(u => { u.bedroomType = getCorrectedUnitType(u.bedroomType, existing.projectType); }); } tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : []; tempDecrees = existing ? JSON.parse(JSON.stringify(existing.ministerialDecrees||[])) : []; updatePriceMeterAvg(); renderUnitRows(); renderPlanRows(); renderDecreeRows(); document.getElementById('formOverlay').classList.add('open');
 }
 
 function onProjectTypeChange() { const isComm = document.getElementById('fldProjectType').value === 'commercial'; document.querySelectorAll('.res-price-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); document.getElementById('commercialPriceWrap').style.display = isComm ? 'block' : 'none'; if (isComm) document.getElementById('priceMeterAvgWrap').style.display = 'none'; renderUnitRows(); }
@@ -680,7 +717,7 @@ function updateUnitData(id, field, val) {
     if (field === 'bedroomType') { u.bedroomType = val; } 
     else if (field === 'price') { 
         let raw = getRawNum(val);
-        if(raw === null) { u.price = 0; u.lockedPrice = false; } 
+        if(raw === null) { u.price = ''; u.lockedPrice = false; } 
         else if (isNaN(raw)) { u.price = val; u.lockedPrice = true; } 
         else { u.price = raw; u.lockedPrice = true; }
         return; 
@@ -770,13 +807,9 @@ function renderPlanRows(){
 function updatePlan(id, field, val){ 
     const p = tempPlans.find(x=>x.id===id); 
     if(p) {
-        if (field === 'name' || field === 'notes' || field === 'frequency') {
-            p[field] = val;
-        } else if (field === 'pricePerMeter') {
-            p[field] = getRawNum(val);
-        } else {
-            p[field] = parseFloat(val)||0;
-        }
+        if (field === 'name' || field === 'notes' || field === 'frequency') { p[field] = val; } 
+        else if (field === 'pricePerMeter') { p[field] = getRawNum(val); } 
+        else { p[field] = parseFloat(val)||0; }
     } 
 }
 
@@ -785,13 +818,25 @@ function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', descriptio
 function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
 function renderDecreeRows(){ document.getElementById('decreeRows').innerHTML = tempDecrees.map(d=>`<div class="repeat-row"><input placeholder="الرقم" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')" aria-label="حذف القرار">✕</button></div>`).join(''); }
 
+// ✨ تصحيح تجميع الوحدات في تفاصيل المشروع باستخدام الأنواع المصححة ✨
 function openDetail(id){
   const c = compounds.find(x=>x.id===id); if(!c) return; viewingCompoundId = id;
   const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => getCorrectedUnitType(u.bedroomType, c.projectType))));
-  activeDetailCategory = availTypes.length ? availTypes[0] : null; activeDetailUnitId = (c.unitTypes||[]).filter(u => getCorrectedUnitType(u.bedroomType, c.projectType) === activeDetailCategory)[0]?.id || null;
-  renderDetailModalContent(); document.getElementById('detailOverlay').classList.add('open');
+  activeDetailCategory = availTypes.length ? availTypes[0] : null; 
+  activeDetailUnitId = (c.unitTypes||[]).filter(u => getCorrectedUnitType(u.bedroomType, c.projectType) === activeDetailCategory)[0]?.id || null;
+  renderDetailModalContent(); 
+  document.getElementById('detailOverlay').classList.add('open');
 }
-function setDetailCategory(catKey) { activeDetailCategory = catKey; const c = compounds.find(x => x.id === viewingCompoundId); if (c && c.unitTypes) { const matched = c.unitTypes.filter(u => getCorrectedUnitType(u.bedroomType, c.projectType) === catKey); if (matched.length > 0) activeDetailUnitId = matched[0].id; } renderDetailModalContent(); }
+
+function setDetailCategory(catKey) { 
+    activeDetailCategory = catKey; 
+    const c = compounds.find(x => x.id === viewingCompoundId); 
+    if (c && c.unitTypes) { 
+        const matched = c.unitTypes.filter(u => getCorrectedUnitType(u.bedroomType, c.projectType) === catKey); 
+        if (matched.length > 0) activeDetailUnitId = matched[0].id; 
+    } 
+    renderDetailModalContent(); 
+}
 function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
 function editCurrentCompound(){ const c = compounds.find(x=>x.id===viewingCompoundId); if(!c) return; closeModal('detailOverlay'); openCompoundForm(c); }
 
@@ -830,15 +875,22 @@ function renderDetailModalContent() {
       maintText = '-';
   }
 
-  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري الهندسي</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>المنطقة والفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item" ${c.projectType === 'commercial' ? 'style="align-items:start;"' : ''}><b>سعر المتر</b><span>${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: ${maintText} | جراج: ${parkingText}</span></div><div class="detail-item"><b>المساحة الإجمالية</b><span>${c.projectSize ? c.projectSize + ' فدان' : '-'}</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span>${c.floors ? c.floors : '-'}</span></div><div class="detail-item full"><b>الموقع بالتفصيل</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري الهندسي</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>المنطقة والفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item" ${c.projectType === 'commercial' ? 'style="align-items:start;"' : ''}><b>سعر المتر</b><span>${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: ${maintText} | جراج: ${parkingText}</span></div><div class="detail-item"><b>المساحة الإجمالية</b><span>${c.projectSize ? c.projectSize + ' فدان' : '-'}</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span>${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع بالتفصيل</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
 
-  const grouped = {}; (c.unitTypes||[]).forEach(u => { let t = u.bedroomType; (grouped[t] = grouped[t] || []).push(u); }); const cats = Object.keys(grouped);
+  // ✨ التجميع الآمن بناءً على الأنواع المصححة عشان السيستم ميضربش ✨
+  const grouped = {}; 
+  (c.unitTypes||[]).forEach(u => { 
+      let t = getCorrectedUnitType(u.bedroomType, c.projectType); 
+      (grouped[t] = grouped[t] || []).push(u); 
+  }); 
+  const cats = Object.keys(grouped);
+  
   if(cats.length){
-    if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) activeDetailUnitId = grouped[activeDetailCategory][0].id;
+    if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; 
+    if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) activeDetailUnitId = grouped[activeDetailCategory][0].id;
     
     html += `<div class="section-label">حساب الأقساط والكاش للوحدات المتاحة</div><div class="unit-cat-tabs">` + cats.map(k => {
-        let dispType = k;
-        return `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${escapeHtml(dispType)}</button>`;
+        return `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${escapeHtml(k)}</button>`;
     }).join('') + `</div>`;
     
     const fNamesAr = { 'core_shell': 'طوب أحمر', 'semi': 'نصف تشطيب', 'full': 'تشطيب كامل' };
@@ -903,7 +955,6 @@ function renderDetailModalContent() {
     }
   } 
   
-  // ✨ آلة حاسبة سريعة مدمجة جوه تفاصيل المشروع ✨
   html += `<div class="section-label" style="margin-top:40px; background:#10B981; border-color:#10B981;">حاسبة المشروع السريعة 🧮</div>
            <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">اكتب المساحة عشان تحسبلها الأقساط على كل خطط السداد الخاصة بالمشروع ده فوراً.</p>
            <div style="display:flex; gap:10px; background:var(--item-bg); padding:15px; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:20px; align-items:center; flex-wrap:wrap;">
@@ -916,7 +967,6 @@ function renderDetailModalContent() {
   document.getElementById('detailBody').innerHTML = html;
 }
 
-/* ✨ دالة حساب الميني كالكوليتر جوه المشروع ✨ */
 window.runProjectMiniCalc = function(cId) {
     const c = compounds.find(x => x.id === cId);
     if(!c) return;
