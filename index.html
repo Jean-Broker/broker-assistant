@@ -19,28 +19,29 @@
 </head>
 <body>
 
-  <header class="site-bar">
-      <div class="site-bar-brand">Broker-Assistant</div>
-      <nav class="site-bar-links" id="siteBarLinks">
-          <a href="#features">المميزات</a>
-          <a href="#pricing">الأسعار</a>
-      </nav>
-      <div class="site-bar-actions">
-          <button class="btn btn-primary-style btn-pill site-bar-login" id="siteBarLoginBtn" onclick="openSystemLogin()">دخول للنظام</button>
-          <button class="theme-switcher" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
-          <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
-      </div>
-  </header>
-
+  <!-- ================= LANDING PAGE ================= -->
   <div id="landingPage">
+      <header class="site-bar">
+          <div class="site-bar-brand">Broker-Assistant</div>
+          <nav class="site-bar-links" id="siteBarLinks">
+              <a href="#features">المميزات</a>
+              <a href="#pricing">الأسعار</a>
+          </nav>
+          <div class="site-bar-actions">
+              <button class="btn btn-primary-style btn-pill site-bar-login" id="siteBarLoginBtn" onclick="openSystemLogin()">دخول للنظام</button>
+              <button class="theme-switcher" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
+              <button class="lang-switcher" onclick="toggleLanguage()">En / عربي</button>
+          </div>
+      </header>
+
       <header class="landing-hero">
           <div class="hero-inner">
               <div class="hero-content">
                   <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
-                  <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy. Designed specifically for real estate brokers to organize clients and save time.">
+                  <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy.">
                     النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.
                   </p>
-                  <button class="btn btn-primary-style btn-large" onclick="openSystemLogin()" data-ar="دخول للنظام" data-en="Login to System">دخول للنظام</button>
+                  <button class="btn btn-primary-style btn-large" onclick="openSystemLogin()">دخول للنظام</button>
               </div>
               <div class="hero-visual" aria-hidden="true">
                   <div class="mock-window">
@@ -69,51 +70,52 @@
       <div class="landing-content">
           <div class="features-grid" id="features">
               <div class="feature-card">
-                  <h3 data-ar="🏢 إدارة المشروعات والوحدات" data-en="🏢 Projects & Units Management">🏢 إدارة المشروعات والوحدات</h3>
-                  <p data-ar="سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة." data-en="Register your real estate projects, track available and sold units, and monitor prices per meter and delivery dates with ease and flexibility.">سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة.</p>
+                  <h3>🏢 إدارة المشروعات والوحدات</h3>
+                  <p>سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة.</p>
               </div>
               <div class="feature-card">
-                  <h3 data-ar="💰 حاسبة دقيقة للأقساط" data-en="💰 Accurate Installments Calculator">💰 حاسبة دقيقة للأقساط</h3>
-                  <p data-ar="احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية." data-en="Calculate monthly, quarterly, and custom payments accurately without any calculation errors.">احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية.</p>
+                  <h3>💰 حاسبة دقيقة للأقساط</h3>
+                  <p>احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية.</p>
               </div>
               <div class="feature-card">
-                  <h3 data-ar="⚡ سرعة واحترافية" data-en="⚡ Speed & Professionalism">⚡ سرعة واحترافية</h3>
-                  <p data-ar="واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك." data-en="A modern, organized interface that ensures you accomplish your daily tasks efficiently with the highest level of security.">واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
+                  <h3>⚡ سرعة واحترافية</h3>
+                  <p>واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
               </div>
           </div>
 
           <div class="pricing-section" id="pricing">
-              <h2 data-ar="باقات الاشتراكات المتاحة" data-en="Available Subscription Plans">باقات الاشتراكات المتاحة</h2>
-              <p style="color: var(--text-muted); margin-bottom: 30px;" data-ar="اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة." data-en="Choose the right plan for your business and activate your system now by contacting us directly.">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
+              <h2>باقات الاشتراكات المتاحة</h2>
+              <p style="color: var(--text-muted); margin-bottom: 30px;">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
               <div class="pricing-cards">
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه) لسيستم Broker-Assistant" class="price-card">
-                      <h3 data-ar="باقة شهر واحد" data-en="1 Month Plan">باقة شهر واحد</h3>
-                      <div class="price-val" data-ar="500 جنيه" data-en="500 EGP">500 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;" data-ar="مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته." data-en="Perfect for experiencing the system fully and benefiting from all its features.">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه)" class="price-card">
+                      <h3>باقة شهر واحد</h3>
+                      <div class="price-val">500 جنيه</div>
+                      <p style="color:var(--text-muted); font-size:13px;">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
                   </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه) لسيستم Broker-Assistant" class="price-card featured-plan">
-                      <h3 data-ar="باقة 3 شهور" data-en="3 Months Plan">باقة 3 شهور</h3>
-                      <div class="price-val" data-ar="1200 جنيه" data-en="1200 EGP">1200 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;" data-ar="توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف." data-en="Bigger savings for continuous follow-up and non-stop workflow.">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه)" class="price-card featured-plan">
+                      <h3>باقة 3 شهور</h3>
+                      <div class="price-val">1200 جنيه</div>
+                      <p style="color:var(--text-muted); font-size:13px;">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
                   </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه) لسيستم Broker-Assistant" class="price-card">
-                      <h3 data-ar="باقة 6 شهور" data-en="6 Months Plan">باقة 6 شهور</h3>
-                      <div class="price-val" data-ar="2000 جنيه" data-en="2000 EGP">2000 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;" data-ar="القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين." data-en="The best value for real estate agencies and professional brokers.">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
+                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه)" class="price-card">
+                      <h3>باقة 6 شهور</h3>
+                      <div class="price-val">2000 جنيه</div>
+                      <p style="color:var(--text-muted); font-size:13px;">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
                   </a>
               </div>
           </div>
 
           <footer class="landing-footer">
               <div class="footer-brand">Broker-Assistant</div>
-              <p data-ar="النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني." data-en="The smart system for managing real estate projects and installments — run by Jean Hany.">النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني.</p>
+              <p>النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني.</p>
               <a class="footer-contact" href="https://wa.me/201060205362?text=أهلاً جان، عندي استفسار عن نظام Broker-Assistant" target="_blank" rel="noopener">💬 تواصل معنا على واتساب</a>
               <div class="footer-fine">© <span id="footerYear"></span> Broker-Assistant. جميع الحقوق محفوظة.</div>
           </footer>
       </div>
   </div>
 
-  <div class="app" id="systemApp">
+  <!-- ================= SYSTEM APP ================= -->
+  <div class="app" id="systemApp" style="display: none;">
     <aside class="sidebar">
       <div class="brand">Broker-Assistant<br><small>إدارة: جان هاني</small></div>
 
@@ -253,26 +255,31 @@
     </main>
   </div>
 
+  <!-- ================= النوافذ المنبثقة ================= -->
+
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
       <button class="modal-close login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
       <h2 id="loginModalTitle">تسجيل الدخول للنظام</h2>
-      <p>برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
+      
       <label for="loginEmail" class="sr-only">البريد الإلكتروني</label>
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
+      
       <label for="loginPassword" class="sr-only">كلمة المرور</label>
-      <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password">
-      <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px;">
-          <input type="checkbox" id="rememberMe" style="width:auto; margin:0; cursor:pointer;">
+      <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitLogin()">
+      
+      <div style="display:flex; align-items:center; gap:8px; margin:15px 0 25px 0;">
+          <input type="checkbox" id="rememberMe">
           <label for="rememberMe" style="font-size:13px; color:var(--text-muted); cursor:pointer;">تذكر بيانات الدخول</label>
       </div>
-      <button class="btn btn-primary-style w-100 btn-pill" style="padding:14px; font-size:15px; margin-bottom:10px;" onclick="submitLogin()">دخول</button>
-      <button class="btn btn-outline-light w-100 btn-pill" onclick="closeLoginModal()">إلغاء</button>
+      
+      <button class="btn btn-primary-style w-100 btn-pill" id="loginSubmitBtn" style="padding:14px; font-size:16px;" onclick="submitLogin()">دخول</button>
     </div>
   </div>
 
   <div class="overlay" id="usersOverlay">
-    <div class="modal curved-modal" role="dialog" aria-modal="true" aria-labelledby="usersModalTitle">
+    <div class="modal curved-modal" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 id="usersModalTitle">إدارة المشتركين</h3>
         <button class="modal-close" onclick="closeModal('usersOverlay')" aria-label="إغلاق">✕</button>
@@ -280,7 +287,7 @@
       <div class="modal-body">
         <div class="form-grid" style="grid-template-columns: 1fr;">
           <div class="form-field">
-              <label for="newAccEmail">إيميل المشترك (يجب أن يكون إيميل صحيح)</label>
+              <label for="newAccEmail">إيميل المشترك (يجب أن يكون صحيح)</label>
               <input type="email" id="newAccEmail" placeholder="client@example.com" autocomplete="off">
           </div>
           <div class="form-field">
@@ -292,7 +299,7 @@
           <div class="form-field">
               <label for="newAccRole">صلاحيات الحساب</label>
               <select id="newAccRole">
-                  <option value="viewer">متفرج (تصفح المشروعات وحساب الأقساط فقط)</option><option value="editor">محرر (إضافة وتعديل المشروعات مسموح)</option>
+                  <option value="viewer">متفرج (تصفح فقط)</option><option value="editor">محرر (إضافة وتعديل)</option>
               </select>
           </div>
         </div>
@@ -309,16 +316,36 @@
     </div>
   </div>
 
+  <div class="overlay" id="typesOverlay" style="z-index: 1100;">
+    <div class="modal curved-modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>⚙️ إدارة أنواع الوحدات المخصصة</h3>
+        <button class="modal-close" onclick="closeModal('typesOverlay')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
+        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
+        <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
+        <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-light btn-pill" onclick="closeModal('typesOverlay')">إلغاء</button>
+        <button class="btn btn-primary-style btn-pill" onclick="saveCustomTypes()">حفظ الأنواع</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="formOverlay">
     <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true" aria-labelledby="formTitle">
       <div class="modal-header">
         <h3 id="formTitle">إضافة مشروع جديد</h3>
-        <button class="modal-close" onclick="closeModal('formOverlay')" aria-label="إغلاق">✕</button>
+        <button class="modal-close" onclick="closeModal('formOverlay')">✕</button>
       </div>
       <div class="modal-body">
         
         <div class="magic-paste-box">
-            <label for="magicPasteInput">✨ الاستيراد الذكي من الواتساب (انسخ رسالة المشروع بالكامل هنا)</label>
+            <label for="magicPasteInput">✨ الاستيراد الذكي من الواتساب</label>
             <textarea id="magicPasteInput" rows="3" placeholder="انسخ تفاصيل المشروع والوحدات وخطط السداد هنا وسيتم استخراجهم تلقائياً..." autocomplete="off"></textarea>
             <button class="btn btn-primary-style w-100 btn-pill" onclick="processMagicPaste()">استخراج البيانات أوتوماتيك 🚀</button>
         </div>
@@ -333,10 +360,10 @@
           <div class="form-field"><label for="fldCompany">اسم الشركة المطورة</label><input id="fldCompany" placeholder="مثال: سيتي إيدج" autocomplete="off"></div>
           <div class="form-field"><label for="fldProject">اسم المشروع / الكمبوند</label><input id="fldProject" placeholder="مثال: G WEST" autocomplete="off"></div>
           
-          <div class="form-field"><label for="fldPhaseName">اسم أو رقم المرحلة (اختياري للمراحل المتعددة)</label><input id="fldPhaseName" placeholder="مثال: Phase 2 أو المرحلة الثانية" autocomplete="off"></div>
+          <div class="form-field"><label for="fldPhaseName">المرحلة (اختياري)</label><input id="fldPhaseName" placeholder="مثال: Phase 2" autocomplete="off"></div>
           <div class="form-field"><label for="fldFloors">ارتفاع العمارات (G + ?)</label><input type="text" id="fldFloors" placeholder="مثال: 5 أو Ground + 4" autocomplete="off"></div>
 
-          <div class="form-field"><label for="fldOwner">اسم مالك الشركة / رئيس المجلس</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
+          <div class="form-field"><label for="fldOwner">المالك</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
           
           <div class="form-field res-price-field"><label for="fldPriceMeterMin">سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="text" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off"></div>
@@ -352,7 +379,7 @@
           <div class="form-field res-field">
               <label for="fldParkingType">حالة الجراج (Parking)</label>
               <div style="display:flex; gap:8px;">
-                  <select id="fldParkingType" style="flex:1; padding: 12px 5px;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='extra' ? 'block' : 'none';">
+                  <select id="fldParkingType" style="flex:1;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='extra' ? 'block' : 'none';">
                       <option value="extra">رسوم إضافية</option>
                       <option value="included">شامل السعر</option>
                       <option value="optional">اختياري</option>
@@ -364,10 +391,10 @@
           <div id="commercialPriceWrap" class="full" style="display:none;">
              <div class="section-label">أسعار المتر والتشطيب للأنشطة التجارية</div>
              <div class="comm-prices-grid">
-                 <div class="form-field"><label for="fldAdminMin">إداري (من)</label><input id="fldAdminMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldAdminMax">إداري (إلى)</label><input id="fldAdminMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldAdminFinish">تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label for="fldCommMin">تجاري (من)</label><input id="fldCommMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldCommMax">تجاري (إلى)</label><input id="fldCommMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldCommFinish">تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label for="fldClinicMin">طبي (من)</label><input id="fldClinicMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldClinicMax">طبي (إلى)</label><input id="fldClinicMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldClinicFinish">تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label for="fldRecMin">ترفيهي (من)</label><input id="fldRecMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldRecMax">ترفيهي (إلى)</label><input id="fldRecMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label for="fldRecFinish">تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
              </div>
           </div>
 
@@ -375,24 +402,21 @@
               <label>وديعة الصيانة (Maintenance)</label>
               <div style="display:flex; gap:8px;">
                   <input type="text" id="fldMaintenanceValue" placeholder="مثال: 10 أو 1500" autocomplete="off" style="flex:2;">
-                  <select id="fldMaintenanceType" style="flex:1; padding: 12px 5px;">
+                  <select id="fldMaintenanceType" style="flex:1;">
                       <option value="percent">نسبة %</option>
                       <option value="per_meter">جنيه / م²</option>
                   </select>
               </div>
           </div>
 
-          <div class="form-field"><label for="fldProjectSize">مساحة المشروع الإجمالية (فدان)</label><input id="fldProjectSize" type="text" autocomplete="off"></div>
+          <div class="form-field"><label for="fldProjectSize">مساحة المشروع (فدان)</label><input id="fldProjectSize" type="text" autocomplete="off"></div>
           <div class="form-field"><label for="fldDeliveryDate">موعد التسليم</label><select id="fldDeliveryDate"></select></div>
-          <div class="form-field"><label for="fldLocationDetail">موقع الكمبوند بالتفصيل</label><input id="fldLocationDetail" placeholder="مثال: امتداد التسعين، بجوار..." autocomplete="off"></div>
-          <div class="form-field"><label for="fldLocationLink">رابط الموقع (Google Maps) - اختياري</label><input id="fldLocationLink" placeholder="https://maps.app.goo.gl/..." dir="ltr" autocomplete="off"></div>
+          <div class="form-field"><label for="fldLocationDetail">موقع الكمبوند بالتفصيل</label><input id="fldLocationDetail" placeholder="امتداد التسعين..." autocomplete="off"></div>
+          <div class="form-field"><label for="fldLocationLink">رابط الموقع (Google Maps)</label><input id="fldLocationLink" placeholder="https://maps.app.goo.gl/..." dir="ltr" autocomplete="off"></div>
 
         </div>
 
         <div class="section-label">أنواع الوحدات والمساحات والأسعار</div>
-        <!-- قوائم مخفية عشان الـ Datalist تشتغل -->
-        <datalist id="dl_residential"></datalist>
-        <datalist id="dl_commercial"></datalist>
         <div id="unitRows"></div>
         <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:15px;" onclick="addUnitRow()">+ إضافة وحدة / مساحة جديدة</button>
         
@@ -418,10 +442,10 @@
   </div>
 
   <div class="overlay" id="detailOverlay">
-    <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="modal curved-modal" style="max-width:900px;" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 id="detailTitle">تفاصيل المشروع</h3>
-        <button class="modal-close" onclick="closeModal('detailOverlay')" aria-label="إغلاق">✕</button>
+        <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
       </div>
       <div class="modal-body" id="detailBody" style="padding-top: 25px;"></div>
       <div class="modal-footer">
@@ -445,10 +469,10 @@
   </div>
 
   <div class="overlay" id="calcOverlay">
-    <div class="modal curved-modal" role="dialog" aria-modal="true" aria-labelledby="calcModalTitle">
+    <div class="modal curved-modal" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 id="calcModalTitle">حاسبة الأقساط الشاملة</h3>
-        <button class="modal-close" onclick="closeModal('calcOverlay')" aria-label="إغلاق">✕</button>
+        <button class="modal-close" onclick="closeModal('calcOverlay')">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-grid">
@@ -468,30 +492,9 @@
     </div>
   </div>
 
-  <!-- ✨ شاشة إدارة الأنواع أخدت VIP Z-Index وبقت آخر حاجة في الكود ✨ -->
-  <div class="overlay" id="typesOverlay" style="z-index: 1100;">
-    <div class="modal curved-modal" style="max-width: 600px;">
-      <div class="modal-header">
-        <h3>⚙️ إدارة أنواع الوحدات المخصصة</h3>
-        <button class="modal-close" onclick="closeModal('typesOverlay')" aria-label="إغلاق">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
-        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
-        <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
-        <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
-        <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline-light btn-pill" onclick="closeModal('typesOverlay')">إلغاء</button>
-        <button class="btn btn-primary-style btn-pill" onclick="saveCustomTypes()">حفظ الأنواع</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; color:#fff; flex-direction:column; justify-content:center; align-items:center;">
+  <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column; justify-content:center; align-items:center;">
     <div class="loader"></div>
-    <h2 style="margin-bottom:10px; font-family:'Cairo';">جاري المعالجة...</h2>
+    <h2 style="margin-bottom:10px; color:#fff;">جاري المعالجة...</h2>
     <p id="loadingMsg" style="color:var(--primary); font-size:14px;">برجاء عدم إغلاق الصفحة</p>
   </div>
 
