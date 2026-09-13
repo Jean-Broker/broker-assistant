@@ -238,14 +238,17 @@
 
   <!-- ================= النوافذ المنبثقة ================= -->
 
-  <!-- ✨ شاشة تسجيل الدخول ✨ -->
+  <!-- شاشة تسجيل الدخول -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
       <button class="login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
       <h2 id="loginModalTitle">تسجيل الدخول للنظام</h2>
       <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
       
+      <label for="loginEmail" class="sr-only">البريد الإلكتروني</label>
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
+      
+      <label for="loginPassword" class="sr-only">كلمة المرور</label>
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitLogin()">
       
       <div style="display:flex; align-items:center; gap:8px; margin:15px 0 25px 0;">
@@ -303,8 +306,10 @@
       </div>
       <div class="modal-body">
         <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
+        
         <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
         <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+        
         <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
         <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
       </div>
