@@ -1,12 +1,12 @@
 // --- Theme & Setup ---
 function setNavForApp(isAppView) { const links = document.getElementById('siteBarLinks'), loginBtn = document.getElementById('siteBarLoginBtn'); if (links) links.classList.toggle('nav-app-hidden', isAppView); if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); }
-if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPageContainer').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
+if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPage').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
 
 let currentLang = 'ar';
 function toggleLanguage() { currentLang = currentLang === 'ar' ? 'en' : 'ar'; document.documentElement.lang = currentLang; document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); }
 function openSystemLogin() { document.getElementById('paywallModal').style.display = 'flex'; }
 function closeLoginModal() { document.getElementById('paywallModal').style.display = 'none'; }
-function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'block'; setNavForApp(false); }
+function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; setNavForApp(false); }
 
 function toggleTheme() { document.body.classList.toggle('light-mode'); localStorage.setItem('appTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark'); }
 if (localStorage.getItem('appTheme') === 'light') { document.body.classList.add('light-mode'); }
@@ -47,7 +47,7 @@ let filters = {};
 let completionFilter = 'all'; 
 
 let appSettings = {
-    resTypes: ['شقة', 'استوديو', 'فيلا', 'توين هاوس', 'تاون هاوس', 'دوبلكس', 'بنتهاوس', 'شاليه'],
+    resTypes: ['شقة', 'استوديو', '1 غرفة نوم', '2 غرفة نوم', '3 غرف نوم', '4 غرف نوم', 'فيلا', 'توين هاوس', 'تاون هاوس', 'دوبلكس', 'بنتهاوس', 'شاليه'],
     commTypes: ['تجاري', 'إداري', 'عيادة', 'ترفيهي']
 };
 
@@ -90,8 +90,8 @@ auth.onAuthStateChanged(async (user) => {
     
     if(document.getElementById('loginSubmitBtn')) document.getElementById('loginSubmitBtn').innerHTML = 'دخول';
     
-    await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true);
-  } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'block'; setNavForApp(false); }
+    await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPage').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true);
+  } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPage').style.display = 'block'; setNavForApp(false); }
 });
 
 function handleAuthAction() { currentUser ? (auth.signOut(), sessionStorage.removeItem('isSystemOpen'), backToLanding()) : document.getElementById('paywallModal').style.display = 'flex'; }
@@ -217,10 +217,12 @@ function processMagicPaste() {
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
 }
 
+// ✨ تحديث الحفظ: استخدام Auto-ID من الفايربيز عشان مفيش داتا تتمسح وقت الشغل الجماعي ✨
 async function saveCompoundToCloud() {
   if(!isEditor) return;
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
+  
   const data = {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: document.getElementById('fldFloors').value.trim() || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
@@ -228,9 +230,20 @@ async function saveCompoundToCloud() {
     maintenanceValue: document.getElementById('fldMaintenanceValue').value.trim() || '', maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent', parkingType: document.getElementById('fldParkingType').value || 'extra', parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: u.bedroomType || '', rooms: u.rooms || '', area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: getRawNum(u.price) || u.price || 0, finishing: u.finishing || '' })),
     paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: getRawNum(p.pricePerMeter) || 0 })), ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
   };
-  try { await db.collection('compounds').doc(editingCompoundId || uid()).set(data, { merge: true }); document.getElementById('formOverlay').classList.remove('open'); showToast('تم الحفظ 💾'); } 
-  catch (error) { alert('خطأ في الحفظ!'); }
+  
+  try { 
+      if (editingCompoundId) {
+          await db.collection('compounds').doc(editingCompoundId).set(data, { merge: true }); 
+      } else {
+          await db.collection('compounds').add(data); // Auto-ID من فايربيز بيحل مشكلة مسح الداتا
+      }
+      document.getElementById('formOverlay').classList.remove('open'); 
+      showToast('تم الحفظ 💾'); 
+  } catch (error) { 
+      alert('خطأ في الحفظ!'); 
+  }
 }
 
 async function deleteCurrentCompoundFromCloud() { if(!isEditor || !confirm('متأكد من الحذف؟')) return; await db.collection('compounds').doc(viewingCompoundId).delete(); document.getElementById('detailOverlay').classList.remove('open'); showToast('تم الحذف'); }
@@ -260,7 +273,7 @@ function renderLocationTree(){
           const subCount = compounds.filter(c => c.locationId === sub.id).length; const isSubActive = activeLocationIds.includes(sub.id);
           html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
       }); 
-      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')" style="background:transparent; border:none; border-bottom:1px dashed var(--border-color); color:var(--text-main); outline:none;"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px; font-size:10px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
+      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px; font-size:10px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
   }); 
   wrap.innerHTML = html; 
   if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
@@ -328,7 +341,7 @@ function generateDossierHTML(c) {
     if (c.projectType === 'commercial' && c.commercialPrices) {
         let mins = [c.commercialPrices.adminMin, c.commercialPrices.commMin, c.commercialPrices.clinicMin, c.commercialPrices.recMin].filter(x => x > 0);
         let absoluteMin = mins.length > 0 ? Math.min(...mins) : (c.pricePerMeterMin || 0); 
-        pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
+        pDisplay = absoluteMin > 0 ? `من ${formatNum(absoluteMin)}` : '-';
     } else { 
         pDisplay = (c.pricePerMeterMin && c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}` : formatNum(c.pricePerMeterMin||0); 
     }
@@ -342,7 +355,7 @@ function generateDossierHTML(c) {
                 <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
                 <div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div>
                 <div class="dossier-row"><b>ارتفاع العمارات:</b> <span class="num">${c.floors ? c.floors : '-'}</span></div>
-                <div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${c.projectType === 'commercial' ? 'حسب النشاط' : (FINISHING_TYPES[c.finishingStatus]||'-')}</span></div>
+                <div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${c.projectType === 'commercial' ? 'متنوع' : (FINISHING_TYPES[c.finishingStatus]||'-')}</span></div>
                 <div class="dossier-meta">
                     <div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div>
                     <div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice ? formatNum(minPrice) : '-'}</div></div>
@@ -689,7 +702,7 @@ function renderDetailModalContent() {
   
   let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
 
-  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>سعر المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>عمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+  let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>سعر المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>عمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
 
   const grouped = {}; (c.unitTypes||[]).forEach(u => { let t = u.bedroomType; (grouped[t] = grouped[t] || []).push(u); }); const cats = Object.keys(grouped);
   if(cats.length){
@@ -747,13 +760,13 @@ function renderDetailModalContent() {
           let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
           if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
           
-          let unitPriceCol = `<b class="num" style="font-size:16px;">${formatNum(planBasePrice)} ج</b>`;
-          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:11px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+          let unitPriceCol = `<b class="num">${formatNum(planBasePrice)} ج</b>`;
+          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
           html += `<tr>
               <td>${planNameCol}</td>
               <td>${unitPriceCol}</td>
-              <td><span class="num" style="font-size:16px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
+              <td><span class="num">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
               <td class="num">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
               <td style="color:var(--primary);" class="num"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
               <td class="num"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
@@ -820,13 +833,13 @@ window.runProjectMiniCalc = function(cId) {
           let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
           if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
           
-          let unitPriceCol = `<b class="num" style="font-size:16px;">${formatNum(planBasePrice)} ج</b>`;
-          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:11px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+          let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
+          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
           html += `<tr>
               <td>${planNameCol}</td>
               <td>${unitPriceCol}</td>
-              <td><span class="num" style="font-size:16px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
+              <td><span class="num" style="font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
               <td class="num">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
               <td style="color:var(--primary);" class="num"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
               <td class="num"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
