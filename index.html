@@ -20,7 +20,7 @@
 <body>
 
   <!-- ================= LANDING PAGE ================= -->
-  <div id="landingPage">
+  <div id="landingPageContainer">
       <header class="site-bar">
           <div class="site-bar-brand">Broker-Assistant</div>
           <nav class="site-bar-links" id="siteBarLinks">
@@ -34,83 +34,64 @@
           </div>
       </header>
 
-      <header class="landing-hero">
-          <div class="hero-inner">
-              <div class="hero-content">
-                  <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
-                  <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy.">
-                    النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.
-                  </p>
-                  <button class="btn btn-primary-style btn-large" onclick="openSystemLogin()">دخول للنظام</button>
-              </div>
-              <div class="hero-visual" aria-hidden="true">
-                  <div class="mock-window">
-                      <div class="mock-window-bar"><span></span><span></span><span></span></div>
-                      <div class="mock-window-body">
-                          <div class="mock-search"></div>
-                          <div class="mock-card">
-                              <div class="mock-ribbon">معتمد</div>
-                              <div class="mock-badge"></div>
-                              <div class="mock-line lg"></div>
-                              <div class="mock-line sm"></div>
-                              <div class="mock-chip-row"><div class="mock-chip"></div><div class="mock-chip"></div></div>
-                          </div>
-                          <div class="mock-card">
-                              <div class="mock-badge"></div>
-                              <div class="mock-line lg"></div>
-                              <div class="mock-line sm"></div>
-                              <div class="mock-chip-row"><div class="mock-chip"></div><div class="mock-chip"></div></div>
-                          </div>
-                      </div>
+      <div id="landingPage">
+          <header class="landing-hero">
+              <div class="hero-inner">
+                  <div class="hero-content">
+                      <h1 data-ar="Broker-Assistant | جان هاني" data-en="Broker-Assistant | Jean Hany">Broker-Assistant | جان هاني</h1>
+                      <p data-ar="النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل." data-en="The smartest system for managing real estate projects and installments with absolute accuracy.">
+                        النظام الذكي والأول من نوعه لإدارة المشروعات والوحدات العقارية وحسابات الأقساط بدقة تامة. مصمم خصيصاً للوسطاء والمكاتب العقارية لتسهيل المتابعة، تنظيم العملاء، وتوفير وقتك بالكامل.
+                      </p>
+                      <button class="btn btn-primary-style btn-large" onclick="openSystemLogin()">دخول للنظام</button>
                   </div>
               </div>
-          </div>
-      </header>
+          </header>
 
-      <div class="landing-content">
-          <div class="features-grid" id="features">
-              <div class="feature-card">
-                  <h3>🏢 إدارة المشروعات والوحدات</h3>
-                  <p>سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة.</p>
+          <div class="landing-content">
+              <div class="features-grid" id="features">
+                  <div class="feature-card">
+                      <h3>🏢 إدارة المشروعات والوحدات</h3>
+                      <p>سجل مشروعاتك العقارية، تتبع الوحدات المتاحة والمبيعة، وتابع أسعار المتر ومواعيد التسليم بكل سهولة ومرونة.</p>
+                  </div>
+                  <div class="feature-card">
+                      <h3>💰 حاسبة دقيقة للأقساط</h3>
+                      <p>احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية.</p>
+                  </div>
+                  <div class="feature-card">
+                      <h3>⚡ سرعة واحترافية</h3>
+                      <p>واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
+                  </div>
               </div>
-              <div class="feature-card">
-                  <h3>💰 حاسبة دقيقة للأقساط</h3>
-                  <p>احسب الأقساط الشهرية والربع سنوية والدفعات الخاصة (السنوية والمؤجلة) بدقة مذهلة دون أي أخطاء حسابية.</p>
-              </div>
-              <div class="feature-card">
-                  <h3>⚡ سرعة واحترافية</h3>
-                  <p>واجهة عصرية ومنظمة تضمن لك إنجاز مهامك اليومية بكفاءة عالية وبأعلى مستوى من الأمان والخصوصية لبياناتك.</p>
-              </div>
-          </div>
 
-          <div class="pricing-section" id="pricing">
-              <h2>باقات الاشتراكات المتاحة</h2>
-              <p style="color: var(--text-muted); margin-bottom: 30px;">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
-              <div class="pricing-cards">
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه)" class="price-card">
-                      <h3>باقة شهر واحد</h3>
-                      <div class="price-val">500 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
-                  </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه)" class="price-card featured-plan">
-                      <h3>باقة 3 شهور</h3>
-                      <div class="price-val">1200 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
-                  </a>
-                  <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه)" class="price-card">
-                      <h3>باقة 6 شهور</h3>
-                      <div class="price-val">2000 جنيه</div>
-                      <p style="color:var(--text-muted); font-size:13px;">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
-                  </a>
+              <div class="pricing-section" id="pricing">
+                  <h2>باقات الاشتراكات المتاحة</h2>
+                  <p style="color: var(--text-muted); margin-bottom: 30px;">اختر الباقة المناسبة لشغلك وابدأ تفعيل نظامك الآن عبر التواصل معنا مباشرة.</p>
+                  <div class="pricing-cards">
+                      <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (شهر واحد - 500 جنيه)" class="price-card">
+                          <h3>باقة شهر واحد</h3>
+                          <div class="price-val">500 جنيه</div>
+                          <p style="color:var(--text-muted); font-size:13px;">مثالية لتجربة النظام بالكامل والاستفادة من كافة مميزاته.</p>
+                      </a>
+                      <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (3 شهور - 1200 جنيه)" class="price-card featured-plan">
+                          <h3>باقة 3 شهور</h3>
+                          <div class="price-val">1200 جنيه</div>
+                          <p style="color:var(--text-muted); font-size:13px;">توفير أكبر لمتابعة مستمرة وعمل متواصل بلا توقف.</p>
+                      </a>
+                      <a href="https://wa.me/201060205362?text=أهلاً جان، مهتم بالاشتراك في باقة (6 شهور - 2000 جنيه)" class="price-card">
+                          <h3>باقة 6 شهور</h3>
+                          <div class="price-val">2000 جنيه</div>
+                          <p style="color:var(--text-muted); font-size:13px;">القيمة الأفضل للمكاتب العقارية والوسطاء المحترفين.</p>
+                      </a>
+                  </div>
               </div>
-          </div>
 
-          <footer class="landing-footer">
-              <div class="footer-brand">Broker-Assistant</div>
-              <p>النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني.</p>
-              <a class="footer-contact" href="https://wa.me/201060205362?text=أهلاً جان، عندي استفسار عن نظام Broker-Assistant" target="_blank" rel="noopener">💬 تواصل معنا على واتساب</a>
-              <div class="footer-fine">© <span id="footerYear"></span> Broker-Assistant. جميع الحقوق محفوظة.</div>
-          </footer>
+              <footer class="landing-footer">
+                  <div class="footer-brand">Broker-Assistant</div>
+                  <p>النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني.</p>
+                  <a class="footer-contact" href="https://wa.me/201060205362?text=أهلاً جان، عندي استفسار عن نظام Broker-Assistant" target="_blank" rel="noopener">💬 تواصل معنا على واتساب</a>
+                  <div class="footer-fine">© <span id="footerYear"></span> Broker-Assistant. جميع الحقوق محفوظة.</div>
+              </footer>
+          </div>
       </div>
   </div>
 
@@ -257,16 +238,14 @@
 
   <!-- ================= النوافذ المنبثقة ================= -->
 
+  <!-- ✨ شاشة تسجيل الدخول بعد إضافة الستايل المظبوط بتاعها ✨ -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
-      <button class="modal-close login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
+      <button class="login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
       <h2 id="loginModalTitle">تسجيل الدخول للنظام</h2>
       <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">برجاء إدخال بيانات حسابك المعتمدة للوصول إلى لوحة التحكم.</p>
       
-      <label for="loginEmail" class="sr-only">البريد الإلكتروني</label>
       <input type="email" id="loginEmail" placeholder="البريد الإلكتروني / Email" autocomplete="username">
-      
-      <label for="loginPassword" class="sr-only">كلمة المرور</label>
       <input type="password" id="loginPassword" placeholder="كلمة المرور / Password" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitLogin()">
       
       <div style="display:flex; align-items:center; gap:8px; margin:15px 0 25px 0;">
@@ -287,7 +266,7 @@
       <div class="modal-body">
         <div class="form-grid" style="grid-template-columns: 1fr;">
           <div class="form-field">
-              <label for="newAccEmail">إيميل المشترك (يجب أن يكون صحيح)</label>
+              <label for="newAccEmail">إيميل المشترك (يجب أن يكون إيميل صحيح)</label>
               <input type="email" id="newAccEmail" placeholder="client@example.com" autocomplete="off">
           </div>
           <div class="form-field">
@@ -324,8 +303,10 @@
       </div>
       <div class="modal-body">
         <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">اكتب الأنواع اللي عايزها تظهر في اختيارات إضافة المشروع. (افصل بين كل نوع والتاني بعلامة الفاصلة ، أو دوس Enter).</p>
+        
         <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏢 أنواع الوحدات (للمشاريع السكنية)</label>
         <textarea id="resTypesInput" rows="5" style="width:100%; margin-bottom:20px; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
+        
         <label style="color:var(--primary); font-weight:bold; font-size:13px; display:block; margin-bottom:8px;">🏪 أنواع الوحدات (للمشاريع التجارية)</label>
         <textarea id="commTypesInput" rows="4" style="width:100%; padding:12px; border-radius:var(--radius-input); border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-main); outline:none; font-family:'Cairo'; line-height:1.6; resize:vertical;"></textarea>
       </div>
@@ -379,7 +360,7 @@
           <div class="form-field res-field">
               <label for="fldParkingType">حالة الجراج (Parking)</label>
               <div style="display:flex; gap:8px;">
-                  <select id="fldParkingType" style="flex:1;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='extra' ? 'block' : 'none';">
+                  <select id="fldParkingType" style="flex:1; padding: 12px 5px;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='extra' ? 'block' : 'none';">
                       <option value="extra">رسوم إضافية</option>
                       <option value="included">شامل السعر</option>
                       <option value="optional">اختياري</option>
@@ -492,7 +473,7 @@
     </div>
   </div>
 
-  <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column; justify-content:center; align-items:center;">
+  <div id="loadingOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column; justify-content:center; align-items:center;">
     <div class="loader"></div>
     <h2 style="margin-bottom:10px; color:#fff;">جاري المعالجة...</h2>
     <p id="loadingMsg" style="color:var(--primary); font-size:14px;">برجاء عدم إغلاق الصفحة</p>
