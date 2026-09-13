@@ -34,19 +34,9 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .num, .meta-chip div, .price-val, .cash-row b, .calc-highlight b, .calc-item b { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
 
-/* الأزرار العادية (Landing Page) */
-.btn { padding: 10px 20px; font-family: 'Cairo'; font-weight: 800; cursor: pointer; border: none; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px;}
-.btn-pill { border-radius: 50px !important; }
-.btn-primary-style { background: var(--primary); color: var(--btn-text); }
-.btn-primary-style:hover { background: var(--primary-hover); transform: translateY(-2px); }
-.btn-outline-light { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
-.btn-outline-light:hover { border-color: var(--primary); color: var(--primary); }
-.w-100 { width: 100%; }
-
 /* =========================================
-   1. LANDING PAGE
+   1. LANDING PAGE & NAVIGATION
 ========================================= */
-#landingPage { display: block; min-height: 100vh; overflow-y: auto; }
 .site-bar { position: sticky; top: 0; z-index: 500; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--topbar-height); padding: 10px 30px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
 .site-bar-brand { font-weight: 800; font-size: 18px; color: var(--primary); white-space: nowrap; }
 .site-bar-links { display: flex; align-items: center; gap: 22px; }
@@ -107,7 +97,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .landing-footer .footer-fine { margin-top: 24px; font-size: 11px; color: var(--text-muted); opacity: 0.7; }
 
 /* =========================================
-   2. SYSTEM APP
+   2. SYSTEM APP INTERFACE
 ========================================= */
 .app { display: flex; height: calc(100vh - var(--topbar-height)); overflow: hidden; padding: 12px; gap: 12px;}
 .sidebar { width: 250px; background-color: var(--sidebar-bg); display: flex; flex-direction: column; padding: 20px 15px; border-radius: var(--radius-card); box-shadow: var(--shadow-sm); z-index: 10; overflow-y: auto; border: 1px solid var(--border-color); transition: var(--transition);}
@@ -143,7 +133,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .page-title { font-size: 26px; color: var(--text-main); font-weight: 800; }
 .page-sub { font-size: 12px; color: var(--primary); font-weight: 700; margin-top: 2px; }
 
-/* ✨ لوحة بيانات الإدارة ✨ */
+/* لوحة بيانات الإدارة */
 .admin-stats-board { background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 15px 20px; margin-bottom: 25px; display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; box-shadow: var(--shadow-sm); }
 .stat-card { flex: 1; min-width: 140px; background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: var(--radius-input); text-align: center; cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .stat-card:hover { transform: translateY(-3px); box-shadow: var(--glow); border-color: var(--primary); }
@@ -273,7 +263,10 @@ body.light-mode .dossier:hover .meta-chip { box-shadow: 0 5px 15px rgba(220, 38,
 .mini-phase .dossier-title { font-size: 16px; margin-bottom: 12px; }
 .mini-phase .dossier-row { font-size: 11px; padding: 6px 0; border-top: 1px solid var(--border-color);}
 
-/* شاشات منبثقة للسيستم */
+
+/* =========================================
+   3. MODALS & OVERLAYS (الشاشات المنبثقة)
+========================================= */
 .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
 body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 .overlay.open { display: flex; opacity: 1; }
@@ -337,6 +330,7 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 .btn-outline-light:hover { background: var(--card-bg); border-color: var(--primary); color: var(--primary);}
 .btn-excel { background: #10B981 !important; color: #fff !important;}
 .btn-excel:hover { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); transform: translateY(-2px);}
+.w-100 { width: 100%; }
 
 .repeat-row, .plan-card { background: var(--item-bg); padding: 18px; border-radius: var(--radius-card); border: 1px solid var(--border-color); margin-bottom: 15px; }
 .plan-card-header, .bullet-top, .repeat-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -369,7 +363,7 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 .magic-paste-box textarea:focus { border-color: var(--primary); }
 
 @media (max-width: 900px) {
-    .app { display: flex; flex-direction: column; overflow-y: auto; height: auto; gap: 15px;}
+    .app { flex-direction: column; overflow-y: auto; height: auto; gap: 15px;}
     .form-grid, .comm-prices-grid, .detail-grid, .calc-result { grid-template-columns: 1fr; }
     .sidebar, .main { display: contents; }
     .topbar, .search-master-container, .project-type-nav, .location-container, .brand, .auth-badge, .side-actions, .admin-stats-board { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 15px; width: 100%; margin: 0; }
