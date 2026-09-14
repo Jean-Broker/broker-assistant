@@ -101,7 +101,6 @@ async function createNewSubscriber() { const email = document.getElementById('ne
 function openTypesManager() { document.getElementById('resTypesInput').value = appSettings.resTypes.join(' ، '); document.getElementById('commTypesInput').value = appSettings.commTypes.join(' ، '); document.getElementById('typesOverlay').classList.add('open'); }
 async function saveCustomTypes() { if(!isEditor) return; const r = document.getElementById('resTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); const c = document.getElementById('commTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); appSettings.resTypes = r.length ? r : appSettings.resTypes; appSettings.commTypes = c.length ? c : appSettings.commTypes; try { await db.collection('system').doc('settings').set({ resTypes: appSettings.resTypes, commTypes: appSettings.commTypes }, { merge: true }); closeModal('typesOverlay'); showToast('تم الحفظ 💾'); if(document.getElementById('formOverlay').classList.contains('open')) renderUnitRows(); } catch(e) { alert('خطأ في الحفظ!'); } }
 
-// ✨ فحص مضاد للأخطاء عشان المشاريع مبتختفيش ✨
 function isCompoundComplete(c) {
     try {
         if (!c.companyName || String(c.companyName).trim() === '') return false;
@@ -194,7 +193,7 @@ function processMagicPaste() {
         if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
             let pSelect = document.getElementById('fldParkingType');
             if(lowerLine.includes('free') || lowerLine.includes('شامل') || lowerLine.includes('مجان')) { pSelect.value = 'included'; document.getElementById('fldParkingFee').style.display = 'none'; } 
-            else if (lowerLine.includes('optional') || lowerLine.includes('اختيار')) { pSelect.value = 'optional'; document.getElementById('fldParkingFee').style.display = 'none'; } 
+            else if (lowerLine.includes('optional') || lowerLine.includes('اختيار')) { pSelect.value = 'optional'; document.getElementById('fldParkingFee').style.display = 'block'; } 
             else { pSelect.value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block'; let pMatch = cleanLine.match(/([\d,]+(?:\.\d+)?)\s*(k|egp|ج|جنيه|الف)?/i); if (pMatch && !document.getElementById('fldParkingFee').value) { let pVal = parseFloat(pMatch[1].replace(/,/g, '')); let mult = pMatch[2] ? pMatch[2].toLowerCase() : ''; if (mult === 'k' || mult === 'الف') pVal *= 1000; document.getElementById('fldParkingFee').value = formatNum(pVal); fieldsFilled++; } }
         }
         const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i); if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
@@ -220,7 +219,6 @@ function processMagicPaste() {
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
 }
 
-// ✨ الحفظ الآمن لمنع مسح المشاريع باستخدام Auto-ID ✨
 async function saveCompoundToCloud() {
   if(!isEditor) return;
   const projectName = document.getElementById('fldProject').value.trim();
@@ -228,6 +226,7 @@ async function saveCompoundToCloud() {
   
   const data = {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: document.getElementById('fldFloors').value.trim() || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
+    salesName: document.getElementById('fldSalesName').value.trim(), salesPhone: document.getElementById('fldSalesPhone').value.trim(),
     pricePerMeterMin: getRawNum(document.getElementById('fldPriceMeterMin').value)||0, pricePerMeterMax: getRawNum(document.getElementById('fldPriceMeterMax').value)||0,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenanceValue: document.getElementById('fldMaintenanceValue').value.trim() || '', maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent', parkingType: document.getElementById('fldParkingType').value || 'extra', parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), finishingStatus: document.getElementById('fldFinishingStatus').value, compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
@@ -517,6 +516,10 @@ function openCompoundForm(existing){
   
   if (existing) {
       document.getElementById('fldProjectType').value = existing.projectType || 'residential'; document.getElementById('fldCompany').value = existing.companyName || ''; document.getElementById('fldProject').value = existing.projectName || ''; document.getElementById('fldPhaseName').value = existing.phaseName || ''; document.getElementById('fldFloors').value = existing.floors || ''; document.getElementById('fldOwner').value = existing.ownerName || ''; document.getElementById('fldConsultant').value = existing.consultant || ''; 
+      
+      document.getElementById('fldSalesName').value = existing.salesName || '';
+      document.getElementById('fldSalesPhone').value = existing.salesPhone || '';
+
       document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : ''; document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '';
       let cp = existing.commercialPrices || {}; document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell';
       
@@ -525,11 +528,11 @@ function openCompoundForm(existing){
       
       document.getElementById('fldParkingType').value = existing.parkingType || 'extra';
       document.getElementById('fldParkingFee').value = existing.parkingFee ? formatNum(existing.parkingFee) : ''; 
-      document.getElementById('fldParkingFee').style.display = (existing.parkingType === 'included' || existing.parkingType === 'optional') ? 'none' : 'block';
+      document.getElementById('fldParkingFee').style.display = (existing.parkingType === 'included') ? 'none' : 'block';
 
       document.getElementById('fldProjectSize').value = existing.projectSize || ''; document.getElementById('fldDeliveryDate').value = existing.deliveryDate || ''; document.getElementById('fldFinishingStatus').value = existing.finishingStatus || 'core_shell'; document.getElementById('fldLocationDetail').value = existing.compoundLocationDetail || ''; document.getElementById('fldLocationLink').value = existing.locationLink || ''; document.getElementById('fldCashDiscount').value = existing.cashDiscount || ''; 
   } else {
-      document.getElementById('fldProjectType').value = 'residential'; ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant','fldPriceMeterMin','fldPriceMeterMax','fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax','fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { document.getElementById(id).value = ''; }); ['fldFinishingStatus', 'fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { document.getElementById(id).value = 'core_shell'; });
+      document.getElementById('fldProjectType').value = 'residential'; ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant','fldSalesName','fldSalesPhone','fldPriceMeterMin','fldPriceMeterMax','fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax','fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { document.getElementById(id).value = ''; }); ['fldFinishingStatus', 'fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { document.getElementById(id).value = 'core_shell'; });
       document.getElementById('fldMaintenanceValue').value = ''; document.getElementById('fldMaintenanceType').value = 'percent';
       document.getElementById('fldParkingType').value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block';
   }
@@ -688,8 +691,8 @@ function renderDetailModalContent() {
   
   let parkingText = '';
   if (c.parkingType === 'included') parkingText = 'شامل السعر';
-  else if (c.parkingType === 'optional') parkingText = 'اختياري';
-  else parkingText = c.parkingFee ? formatNum(c.parkingFee) + ' ج' : 'لا يوجد';
+  else if (c.parkingType === 'optional') parkingText = c.parkingFee ? 'اختياري (' + formatNum(c.parkingFee) + ' ج)' : 'اختياري';
+  else parkingText = c.parkingFee ? formatNum(c.parkingFee) + ' ج' : 'رسوم إضافية';
 
   if (c.projectType === 'commercial') {
       finishText = 'متنوع (بالأسعار)';
@@ -706,6 +709,23 @@ function renderDetailModalContent() {
   let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
 
   let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>سعر المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+
+  // قسم السيلز (Sales Rep) الجديد
+  if (c.salesName || c.salesPhone) {
+      let cleanPhone = c.salesPhone ? c.salesPhone.replace(/\D/g, '') : '';
+      if(cleanPhone.startsWith('0')) cleanPhone = '2' + cleanPhone;
+      let waBtn = cleanPhone ? `<a href="https://wa.me/${cleanPhone}" target="_blank" style="background:#25D366; color:#fff; padding:6px 14px; border-radius:50px; text-decoration:none; font-size:12px; font-weight:800; display:flex; align-items:center; gap:6px; box-shadow:0 2px 5px rgba(37,211,102,0.3); transition:all 0.3s;">💬 تواصل واتساب</a>` : '';
+      
+      html += `<div class="detail-item full" style="background:rgba(37, 211, 102, 0.05); border:1px dashed #25D366; margin-bottom: 30px; padding: 18px; border-radius: 12px;">
+                  <b style="color:var(--text-muted); font-size:11px;">مسؤول المبيعات المعتمد (Sales Rep)</b>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                      <span style="font-size:15px; color:var(--text-main); font-weight:bold;">${escapeHtml(c.salesName || 'بدون اسم')} 
+                          <span style="color:var(--text-muted); font-size:13px; margin-right:8px; font-family:'IBM Plex Mono', monospace;">${escapeHtml(c.salesPhone || '')}</span>
+                      </span> 
+                      ${waBtn}
+                  </div>
+               </div>`;
+  }
 
   const grouped = {}; (c.unitTypes||[]).forEach(u => { let t = u.bedroomType; (grouped[t] = grouped[t] || []).push(u); }); const cats = Object.keys(grouped);
   if(cats.length){
@@ -990,7 +1010,7 @@ async function handleExcelUpload(event) {
                 const worksheet = workbook.Sheets[sheetName]; const rows = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: "" }); if (rows.length === 0) return; const subLocId = uid(); excelMainLoc.subLocations.push({ id: subLocId, name: sheetName });
                 rows.forEach(row => {
                     let projName = row['Project'] || row['project'] || ''; let devName = row['Developer'] || row['developer'] || ''; if (!projName && !devName) return; let compKey = `${projName}_${devName}`;
-                    if (!compoundsToUpload[compKey]) { compoundsToUpload[compKey] = { id: uid(), locationId: subLocId, projectType: 'residential', companyName: String(devName).trim(), projectName: String(projName).trim(), ownerName: '', consultant: String(row['Engineering Consult'] || row['Engineering Consultant'] || '').trim(), pricePerMeterMin: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMax: parseFloat(row['Price Per Meter']) || 0, maintenancePercent: parseFloat(row['Maintenance Fees %']) || 0, projectSize: parseFloat(row['Project area']) || 0, deliveryDate: String(row['Delivery Date'] || '').trim(), finishingStatus: String(row['Finishing type'] || '').toLowerCase().includes('core') ? 'core_shell' : (String(row['Finishing type'] || '').toLowerCase().includes('full') ? 'full' : 'semi'), compoundLocationDetail: String(row['Location On Map'] || '').trim(), locationLink: String(row['Location On Map'] || '').includes('http') ? String(row['Location On Map'] || '').trim() : '', cashDiscount: 0, unitTypes: [], paymentPlans: [], ministerialDecrees: row['قرار وزاري'] ? [{id: uid(), decreeNumber: '', description: String(row['قرار وزاري']), date: ''}] : [] }; }
+                    if (!compoundsToUpload[compKey]) { compoundsToUpload[compKey] = { id: uid(), locationId: subLocId, projectType: 'residential', companyName: String(devName).trim(), projectName: String(projName).trim(), ownerName: '', consultant: String(row['Engineering Consult'] || row['Engineering Consultant'] || '').trim(), salesName: '', salesPhone: '', pricePerMeterMin: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMax: parseFloat(row['Price Per Meter']) || 0, maintenancePercent: parseFloat(row['Maintenance Fees %']) || 0, projectSize: parseFloat(row['Project area']) || 0, deliveryDate: String(row['Delivery Date'] || '').trim(), finishingStatus: String(row['Finishing type'] || '').toLowerCase().includes('core') ? 'core_shell' : (String(row['Finishing type'] || '').toLowerCase().includes('full') ? 'full' : 'semi'), compoundLocationDetail: String(row['Location On Map'] || '').trim(), locationLink: String(row['Location On Map'] || '').includes('http') ? String(row['Location On Map'] || '').trim() : '', cashDiscount: 0, unitTypes: [], paymentPlans: [], ministerialDecrees: row['قرار وزاري'] ? [{id: uid(), decreeNumber: '', description: String(row['قرار وزاري']), date: ''}] : [] }; }
                     
                     let area = parseFloat(row['BUA From']) || parseFloat(row['BUA To']) || parseFloat(row['Area']) || 0; 
                     let gardenArea = parseFloat(row['Garden Area']) || parseFloat(row['Garden']) || parseFloat(row['جاردن']) || 0;
