@@ -44,43 +44,44 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .w-100 { width: 100%; }
 
 /* =========================================
-   ✨ CUSTOM J-LOGO (JEAN HANY) ✨
+   ✨ CUSTOM J-LOGO - PURE CSS CLIP PATH ✨
 ========================================= */
+
+/* اللوجو الصغير (القوائم والسايدبار) */
 .j-logo {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 140px; 
+    width: 130px; 
     height: 40px;
     user-select: none;
 }
-.j-logo .j-letter {
+.j-top, .j-bot {
     font-family: 'Times New Roman', serif;
     font-size: 55px;
     color: var(--primary);
-    line-height: 1;
     position: absolute;
+    line-height: 1;
     z-index: 1;
-    text-shadow: var(--glow);
-    top: -14px; 
-    transform: scaleY(1.35); /* Taller mini-J */
+    transform: scaleY(1.35) translateY(-4px); 
 }
+.j-top { clip-path: inset(0 0 58% 0); } /* يقطع من تحت لفوق */
+.j-bot { clip-path: inset(58% 0 0 0); } /* يقطع من فوق لتحت */
+
 .j-logo .j-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     font-weight: 800;
     color: var(--text-main);
-    background: var(--card-bg); 
-    padding: 2px 6px;
+    background: transparent; /* سحر الخلفية الشفافة */
+    padding: 0;
     z-index: 2;
     letter-spacing: 1px;
     text-transform: uppercase;
     position: relative;
-    border-radius: 2px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8); /* تحديد الكلمة */
 }
-.site-bar .j-logo .j-text, .landing-footer .j-logo .j-text { background: var(--card-bg); }
-.sidebar .j-logo .j-text { background: var(--sidebar-bg); }
 
 /* =========================================
    1. LANDING PAGE
@@ -108,27 +109,41 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 
 @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ✨ THE GIANT HERO LOGO ✨ */
+/* ✨ THE GIANT HERO LOGO - PURE CSS CLIP PATH ✨ */
 .hero-main-logo {
     position: relative;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 35px;
-    min-height: 160px; 
+    margin-bottom: 25px;
+    min-height: 180px; 
     width: 100%;
     user-select: none;
 }
-.hero-j-bg {
+.hero-j-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+.hero-j-top, .hero-j-bot {
     font-family: 'Times New Roman', Times, serif;
-    font-size: 180px; /* Massive J */
+    font-size: 200px; /* Big J */
     color: var(--primary);
     position: absolute;
-    z-index: 1;
-    line-height: 0;
-    transform: scaleY(1.5) translateY(-2px); /* Tall elongation like the notebook */
+    line-height: 1;
+    transform: scaleY(1.3);
     text-shadow: 0 0 40px rgba(220, 38, 38, 0.4);
 }
+.hero-j-top { clip-path: inset(0 0 58% 0); } /* يقطع من تحت مسافة الكلمة */
+.hero-j-bot { clip-path: inset(57% 0 0 0); } /* يقطع من فوق مسافة الكلمة */
+
 .hero-j-text {
     position: relative;
     z-index: 2;
@@ -136,16 +151,12 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     font-weight: 800;
     color: var(--text-main);
     margin: 0;
-    padding: 8px 25px;
-    background: #090303; /* Deep dark background to cut the J seamlessly over gradient */
-    border-radius: 6px;
+    padding: 0;
+    background: transparent; /* ✨ السحر كله هنا: مفيش لون خلفية مقرف ✨ */
     letter-spacing: 1px;
-    box-shadow: 0 0 20px rgba(9, 3, 3, 0.9); /* Smooths the edges of the cut */
+    text-shadow: 0 4px 15px rgba(0,0,0,0.8);
 }
-body.light-mode .hero-j-text {
-    background: #fdf5f5; /* Light mode seamless cut */
-    box-shadow: 0 0 20px rgba(253, 245, 245, 0.9);
-}
+
 
 .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto 60px auto; padding: 0 20px; }
 .feature-card { background: var(--card-bg); padding: 30px 25px; text-align: center; border-radius: var(--radius-card); border: 1px solid var(--border-color); transition: var(--transition); }
