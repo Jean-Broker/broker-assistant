@@ -349,21 +349,20 @@
           <div class="form-field"><label for="fldOwner">المالك</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
           
-          <!-- ✨ الخانات الجديدة للسيلز ✨ -->
           <div class="form-field"><label for="fldSalesName">مسؤول المبيعات (Sales Rep)</label><input id="fldSalesName" placeholder="مثال: محمد سلطان" autocomplete="off"></div>
           <div class="form-field"><label for="fldSalesPhone">رقم تليفون المبيعات (واتساب)</label><input id="fldSalesPhone" placeholder="مثال: 01012345678" autocomplete="off" dir="ltr"></div>
           
-          <div class="form-field res-price-field"><label for="fldPriceMeterMin">سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="text" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off"></div>
-          <div class="form-field res-price-field"><label for="fldPriceMeterMax">سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="text" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off"></div>
-          <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label for="fldPriceMeterAvg">متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:var(--item-bg); font-weight:bold; color:var(--primary);"></div>
-          
-          <div class="form-field res-field"><label for="fldFinishingStatus">حالة التشطيب الرئيسية</label>
-            <select id="fldFinishingStatus">
-              <option value="core_shell">Core &amp; Shell (طوب أحمر)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
-            </select>
+          <!-- ✨ تحديث أسعار السكني حسب التشطيب ✨ -->
+          <div class="form-field full res-price-field" style="background:var(--item-bg); padding:15px; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:15px;">
+             <div class="section-label" style="margin-top:0;">أسعار المتر السكني حسب التشطيب</div>
+             <p style="font-size:11px; color:var(--text-muted); margin-bottom:15px;">اكتب السعر في الخانة المناسبة، والسيستم هيحسب سعر الوحدة أوتوماتيك لما تختار تشطيبها تحت.</p>
+             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                 <div class="form-field"><label>طوب أحمر (Core & Shell)</label><input id="fldPriceCore" type="text" class="res-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="سعر المتر"></div>
+                 <div class="form-field"><label>نصف تشطيب (Semi-finished)</label><input id="fldPriceSemi" type="text" class="res-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="سعر المتر"></div>
+                 <div class="form-field"><label>تشطيب كامل (Fully-finished)</label><input id="fldPriceFull" type="text" class="res-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="سعر المتر"></div>
+             </div>
           </div>
           
-          <!-- ✨ تصليح جراج اختياري ✨ -->
           <div class="form-field res-field">
               <label for="fldParkingType">حالة الجراج (Parking)</label>
               <div style="display:flex; gap:8px;">
@@ -379,10 +378,10 @@
           <div id="commercialPriceWrap" class="full" style="display:none;">
              <div class="section-label">أسعار المتر والتشطيب للأنشطة التجارية</div>
              <div class="comm-prices-grid">
-                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
-                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="text" class="comm-price-input" oninput="formatInput(this);" autocomplete="off"></div><div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>إداري (من)</label><input id="fldAdminMin" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>إداري (إلى)</label><input id="fldAdminMax" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>تشطيب الإداري</label><select id="fldAdminFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>تجاري (من)</label><input id="fldCommMin" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>تجاري (إلى)</label><input id="fldCommMax" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>تشطيب التجاري</label><select id="fldCommFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>طبي (من)</label><input id="fldClinicMin" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>طبي (إلى)</label><input id="fldClinicMax" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>تشطيب الطبي</label><select id="fldClinicFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
+                 <div class="form-field"><label>ترفيهي (من)</label><input id="fldRecMin" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>ترفيهي (إلى)</label><input id="fldRecMax" type="text" class="comm-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off"></div><div class="form-field"><label>تشطيب الترفيهي</label><select id="fldRecFinish"><option value="core_shell">Core & Shell</option><option value="semi">نصف تشطيب</option><option value="full">تشطيب كامل</option></select></div>
              </div>
           </div>
 
