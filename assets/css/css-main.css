@@ -51,26 +51,27 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 140px; /* Fixed width to ensure text fits over the J */
+    width: 140px; 
     height: 40px;
     user-select: none;
 }
 .j-logo .j-letter {
     font-family: 'Times New Roman', serif;
-    font-size: 50px;
+    font-size: 55px;
     color: var(--primary);
     line-height: 1;
     position: absolute;
     z-index: 1;
     text-shadow: var(--glow);
-    top: -5px; /* Alignment tweak to center behind text */
+    top: -14px; 
+    transform: scaleY(1.35); /* Taller mini-J */
 }
 .j-logo .j-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     font-weight: 800;
     color: var(--text-main);
-    background: var(--card-bg); /* Default background, cuts the J */
+    background: var(--card-bg); 
     padding: 2px 6px;
     z-index: 2;
     letter-spacing: 1px;
@@ -78,7 +79,6 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     position: relative;
     border-radius: 2px;
 }
-/* Contextual backgrounds to match the container and create the perfect 'cut' */
 .site-bar .j-logo .j-text, .landing-footer .j-logo .j-text { background: var(--card-bg); }
 .sidebar .j-logo .j-text { background: var(--sidebar-bg); }
 
@@ -97,32 +97,55 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .theme-switcher, .lang-switcher { background: var(--item-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 15px; border-radius: var(--radius-pill); cursor: pointer; font-weight: 700; font-size: 13px; transition: var(--transition); display: flex; align-items: center; justify-content: center;}
 .theme-switcher:hover, .lang-switcher:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px);}
 
+/* ✨ Hero Section Centered ✨ */
 .landing-hero { position: relative; overflow: hidden; background: var(--gradient-header); color: var(--text-main); padding: 100px 20px 80px; text-align: center; border-radius: 0 0 var(--radius-card) var(--radius-card); margin-bottom: 40px; border-bottom: 2px solid var(--primary); box-shadow: var(--shadow-sm);}
 .landing-hero::before { content:''; position:absolute; width:520px; height:520px; background: radial-gradient(circle, rgba(220,38,38,0.28) 0%, transparent 70%); top:-200px; inset-inline-end:-180px; pointer-events:none; }
 .landing-hero::after { content:''; position:absolute; width:380px; height:380px; background: radial-gradient(circle, rgba(220,38,38,0.14) 0%, transparent 70%); bottom:-160px; inset-inline-start:5%; pointer-events:none; }
-.hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 50px; flex-wrap: wrap; text-align: start; }
-.hero-content { flex: 1 1 400px; max-width: 620px; animation: heroFadeUp 0.7s ease both; }
-.landing-hero h1 { font-size: clamp(30px, 4.2vw, 46px); color: var(--primary); margin-bottom: 18px; font-weight: 800; line-height: 1.25; text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
-.landing-hero p { max-width: 620px; margin: 0; font-size: 15.5px; color: var(--text-muted); font-weight: 600; line-height: 1.85; }
+.hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; text-align: center; }
+.hero-content { flex: 1 1 100%; max-width: 800px; display: flex; flex-direction: column; align-items: center; margin: 0 auto; animation: heroFadeUp 0.7s ease both; }
+.landing-hero p { max-width: 620px; margin: 0 auto; font-size: 15.5px; color: var(--text-muted); font-weight: 600; line-height: 1.85; text-align: center;}
 .btn-large { padding: 15px 38px; font-size: 15px; margin-top: 32px; box-shadow: var(--glow);}
 
-.hero-visual { flex: 1 1 300px; max-width: 400px; display: flex; justify-content: center; animation: heroFadeUp 0.7s 0.15s ease both; }
 @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-.mock-window { width: 100%; max-width: 360px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); box-shadow: var(--shadow-lg); overflow: hidden; transform: rotate(-2deg); transition: transform 0.4s ease; }
-.mock-window:hover { transform: rotate(0deg); }
-.mock-window-bar { display: flex; gap: 6px; padding: 12px 14px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); }
-.mock-window-bar span { width: 9px; height: 9px; border-radius: 50%; background: var(--border-color); display: block; }
-.mock-window-bar span:first-child { background: var(--primary); }
-.mock-window-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.mock-search { height: 30px; border-radius: var(--radius-pill); background: var(--item-bg); border: 1px solid var(--border-color); }
-.mock-card { position: relative; background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-input); padding: 14px; overflow: hidden; }
-.mock-ribbon { position: absolute; top: 9px; inset-inline-start: -22px; background: var(--primary); color: #fff; padding: 2px 24px; transform: rotate(-45deg); font-size: 7px; font-weight: 800; letter-spacing: 0.5px; }
-.mock-badge { width: 68px; height: 8px; border-radius: 4px; background: var(--primary); opacity: 0.55; margin-bottom: 9px; }
-.mock-line { height: 9px; border-radius: 4px; background: var(--border-color); }
-.mock-line.lg { height: 13px; width: 78%; margin-bottom: 7px; }
-.mock-line.sm { width: 42%; }
-.mock-chip-row { display: flex; gap: 8px; margin-top: 10px; }
-.mock-chip { flex: 1; height: 26px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--border-color); }
+
+/* ✨ THE GIANT HERO LOGO ✨ */
+.hero-main-logo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 35px;
+    min-height: 160px; 
+    width: 100%;
+    user-select: none;
+}
+.hero-j-bg {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 180px; /* Massive J */
+    color: var(--primary);
+    position: absolute;
+    z-index: 1;
+    line-height: 0;
+    transform: scaleY(1.5) translateY(-2px); /* Tall elongation like the notebook */
+    text-shadow: 0 0 40px rgba(220, 38, 38, 0.4);
+}
+.hero-j-text {
+    position: relative;
+    z-index: 2;
+    font-size: clamp(26px, 4vw, 42px);
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+    padding: 8px 25px;
+    background: #090303; /* Deep dark background to cut the J seamlessly over gradient */
+    border-radius: 6px;
+    letter-spacing: 1px;
+    box-shadow: 0 0 20px rgba(9, 3, 3, 0.9); /* Smooths the edges of the cut */
+}
+body.light-mode .hero-j-text {
+    background: #fdf5f5; /* Light mode seamless cut */
+    box-shadow: 0 0 20px rgba(253, 245, 245, 0.9);
+}
 
 .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto 60px auto; padding: 0 20px; }
 .feature-card { background: var(--card-bg); padding: 30px 25px; text-align: center; border-radius: var(--radius-card); border: 1px solid var(--border-color); transition: var(--transition); }
