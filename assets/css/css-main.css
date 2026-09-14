@@ -44,7 +44,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .w-100 { width: 100%; }
 
 /* =========================================
-   ✨ CUSTOM J-LOGO - CLASSIC J + MODERN TEXT ✨
+   ✨ CUSTOM J-LOGO - THE PERFECT MIX ✨
 ========================================= */
 
 /* اللوجو الصغير (القوائم والسايدبار) */
@@ -58,31 +58,35 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     user-select: none;
 }
 .j-top, .j-bot {
-    font-family: 'Times New Roman', Times, serif; /* الحرف الكلاسيك الفخم */
-    font-size: 60px;
+    font-family: 'Cairo', sans-serif; /* الـ J المودرن اللي من غير شرطة */
+    font-size: 65px;
+    font-weight: 800;
     color: var(--primary);
     position: absolute;
     line-height: 1;
     z-index: 1;
-    transform: scaleY(1.3) translateY(-4px); 
+    transform: scaleY(1.2) translateY(-4px); 
     text-shadow: none; 
 }
-.j-top { clip-path: inset(0 0 54.5% 0); } 
-.j-bot { clip-path: inset(53.5% 0 0 0); } 
+.j-top { clip-path: inset(0 0 54% 0); } 
+.j-bot { clip-path: inset(54% 0 0 0); } 
 
 .j-logo .j-text {
-    font-family: 'Cairo', sans-serif; /* فونت الكلمة المودرن النظيف */
-    font-size: 13px; /* كبرناه سنة عشان يبان أحلى */
+    font-family: 'Cairo', sans-serif; /* الفونت الجديد */
+    font-size: 11px;
     font-weight: 800;
     color: var(--text-main);
     background: transparent; 
-    padding: 0;
+    padding: 2px 4px;
     z-index: 2;
-    letter-spacing: 0.5px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
     position: relative;
-    border: none;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.9); 
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8); 
+    border-top: 1px solid rgba(255,255,255,0.15); /* الخطوط اللي فاتت */
+    border-bottom: 1px solid rgba(255,255,255,0.15);
 }
+body.light-mode .j-logo .j-text { border-color: rgba(0,0,0,0.15); }
 
 /* =========================================
    1. LANDING PAGE
@@ -134,32 +138,35 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     z-index: 1;
 }
 .hero-j-top, .hero-j-bot {
-    font-family: 'Times New Roman', Times, serif; /* الحرف الكلاسيك العملاق */
-    font-size: 240px; 
+    font-family: 'Cairo', sans-serif; /* الـ J المودرن العملاق */
+    font-size: 260px; 
+    font-weight: 800;
     color: var(--primary);
     position: absolute;
     line-height: 1;
-    transform: scaleY(1.3) translateY(-5px); 
+    transform: scaleY(1.1) translateY(-10px); 
     text-shadow: none; 
 }
-.hero-j-top { clip-path: inset(0 0 54.5% 0); } 
-.hero-j-bot { clip-path: inset(53.5% 0 0 0); } 
+.hero-j-top { clip-path: inset(0 0 54% 0); } 
+.hero-j-bot { clip-path: inset(53% 0 0 0); } 
 
 .hero-j-text {
     position: relative;
     z-index: 2;
-    font-family: 'Cairo', sans-serif; /* فونت الكلمة المودرن النظيف */
-    font-size: clamp(28px, 4vw, 46px); /* حجم مناسب للكلمة */
+    font-family: 'Cairo', sans-serif; /* الفونت الجديد للكلمة */
+    font-size: clamp(20px, 3.5vw, 30px); 
     font-weight: 800;
     color: var(--text-main);
     margin: 0;
-    padding: 0;
+    padding: 10px 15px; 
     background: transparent; 
-    letter-spacing: 0px; 
-    border: none; 
-    text-shadow: 0 4px 15px rgba(0,0,0,0.9); 
+    letter-spacing: 8px; /* المسافات الواسعة رجعت */
+    text-transform: uppercase; 
+    text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    border-top: 1px solid rgba(255,255,255,0.15); /* الخطوط رجعت */
+    border-bottom: 1px solid rgba(255,255,255,0.15); 
 }
-
+body.light-mode .hero-j-text { border-color: rgba(0,0,0,0.15); }
 
 .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto 60px auto; padding: 0 20px; }
 .feature-card { background: var(--card-bg); padding: 30px 25px; text-align: center; border-radius: var(--radius-card); border: 1px solid var(--border-color); transition: var(--transition); }
