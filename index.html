@@ -22,7 +22,13 @@
   <!-- ================= LANDING PAGE ================= -->
   <div id="landingPageContainer">
       <header class="site-bar">
-          <div class="site-bar-brand">Broker-Assistant</div>
+          <div class="site-bar-brand">
+              <!-- ✨ اللوجو الجديد ✨ -->
+              <div class="j-logo">
+                  <span class="j-letter">J</span>
+                  <span class="j-text">Broker-Assistant</span>
+              </div>
+          </div>
           <nav class="site-bar-links" id="siteBarLinks">
               <a href="#features">المميزات</a>
               <a href="#pricing">الأسعار</a>
@@ -86,7 +92,13 @@
               </div>
 
               <footer class="landing-footer">
-                  <div class="footer-brand">Broker-Assistant</div>
+                  <div class="footer-brand" style="display:flex; justify-content:center; margin-bottom: 10px;">
+                      <!-- ✨ اللوجو الجديد ✨ -->
+                      <div class="j-logo">
+                          <span class="j-letter">J</span>
+                          <span class="j-text">Broker-Assistant</span>
+                      </div>
+                  </div>
                   <p>النظام الذكي لإدارة المشروعات العقارية وحسابات الأقساط — بإدارة جان هاني.</p>
                   <a class="footer-contact" href="https://wa.me/201060205362?text=أهلاً جان، عندي استفسار عن نظام Broker-Assistant" target="_blank" rel="noopener">💬 تواصل معنا على واتساب</a>
                   <div class="footer-fine">© <span id="footerYear"></span> Broker-Assistant. جميع الحقوق محفوظة.</div>
@@ -98,7 +110,14 @@
   <!-- ================= SYSTEM APP ================= -->
   <div class="app" id="systemApp" style="display: none;">
     <aside class="sidebar">
-      <div class="brand">Broker-Assistant<br><small>إدارة: جان هاني</small></div>
+      <div class="brand">
+          <!-- ✨ اللوجو الجديد في السيستم ✨ -->
+          <div class="j-logo">
+              <span class="j-letter">J</span>
+              <span class="j-text">Broker-Assistant</span>
+          </div>
+          <small>إدارة: جان هاني</small>
+      </div>
 
       <div class="auth-badge">
         <span id="userEmailLabel">يرجى تسجيل الدخول</span>
@@ -349,8 +368,7 @@
           <div class="form-field"><label for="fldOwner">المالك</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
           
-          <!-- ✨ دمج أسعار المتر السكني (من وإلى والمتوسط + أسعار التشطيب) ✨ -->
-          <div class="form-field full res-price-field" style="background:var(--item-bg); padding:15px; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:15px;">
+          <div class="form-field res-price-field full" style="background:var(--item-bg); padding:15px; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:15px;">
              <div class="section-label" style="margin-top:0;">أسعار المتر السكني</div>
              <p style="font-size:11px; color:var(--text-muted); margin-bottom:15px;">اكتب الحد الأدنى والأقصى ليقوم النظام بحساب المتوسط. لو المشروع يضم تشطيبات بأسعار مختلفة، حدد سعر متر كل تشطيب بالأسفل.</p>
              
