@@ -44,11 +44,50 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .w-100 { width: 100%; }
 
 /* =========================================
+   ✨ CUSTOM J-LOGO (JEAN HANY) ✨
+========================================= */
+.j-logo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 140px; /* Fixed width to ensure text fits over the J */
+    height: 40px;
+    user-select: none;
+}
+.j-logo .j-letter {
+    font-family: 'Times New Roman', serif;
+    font-size: 50px;
+    color: var(--primary);
+    line-height: 1;
+    position: absolute;
+    z-index: 1;
+    text-shadow: var(--glow);
+    top: -5px; /* Alignment tweak to center behind text */
+}
+.j-logo .j-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-main);
+    background: var(--card-bg); /* Default background, cuts the J */
+    padding: 2px 6px;
+    z-index: 2;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    position: relative;
+    border-radius: 2px;
+}
+/* Contextual backgrounds to match the container and create the perfect 'cut' */
+.site-bar .j-logo .j-text, .landing-footer .j-logo .j-text { background: var(--card-bg); }
+.sidebar .j-logo .j-text { background: var(--sidebar-bg); }
+
+/* =========================================
    1. LANDING PAGE
 ========================================= */
 #landingPageContainer { display: block; min-height: 100vh; overflow-y: auto; }
 .site-bar { position: sticky; top: 0; z-index: 500; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: var(--topbar-height); padding: 10px 30px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
-.site-bar-brand { font-weight: 800; font-size: 18px; color: var(--primary); white-space: nowrap; }
+.site-bar-brand { display: flex; align-items: center; }
 .site-bar-links { display: flex; align-items: center; gap: 22px; }
 .site-bar-links a { color: var(--text-muted); text-decoration: none; font-weight: 700; font-size: 14px; transition: var(--transition); scroll-margin-top: calc(var(--topbar-height) + 15px); }
 .site-bar-links a:hover { color: var(--primary); }
@@ -100,7 +139,6 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .featured-plan { border: 2px solid var(--primary); box-shadow: var(--glow);}
 
 .landing-footer { border-top: 1px solid var(--border-color); padding: 40px 20px; text-align: center; background: var(--card-bg);}
-.landing-footer .footer-brand { font-weight: 800; color: var(--primary); font-size: 16px; margin-bottom: 8px; }
 .landing-footer p { color: var(--text-muted); font-size: 12.5px; margin: 0 0 18px; }
 .landing-footer a.footer-contact { display: inline-flex; align-items: center; gap: 6px; color: var(--text-main); text-decoration: none; font-weight: 700; font-size: 13px; background: var(--item-bg); border: 1px solid var(--border-color); padding: 10px 20px; border-radius: var(--radius-pill); transition: var(--transition); }
 .landing-footer a.footer-contact:hover { border-color: var(--primary); color: var(--primary); }
@@ -111,7 +149,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 ========================================= */
 .app { display: flex; height: 100vh; overflow: hidden; padding: 12px; gap: 12px;}
 .sidebar { width: 250px; background-color: var(--sidebar-bg); display: flex; flex-direction: column; padding: 20px 15px; border-radius: var(--radius-card); box-shadow: var(--shadow-sm); z-index: 10; overflow-y: auto; border: 1px solid var(--border-color); transition: var(--transition);}
-.brand { font-size: 20px; font-weight: 800; color: var(--primary); text-align: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--border-color); }
+.brand { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--border-color); gap: 6px;}
 .brand small { display: block; font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
 .auth-badge { background: var(--item-bg); padding: 10px 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; border-radius: var(--radius-pill); border: 1px solid var(--border-color); }
 .side-section-title { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; font-weight: 800; padding-right: 5px; }
@@ -276,8 +314,6 @@ body.light-mode .dossier:hover .meta-chip { box-shadow: 0 5px 15px rgba(220, 38,
 /* =========================================
    3. MODALS & OVERLAYS 
 ========================================= */
-
-/* تم إزالة inset:0 وإضافة الكود الكلاسيكي لكل الشاشات لمنع القص والانهيار */
 .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
 body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 .overlay.open { display: flex; opacity: 1; }
@@ -291,7 +327,6 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 .modal-body { padding: 25px; overflow-y: auto; flex: 1; background: var(--bg-main); }
 .modal-footer { padding: 15px 25px; border-top: 1px solid var(--border-color); background: var(--card-bg); display: flex; justify-content: flex-end; gap: 10px; }
 
-/* ستايل المودال المظبوط لـ Login */
 .paywall-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px);}
 body.light-mode .paywall-overlay { background: rgba(255,255,255,0.85); }
 .paywall-card { background: var(--card-bg); padding: 40px 30px; border-radius: 16px; border: 1px solid var(--border-color); width: 90%; max-width: 400px; text-align: center; position: relative; box-shadow: 0 15px 30px rgba(0,0,0,0.5);}
@@ -364,8 +399,6 @@ body.light-mode .paywall-overlay { background: rgba(255,255,255,0.85); }
 
 .toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--btn-text); padding: 12px 30px; border-radius: var(--radius-pill); font-weight: 800; box-shadow: var(--glow); transition: bottom 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 9999; font-size: 13px;}
 .toast.show { bottom: 30px; }
-
-/* تم التعديل هنا لعدم القص */
 #loadingOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column; justify-content:center; align-items:center; }
 .loader { border: 3px solid rgba(220, 38, 38, 0.2); border-top: 3px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom:15px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
