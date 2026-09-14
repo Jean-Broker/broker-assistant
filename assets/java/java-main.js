@@ -114,7 +114,7 @@ function isCompoundComplete(c) {
         if (c.projectType === 'commercial' && c.commercialPrices) { 
             if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true; 
         } else { 
-            if ((c.pricePerMeterMin && c.pricePerMeterMin !== 0) || (c.priceCore && c.priceCore > 0) || (c.priceSemi && c.priceSemi > 0) || (c.priceFull && c.priceFull > 0)) hasPrice = true; 
+            if (c.pricePerMeterMin && c.pricePerMeterMin !== 0) hasPrice = true; 
         }
         if (!hasPrice) return false;
 
@@ -235,18 +235,11 @@ async function saveCompoundToCloud() {
   const projectName = document.getElementById('fldProject').value.trim();
   if(!projectName){ showToast('أدخل اسم المشروع'); return; }
   
-  let pCore = getRawNum(document.getElementById('fldPriceCore').value) || 0;
-  let pSemi = getRawNum(document.getElementById('fldPriceSemi').value) || 0;
-  let pFull = getRawNum(document.getElementById('fldPriceFull').value) || 0;
-  let validPrices = [pCore, pSemi, pFull].filter(p => p > 0);
-  let minP = validPrices.length ? Math.min(...validPrices) : 0;
-  let maxP = validPrices.length ? Math.max(...validPrices) : 0;
-  let finStat = validPrices.length > 1 ? 'mixed' : (pFull > 0 ? 'full' : (pSemi > 0 ? 'semi' : 'core_shell'));
+  let pMin = getRawNum(document.getElementById('fldPriceMeterMin').value) || 0;
 
   const data = {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: document.getElementById('fldFloors').value.trim() || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
-    salesName: document.getElementById('fldSalesName').value.trim(), salesPhone: document.getElementById('fldSalesPhone').value.trim(),
-    priceCore: pCore, priceSemi: pSemi, priceFull: pFull, pricePerMeterMin: minP, pricePerMeterMax: maxP, finishingStatus: finStat,
+    pricePerMeterMin: pMin, finishingStatus: document.getElementById('fldFinishingStatus').value,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenanceValue: document.getElementById('fldMaintenanceValue').value.trim() || '', maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent', parkingType: document.getElementById('fldParkingType').value || 'extra', parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: u.bedroomType || '', rooms: u.rooms || '', area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: getRawNum(u.price) || u.price || 0, finishing: u.finishing || 'core_shell' })),
@@ -361,10 +354,10 @@ function generateDossierHTML(c) {
     
     if (c.projectType === 'commercial' && c.commercialPrices) {
         let mins = [c.commercialPrices.adminMin, c.commercialPrices.commMin, c.commercialPrices.clinicMin, c.commercialPrices.recMin].filter(x => x > 0);
-        let absoluteMin = mins.length > 0 ? Math.min(...mins) : (c.pricePerMeterMin || 0); 
+        let absoluteMin = mins.length > 0 ? Math.min(...mins) : 0; 
         pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
     } else { 
-        pDisplay = (c.pricePerMeterMin && c.pricePerMeterMax && c.pricePerMeterMin !== c.pricePerMeterMax) ? `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}` : formatNum(c.pricePerMeterMin||0); 
+        pDisplay = c.pricePerMeterMin > 0 ? `يبدأ من ${formatNum(c.pricePerMeterMin)}` : '-'; 
     }
 
     let phaseTag = c.phaseName ? `<span class="phase-tag">${escapeHtml(c.phaseName)}</span>` : '';
@@ -533,8 +526,8 @@ function openCompoundForm(existing){
   if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => m.subLocations.some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
   if(existing) document.getElementById('fldLocation').value = existing.locationId || ''; else document.getElementById('fldLocation').value = defaultLoc;
   
-  ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant','fldSalesName','fldSalesPhone',
-   'fldPriceCore','fldPriceSemi','fldPriceFull', 
+  ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant',
+   'fldPriceMeterMin', 
    'fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax',
    'fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { document.getElementById(id).value = ''; }); 
    
@@ -543,19 +536,7 @@ function openCompoundForm(existing){
   if (existing) {
       document.getElementById('fldProjectType').value = existing.projectType || 'residential'; document.getElementById('fldCompany').value = existing.companyName || ''; document.getElementById('fldProject').value = existing.projectName || ''; document.getElementById('fldPhaseName').value = existing.phaseName || ''; document.getElementById('fldFloors').value = existing.floors || ''; document.getElementById('fldOwner').value = existing.ownerName || ''; document.getElementById('fldConsultant').value = existing.consultant || ''; 
       
-      document.getElementById('fldSalesName').value = existing.salesName || '';
-      document.getElementById('fldSalesPhone').value = existing.salesPhone || '';
-
-      document.getElementById('fldPriceCore').value = existing.priceCore ? formatNum(existing.priceCore) : '';
-      document.getElementById('fldPriceSemi').value = existing.priceSemi ? formatNum(existing.priceSemi) : '';
-      document.getElementById('fldPriceFull').value = existing.priceFull ? formatNum(existing.priceFull) : '';
-      
-      // التوافق مع المشاريع القديمة
-      if (!existing.priceCore && !existing.priceSemi && !existing.priceFull && existing.pricePerMeterMin) {
-           if (existing.finishingStatus === 'semi') document.getElementById('fldPriceSemi').value = formatNum(existing.pricePerMeterMin);
-           else if (existing.finishingStatus === 'full') document.getElementById('fldPriceFull').value = formatNum(existing.pricePerMeterMin);
-           else document.getElementById('fldPriceCore').value = formatNum(existing.pricePerMeterMin);
-      }
+      document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : '';
 
       let cp = existing.commercialPrices || {}; document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell';
       
@@ -611,15 +592,7 @@ function updateUnitData(id, field, val) {
     if (pType === 'commercial') {
         meterPrice = getAverageCommercialPrice(u.bedroomType);
     } else {
-        let pCore = getRawNum(document.getElementById('fldPriceCore').value) || 0;
-        let pSemi = getRawNum(document.getElementById('fldPriceSemi').value) || 0;
-        let pFull = getRawNum(document.getElementById('fldPriceFull').value) || 0;
-        
-        if (u.finishing === 'core_shell') meterPrice = pCore;
-        else if (u.finishing === 'semi') meterPrice = pSemi;
-        else if (u.finishing === 'full') meterPrice = pFull;
-        
-        if (!meterPrice) meterPrice = pCore || pSemi || pFull || 0;
+        meterPrice = getRawNum(document.getElementById('fldPriceMeterMin').value) || 0;
     }
     
     if (meterPrice > 0) {
@@ -761,12 +734,7 @@ function renderDetailModalContent() {
       if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> <span class="num">${formatNum(cp.recMin)} - ${formatNum(cp.recMax)}</span> <span style="font-size:10px;">(${fName[cp.recFinish||'core_shell']})</span>`);
       pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:14px;">${parts.join('')}</div>` : ((c.pricePerMeterMin && c.pricePerMeterMax) ? `<span class="num">${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}</span> ج` : `<span class="num">${formatNum(c.pricePerMeterMin||0)}</span> ج`);
   } else { 
-      let pParts = [];
-      if(c.priceCore > 0) pParts.push(`<b>طوب أحمر:</b> <span class="num">${formatNum(c.priceCore)}</span> ج`);
-      if(c.priceSemi > 0) pParts.push(`<b>نصف تشطيب:</b> <span class="num">${formatNum(c.priceSemi)}</span> ج`);
-      if(c.priceFull > 0) pParts.push(`<b>تشطيب كامل:</b> <span class="num">${formatNum(c.priceFull)}</span> ج`);
-      
-      pText = pParts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:14px;">${pParts.join('')}</div>` : `<span class="num">${formatNum(c.pricePerMeterMin||0)}</span> ج`;
+      pText = c.pricePerMeterMin > 0 ? `يبدأ من <span class="num">${formatNum(c.pricePerMeterMin)}</span> ج` : '-';
   }
   
   const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:12px; font-weight:bold; background:var(--item-bg); padding:6px 12px; border-radius:4px; border:1px solid var(--primary); display:inline-block; margin-top:5px;">📍 الخريطة</a>` : '';
@@ -774,22 +742,6 @@ function renderDetailModalContent() {
   let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
 
   let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>أسعار المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
-
-  if (c.salesName || c.salesPhone) {
-      let cleanPhone = c.salesPhone ? c.salesPhone.replace(/\D/g, '') : '';
-      if(cleanPhone.startsWith('0')) cleanPhone = '2' + cleanPhone;
-      let waBtn = cleanPhone ? `<a href="https://wa.me/${cleanPhone}" target="_blank" style="background:#25D366; color:#fff; padding:6px 14px; border-radius:50px; text-decoration:none; font-size:12px; font-weight:800; display:flex; align-items:center; gap:6px; box-shadow:0 2px 5px rgba(37,211,102,0.3); transition:all 0.3s;">💬 تواصل واتساب</a>` : '';
-      
-      html += `<div class="detail-item full" style="background:rgba(37, 211, 102, 0.05); border:1px dashed #25D366; margin-bottom: 30px; padding: 18px; border-radius: 12px;">
-                  <b style="color:var(--text-muted); font-size:11px;">مسؤول المبيعات المعتمد (Sales Rep)</b>
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-                      <span style="font-size:15px; color:var(--text-main); font-weight:bold;">${escapeHtml(c.salesName || 'بدون اسم')} 
-                          <span style="color:var(--text-muted); font-size:13px; margin-right:8px; font-family:'IBM Plex Mono', monospace;">${escapeHtml(c.salesPhone || '')}</span>
-                      </span> 
-                      ${waBtn}
-                  </div>
-               </div>`;
-  }
 
   const grouped = {}; (c.unitTypes||[]).forEach(u => { let t = u.bedroomType; (grouped[t] = grouped[t] || []).push(u); }); const cats = Object.keys(grouped);
   if(cats.length){
@@ -886,7 +838,7 @@ window.runProjectMiniCalc = function(cId) {
     let resultDiv = document.getElementById('miniCalcResult');
     if(area === 0 && garden === 0 && roof === 0) { resultDiv.innerHTML = ''; return; }
 
-    let avgPrice = (getRawNum(c.pricePerMeterMin) + getRawNum(c.pricePerMeterMax)) / 2 || getRawNum(c.pricePerMeterMin) || getRawNum(c.pricePerMeterMax) || 0;
+    let avgPrice = c.pricePerMeterMin || 0;
     if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:10px; border:1px dashed var(--danger); text-align:center; background:rgba(220,38,38,0.05); border-radius:8px;">لا يوجد متوسط سعر متر مسجل لهذا المشروع.</div>'; return; }
 
     let effArea = area + (garden/3) + (roof/3);
@@ -1004,7 +956,7 @@ function renderCalcBulletsRows(){
             <input type="number" placeholder="%" class="num" style="width:80px; flex-shrink:0; padding:8px; border-radius:4px; background:var(--item-bg); border:1px solid var(--border-color); color:var(--text-main);" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
             <button class="btn btn-danger-style" style="flex-shrink:0; padding:8px;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
         </div>
-        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${b.selectedYears.includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     `).join(''); 
 }
 
@@ -1074,7 +1026,7 @@ async function handleExcelUpload(event) {
                 const worksheet = workbook.Sheets[sheetName]; const rows = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: "" }); if (rows.length === 0) return; const subLocId = uid(); excelMainLoc.subLocations.push({ id: subLocId, name: sheetName });
                 rows.forEach(row => {
                     let projName = row['Project'] || row['project'] || ''; let devName = row['Developer'] || row['developer'] || ''; if (!projName && !devName) return; let compKey = `${projName}_${devName}`;
-                    if (!compoundsToUpload[compKey]) { compoundsToUpload[compKey] = { id: uid(), locationId: subLocId, projectType: 'residential', companyName: String(devName).trim(), projectName: String(projName).trim(), ownerName: '', consultant: String(row['Engineering Consult'] || row['Engineering Consultant'] || '').trim(), salesName: '', salesPhone: '', priceCore: parseFloat(row['Price Per Meter']) || 0, priceSemi: 0, priceFull: 0, pricePerMeterMin: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMax: parseFloat(row['Price Per Meter']) || 0, maintenancePercent: parseFloat(row['Maintenance Fees %']) || 0, projectSize: parseFloat(row['Project area']) || 0, deliveryDate: String(row['Delivery Date'] || '').trim(), finishingStatus: String(row['Finishing type'] || '').toLowerCase().includes('core') ? 'core_shell' : (String(row['Finishing type'] || '').toLowerCase().includes('full') ? 'full' : 'semi'), compoundLocationDetail: String(row['Location On Map'] || '').trim(), locationLink: String(row['Location On Map'] || '').includes('http') ? String(row['Location On Map'] || '').trim() : '', cashDiscount: 0, unitTypes: [], paymentPlans: [], ministerialDecrees: row['قرار وزاري'] ? [{id: uid(), decreeNumber: '', description: String(row['قرار وزاري']), date: ''}] : [] }; }
+                    if (!compoundsToUpload[compKey]) { compoundsToUpload[compKey] = { id: uid(), locationId: subLocId, projectType: 'residential', companyName: String(devName).trim(), projectName: String(projName).trim(), ownerName: '', consultant: String(row['Engineering Consult'] || row['Engineering Consultant'] || '').trim(), pricePerMeterMin: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMax: parseFloat(row['Price Per Meter']) || 0, maintenancePercent: parseFloat(row['Maintenance Fees %']) || 0, projectSize: parseFloat(row['Project area']) || 0, deliveryDate: String(row['Delivery Date'] || '').trim(), finishingStatus: String(row['Finishing type'] || '').toLowerCase().includes('core') ? 'core_shell' : (String(row['Finishing type'] || '').toLowerCase().includes('full') ? 'full' : 'semi'), compoundLocationDetail: String(row['Location On Map'] || '').trim(), locationLink: String(row['Location On Map'] || '').includes('http') ? String(row['Location On Map'] || '').trim() : '', cashDiscount: 0, unitTypes: [], paymentPlans: [], ministerialDecrees: row['قرار وزاري'] ? [{id: uid(), decreeNumber: '', description: String(row['قرار وزاري']), date: ''}] : [] }; }
                     
                     let area = parseFloat(row['BUA From']) || parseFloat(row['BUA To']) || parseFloat(row['Area']) || 0; 
                     let gardenArea = parseFloat(row['Garden Area']) || parseFloat(row['Garden']) || parseFloat(row['جاردن']) || 0;
