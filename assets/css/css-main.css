@@ -44,7 +44,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .w-100 { width: 100%; }
 
 /* =========================================
-   ✨ CUSTOM J-LOGO - PURE & CLEAN EDITION ✨
+   ✨ CUSTOM J-LOGO - CLASSIC J + MODERN TEXT ✨
 ========================================= */
 
 /* اللوجو الصغير (القوائم والسايدبار) */
@@ -58,32 +58,30 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     user-select: none;
 }
 .j-top, .j-bot {
-    font-family: 'Cairo', sans-serif; /* خط بدون شرطة علوية */
-    font-size: 65px;
-    font-weight: 800;
+    font-family: 'Times New Roman', Times, serif; /* الحرف الكلاسيك الفخم */
+    font-size: 60px;
     color: var(--primary);
     position: absolute;
     line-height: 1;
     z-index: 1;
-    transform: scaleY(1.2) translateY(-4px); 
+    transform: scaleY(1.3) translateY(-4px); 
     text-shadow: none; 
 }
-.j-top { clip-path: inset(0 0 54% 0); } 
-.j-bot { clip-path: inset(54% 0 0 0); } 
+.j-top { clip-path: inset(0 0 54.5% 0); } 
+.j-bot { clip-path: inset(53.5% 0 0 0); } 
 
 .j-logo .j-text {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-family: 'Cairo', sans-serif; /* فونت الكلمة المودرن النظيف */
+    font-size: 13px; /* كبرناه سنة عشان يبان أحلى */
     font-weight: 800;
     color: var(--text-main);
     background: transparent; 
     padding: 0;
     z-index: 2;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    letter-spacing: 0.5px;
     position: relative;
-    border: none; /* إزالة الخطوط */
-    text-shadow: 0 1px 4px rgba(0,0,0,0.8); 
+    border: none;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9); 
 }
 
 /* =========================================
@@ -112,7 +110,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 
 @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ✨ THE GIANT HERO LOGO - CLEAN SANS-SERIF ✨ */
+/* ✨ THE GIANT HERO LOGO ✨ */
 .hero-main-logo {
     position: relative;
     display: flex;
@@ -136,32 +134,30 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     z-index: 1;
 }
 .hero-j-top, .hero-j-bot {
-    font-family: 'Cairo', sans-serif; /* خط بدون شرطة علوية */
-    font-size: 260px; /* حرف جي عملاق وسميك */
-    font-weight: 800;
+    font-family: 'Times New Roman', Times, serif; /* الحرف الكلاسيك العملاق */
+    font-size: 240px; 
     color: var(--primary);
     position: absolute;
     line-height: 1;
-    transform: scaleY(1.1) translateY(-10px); 
+    transform: scaleY(1.3) translateY(-5px); 
     text-shadow: none; 
 }
-.hero-j-top { clip-path: inset(0 0 54% 0); } 
-.hero-j-bot { clip-path: inset(53% 0 0 0); } 
+.hero-j-top { clip-path: inset(0 0 54.5% 0); } 
+.hero-j-bot { clip-path: inset(53.5% 0 0 0); } 
 
 .hero-j-text {
     position: relative;
     z-index: 2;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: clamp(22px, 3.5vw, 32px); /* حجم مناسب للكلمة */
-    font-weight: 700;
+    font-family: 'Cairo', sans-serif; /* فونت الكلمة المودرن النظيف */
+    font-size: clamp(28px, 4vw, 46px); /* حجم مناسب للكلمة */
+    font-weight: 800;
     color: var(--text-main);
     margin: 0;
     padding: 0;
     background: transparent; 
-    letter-spacing: 2px; /* مسافات معقولة */
-    text-transform: none; /* شلت الكابيتال الإجباري */
-    border: none; /* ✨ إزالة الخطوط نهائياً ✨ */
-    text-shadow: 0 2px 10px rgba(0,0,0,0.8); /* تحديد خفيف للكلمة */
+    letter-spacing: 0px; 
+    border: none; 
+    text-shadow: 0 4px 15px rgba(0,0,0,0.9); 
 }
 
 
