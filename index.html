@@ -238,7 +238,6 @@
 
   <!-- ================= النوافذ المنبثقة ================= -->
 
-  <!-- شاشة تسجيل الدخول -->
   <div class="paywall-overlay" id="paywallModal">
     <div class="paywall-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
       <button class="login-close-btn" onclick="closeLoginModal()" aria-label="إغلاق">✕</button>
@@ -350,6 +349,10 @@
           <div class="form-field"><label for="fldOwner">المالك</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
           
+          <!-- ✨ الخانات الجديدة للسيلز ✨ -->
+          <div class="form-field"><label for="fldSalesName">مسؤول المبيعات (Sales Rep)</label><input id="fldSalesName" placeholder="مثال: محمد سلطان" autocomplete="off"></div>
+          <div class="form-field"><label for="fldSalesPhone">رقم تليفون المبيعات (واتساب)</label><input id="fldSalesPhone" placeholder="مثال: 01012345678" autocomplete="off" dir="ltr"></div>
+          
           <div class="form-field res-price-field"><label for="fldPriceMeterMin">سعر المتر - من (جنيه)</label><input id="fldPriceMeterMin" type="text" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off"></div>
           <div class="form-field res-price-field"><label for="fldPriceMeterMax">سعر المتر - إلى (جنيه)</label><input id="fldPriceMeterMax" type="text" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off"></div>
           <div class="form-field full res-price-field" id="priceMeterAvgWrap" style="display:none;"><label for="fldPriceMeterAvg">متوسط سعر المتر</label><input id="fldPriceMeterAvg" type="text" disabled style="background:var(--item-bg); font-weight:bold; color:var(--primary);"></div>
@@ -360,13 +363,14 @@
             </select>
           </div>
           
+          <!-- ✨ تصليح جراج اختياري ✨ -->
           <div class="form-field res-field">
               <label for="fldParkingType">حالة الجراج (Parking)</label>
               <div style="display:flex; gap:8px;">
-                  <select id="fldParkingType" style="flex:1; padding: 12px 5px;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='extra' ? 'block' : 'none';">
+                  <select id="fldParkingType" style="flex:1; padding: 12px 5px;" onchange="document.getElementById('fldParkingFee').style.display = this.value==='included' ? 'none' : 'block';">
                       <option value="extra">رسوم إضافية</option>
-                      <option value="included">شامل السعر</option>
                       <option value="optional">اختياري</option>
+                      <option value="included">شامل السعر</option>
                   </select>
                   <input id="fldParkingFee" type="text" placeholder="السعر" oninput="formatInput(this);" autocomplete="off" style="flex:1;">
               </div>
