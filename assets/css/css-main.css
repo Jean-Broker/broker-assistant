@@ -1,7 +1,7 @@
 /* ========================================================
    RED SIGNATURE THEME (DARK & LIGHT) - CLEAN VERSION
 ======================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@700;900&display=swap');
 
 :root {
     --primary: #DC2626; --primary-hover: #B91C1C; --btn-text: #FFFFFF;
@@ -44,7 +44,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .w-100 { width: 100%; }
 
 /* =========================================
-   ✨ CUSTOM J-LOGO - THE PERFECT MIX ✨
+   ✨ CUSTOM J-LOGO - EXACTLY LIKE NOTEBOOK ✨
 ========================================= */
 
 /* اللوجو الصغير (القوائم والسايدبار) */
@@ -58,35 +58,33 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     user-select: none;
 }
 .j-top, .j-bot {
-    font-family: 'Cairo', sans-serif; /* الـ J المودرن اللي من غير شرطة */
+    font-family: 'Playfair Display', 'Times New Roman', serif; /* ✨ الفونت المحفور الكلاسيك ✨ */
     font-size: 65px;
-    font-weight: 800;
+    font-weight: 900;
     color: var(--primary);
     position: absolute;
     line-height: 1;
     z-index: 1;
-    transform: scaleY(1.2) translateY(-4px); 
+    transform: scaleY(1.3) translateY(-4px); 
     text-shadow: none; 
 }
 .j-top { clip-path: inset(0 0 54% 0); } 
 .j-bot { clip-path: inset(54% 0 0 0); } 
 
 .j-logo .j-text {
-    font-family: 'Cairo', sans-serif; /* الفونت الجديد */
+    font-family: 'Cairo', sans-serif; /* الكلمة بخط نظيف ومقروء */
     font-size: 11px;
     font-weight: 800;
     color: var(--text-main);
     background: transparent; 
-    padding: 2px 4px;
+    padding: 0;
     z-index: 2;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     text-transform: uppercase;
     position: relative;
+    border: none; /* بدون أي خطوط حوالين الكلمة */
     text-shadow: 0 1px 4px rgba(0,0,0,0.8); 
-    border-top: 1px solid rgba(255,255,255,0.15); /* الخطوط اللي فاتت */
-    border-bottom: 1px solid rgba(255,255,255,0.15);
 }
-body.light-mode .j-logo .j-text { border-color: rgba(0,0,0,0.15); }
 
 /* =========================================
    1. LANDING PAGE
@@ -114,7 +112,7 @@ body.light-mode .j-logo .j-text { border-color: rgba(0,0,0,0.15); }
 
 @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ✨ THE GIANT HERO LOGO ✨ */
+/* ✨ THE GIANT HERO LOGO - NOTEBOOK STYLE ✨ */
 .hero-main-logo {
     position: relative;
     display: flex;
@@ -138,35 +136,34 @@ body.light-mode .j-logo .j-text { border-color: rgba(0,0,0,0.15); }
     z-index: 1;
 }
 .hero-j-top, .hero-j-bot {
-    font-family: 'Cairo', sans-serif; /* الـ J المودرن العملاق */
+    font-family: 'Playfair Display', 'Times New Roman', serif; /* ✨ شرطة من فوق وكيرف شيك من تحت ✨ */
     font-size: 260px; 
-    font-weight: 800;
+    font-weight: 900;
     color: var(--primary);
     position: absolute;
     line-height: 1;
-    transform: scaleY(1.1) translateY(-10px); 
+    transform: scaleY(1.25) translateY(-5px); 
     text-shadow: none; 
 }
-.hero-j-top { clip-path: inset(0 0 54% 0); } 
-.hero-j-bot { clip-path: inset(53% 0 0 0); } 
+.hero-j-top { clip-path: inset(0 0 53.5% 0); } 
+.hero-j-bot { clip-path: inset(53.5% 0 0 0); } 
 
 .hero-j-text {
     position: relative;
     z-index: 2;
-    font-family: 'Cairo', sans-serif; /* الفونت الجديد للكلمة */
-    font-size: clamp(20px, 3.5vw, 30px); 
+    font-family: 'Cairo', sans-serif; 
+    font-size: clamp(22px, 3.5vw, 32px); 
     font-weight: 800;
     color: var(--text-main);
     margin: 0;
-    padding: 10px 15px; 
+    padding: 0; 
     background: transparent; 
-    letter-spacing: 8px; /* المسافات الواسعة رجعت */
+    letter-spacing: 5px; /* حروف واسعة فخمة زي النوت بوك */
     text-transform: uppercase; 
-    text-shadow: 0 4px 15px rgba(0,0,0,0.8);
-    border-top: 1px solid rgba(255,255,255,0.15); /* الخطوط رجعت */
-    border-bottom: 1px solid rgba(255,255,255,0.15); 
+    border: none; /* بدون خطوط */
+    text-shadow: 0 4px 15px rgba(0,0,0,0.9); 
 }
-body.light-mode .hero-j-text { border-color: rgba(0,0,0,0.15); }
+
 
 .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto 60px auto; padding: 0 20px; }
 .feature-card { background: var(--card-bg); padding: 30px 25px; text-align: center; border-radius: var(--radius-card); border: 1px solid var(--border-color); transition: var(--transition); }
