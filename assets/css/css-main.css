@@ -44,7 +44,7 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 .w-100 { width: 100%; }
 
 /* =========================================
-   ✨ CUSTOM J-LOGO - 100% NOTEBOOK MATCH ✨
+   ✨ CUSTOM J-LOGO - EXACTLY LIKE REFERENCE ✨
 ========================================= */
 
 /* اللوجو الصغير (القوائم والسايدبار) */
@@ -58,30 +58,18 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     user-select: none;
 }
 .j-top, .j-bot {
-    font-family: 'Times New Roman', Times, serif; 
-    font-size: 65px;
-    font-weight: 400; 
+    font-family: 'Georgia', 'Times New Roman', serif; /* ✨ الحرف الكلاسيك النظيف ✨ */
+    font-size: 55px;
+    font-weight: 400; /* الوزن الطبيعي الأنيق */
     color: var(--primary);
     position: absolute;
     line-height: 1;
     z-index: 1;
-    transform: scaleY(1.2) translateY(-4px); 
+    transform: none; /* شيلنا التمدد اللي كان مبوظه */
     text-shadow: none; 
 }
-/* ✨ رسم الشرطة العريضة اللي فوق الحرف بالـ CSS ✨ */
-.j-top::before {
-    content: '';
-    position: absolute;
-    top: 10px; /* ضبط المكان من فوق */
-    left: 49%;
-    transform: translateX(-50%);
-    width: 26px; /* عرض الشرطة */
-    height: 4px; /* سمك الشرطة */
-    background: var(--primary);
-    border-radius: 1px;
-}
-.j-top { clip-path: inset(0 0 54% 0); } 
-.j-bot { clip-path: inset(54% 0 0 0); } 
+.j-top { clip-path: inset(0 0 53% 0); } 
+.j-bot { clip-path: inset(53% 0 0 0); } 
 
 .j-logo .j-text {
     font-family: 'Cairo', sans-serif;
@@ -124,14 +112,14 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
 
 @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ✨ THE GIANT HERO LOGO - NOTEBOOK MATCH ✨ */
+/* ✨ THE GIANT HERO LOGO ✨ */
 .hero-main-logo {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 25px;
-    min-height: 180px; 
+    min-height: 200px; 
     width: 100%;
     user-select: none;
 }
@@ -148,36 +136,26 @@ body { background-color: var(--bg-main); color: var(--text-main); font-size: 13p
     z-index: 1;
 }
 .hero-j-top, .hero-j-bot {
-    font-family: 'Times New Roman', Times, serif; 
+    font-family: 'Georgia', 'Times New Roman', serif; /* ✨ الحرف الكلاسيك النظيف ✨ */
     font-size: 260px; 
-    font-weight: 400; 
+    font-weight: 400; /* الحجم الطبيعي عشان ميطلعش عريض وشكله وحش */
     color: var(--primary);
     position: absolute;
     line-height: 1;
-    transform: scaleY(1.2) translateY(-5px); 
+    transform: none; /* إزالة أي تمدد أو لخبطة في أبعاد الحرف */
     text-shadow: none; 
 }
-/* ✨ رسم الشرطة العريضة اللي فوق الحرف العملاق ✨ */
-.hero-j-top::before {
-    content: '';
-    position: absolute;
-    top: 40px; 
-    left: 49%;
-    transform: translateX(-50%);
-    width: 108px; /* عرض الشرطة */
-    height: 14px; /* سمك الشرطة */
-    background: var(--primary);
-    border-radius: 2px;
-}
-.hero-j-top { clip-path: inset(0 0 54% 0); } 
-.hero-j-bot { clip-path: inset(53.5% 0 0 0); } 
+
+/* قطعية احترافية في النص بالظبط */
+.hero-j-top { clip-path: inset(0 0 52% 0); } 
+.hero-j-bot { clip-path: inset(52% 0 0 0); } 
 
 .hero-j-text {
     position: relative;
     z-index: 2;
     font-family: 'Cairo', sans-serif; 
     font-size: clamp(20px, 3.5vw, 28px); 
-    font-weight: 600; 
+    font-weight: 700; 
     color: var(--text-main);
     margin: 0;
     padding: 0; 
