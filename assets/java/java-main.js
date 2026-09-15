@@ -114,7 +114,11 @@ function isCompoundComplete(c) {
         if (c.projectType === 'commercial' && c.commercialPrices) { 
             if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true; 
         } else { 
-            if (c.pricePerMeter > 0 || c.pricePerMeterMin > 0 || c.priceCore > 0 || c.priceSemi > 0 || c.priceFull > 0) hasPrice = true;
+            if (c.isAdvancedPricing) {
+                if ((c.pricePerMeterMin && c.pricePerMeterMin > 0) || (c.priceCoreMin && c.priceCoreMin > 0) || (c.priceSemiMin && c.priceSemiMin > 0) || (c.priceFullMin && c.priceFullMin > 0)) hasPrice = true;
+            } else {
+                if (c.pricePerMeter && c.pricePerMeter > 0) hasPrice = true;
+            }
         }
         if (!hasPrice) return false;
 
@@ -230,7 +234,27 @@ function processMagicPaste() {
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
 }
 
-// ✨ تحديث زرار الأسعار المتقدمة ✨
+// ✨ التحديث الجديد للمتوسطات ونطاقات التشطيب ✨
+window.updateFinishingAvgs = function() {
+    let fields = [
+        {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
+        {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
+        {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
+    ];
+
+    fields.forEach(f => {
+        let min = getRawNum(document.getElementById(f.min).value) || 0;
+        let max = getRawNum(document.getElementById(f.max).value) || 0;
+        let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
+        let avgInput = document.getElementById(f.avg);
+        if (avgInput) {
+            avgInput.value = avg > 0 ? formatNum(Math.round(avg)) : '';
+        }
+    });
+
+    updateAllUnitsPrice();
+};
+
 window.toggleAdvPricing = function(forceState) {
     const wrap = document.getElementById('advPricingWrap');
     const btn = document.getElementById('btnToggleAdvPricing');
@@ -245,7 +269,7 @@ window.toggleAdvPricing = function(forceState) {
         btn.style.borderStyle = 'solid';
     } else {
         wrap.style.display = 'none';
-        btn.innerHTML = '+ إضافة أسعار مخصصة لكل تشطيب (اختياري)';
+        btn.innerHTML = '+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)';
         btn.style.color = 'var(--text-muted)';
         btn.style.borderColor = 'var(--border-color)';
         btn.style.borderStyle = 'dashed';
@@ -279,17 +303,24 @@ async function saveCompoundToCloud() {
   
   let isAdvOpen = document.getElementById('advPricingWrap').style.display !== 'none';
   
-  let pCore = isAdvOpen ? (getRawNum(document.getElementById('fldPriceCore').value) || 0) : 0;
-  let pSemi = isAdvOpen ? (getRawNum(document.getElementById('fldPriceSemi').value) || 0) : 0;
-  let pFull = isAdvOpen ? (getRawNum(document.getElementById('fldPriceFull').value) || 0) : 0;
+  let pCoreMin = isAdvOpen ? (getRawNum(document.getElementById('fldPriceCoreMin').value) || 0) : 0;
+  let pCoreMax = isAdvOpen ? (getRawNum(document.getElementById('fldPriceCoreMax').value) || 0) : 0;
+  let pSemiMin = isAdvOpen ? (getRawNum(document.getElementById('fldPriceSemiMin').value) || 0) : 0;
+  let pSemiMax = isAdvOpen ? (getRawNum(document.getElementById('fldPriceSemiMax').value) || 0) : 0;
+  let pFullMin = isAdvOpen ? (getRawNum(document.getElementById('fldPriceFullMin').value) || 0) : 0;
+  let pFullMax = isAdvOpen ? (getRawNum(document.getElementById('fldPriceFullMax').value) || 0) : 0;
   
-  let validPrices = [pCore, pSemi, pFull].filter(p => p > 0);
+  let validPrices = [pCoreMin, pSemiMin, pFullMin].filter(p => p > 0);
   let finStat = document.getElementById('fldFinishingStatus').value;
   if(isAdvOpen && validPrices.length > 1) finStat = 'mixed';
 
   const data = {
     locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: document.getElementById('fldFloors').value.trim() || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
-    pricePerMeter: pSingle, pricePerMeterMin: pMin, pricePerMeterMax: pMax, priceCore: pCore, priceSemi: pSemi, priceFull: pFull, finishingStatus: finStat, isAdvancedPricing: isAdvOpen,
+    pricePerMeter: pSingle, pricePerMeterMin: pMin, pricePerMeterMax: pMax, 
+    priceCoreMin: pCoreMin, priceCoreMax: pCoreMax, 
+    priceSemiMin: pSemiMin, priceSemiMax: pSemiMax, 
+    priceFullMin: pFullMin, priceFullMax: pFullMax, 
+    finishingStatus: finStat, isAdvancedPricing: isAdvOpen,
     commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
     maintenanceValue: document.getElementById('fldMaintenanceValue').value.trim() || '', maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent', parkingType: document.getElementById('fldParkingType').value || 'extra', parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
     unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: u.bedroomType || '', rooms: u.rooms || '', area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: getRawNum(u.price) || u.price || 0, finishing: u.finishing || 'core_shell' })),
@@ -606,7 +637,9 @@ function openCompoundForm(existing){
   
   ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant',
    'fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg',
-   'fldPriceCore', 'fldPriceSemi', 'fldPriceFull',
+   'fldPriceCoreMin', 'fldPriceCoreMax', 'fldPriceCoreAvg',
+   'fldPriceSemiMin', 'fldPriceSemiMax', 'fldPriceSemiAvg',
+   'fldPriceFullMin', 'fldPriceFullMax', 'fldPriceFullAvg',
    'fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax',
    'fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).value = ''; }); 
    
@@ -619,13 +652,21 @@ function openCompoundForm(existing){
       document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : '';
       document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '';
       
-      let hasAdv = existing.priceCore > 0 || existing.priceSemi > 0 || existing.priceFull > 0;
+      let hasAdv = existing.isAdvancedPricing || existing.priceCoreMin > 0 || existing.priceCoreMax > 0 || existing.priceSemiMin > 0 || existing.priceSemiMax > 0 || existing.priceFullMin > 0 || existing.priceFullMax > 0 || existing.priceCore > 0;
       
       if(hasAdv) {
-          document.getElementById('fldPriceCore').value = existing.priceCore ? formatNum(existing.priceCore) : '';
-          document.getElementById('fldPriceSemi').value = existing.priceSemi ? formatNum(existing.priceSemi) : '';
-          document.getElementById('fldPriceFull').value = existing.priceFull ? formatNum(existing.priceFull) : '';
+          // Compatibility with legacy single core/semi/full values if they exist
+          document.getElementById('fldPriceCoreMin').value = existing.priceCoreMin ? formatNum(existing.priceCoreMin) : (existing.priceCore ? formatNum(existing.priceCore) : '');
+          document.getElementById('fldPriceCoreMax').value = existing.priceCoreMax ? formatNum(existing.priceCoreMax) : '';
+          
+          document.getElementById('fldPriceSemiMin').value = existing.priceSemiMin ? formatNum(existing.priceSemiMin) : (existing.priceSemi ? formatNum(existing.priceSemi) : '');
+          document.getElementById('fldPriceSemiMax').value = existing.priceSemiMax ? formatNum(existing.priceSemiMax) : '';
+          
+          document.getElementById('fldPriceFullMin').value = existing.priceFullMin ? formatNum(existing.priceFullMin) : (existing.priceFull ? formatNum(existing.priceFull) : '');
+          document.getElementById('fldPriceFullMax').value = existing.priceFullMax ? formatNum(existing.priceFullMax) : '';
+          
           toggleAdvPricing(true);
+          updateFinishingAvgs();
       } else {
           toggleAdvPricing(false);
       }
@@ -713,17 +754,26 @@ function updateUnitData(id, field, val) {
         let pAvg = (pMin > 0 && pMax > 0) ? (pMin + pMax) / 2 : (pMin || pMax || 0);
 
         let isAdvOpen = document.getElementById('advPricingWrap').style.display !== 'none';
-        let pCore = 0, pSemi = 0, pFull = 0;
         
+        let pCoreAvg = 0, pSemiAvg = 0, pFullAvg = 0;
         if (isAdvOpen) {
-            pCore = getRawNum(document.getElementById('fldPriceCore').value) || 0;
-            pSemi = getRawNum(document.getElementById('fldPriceSemi').value) || 0;
-            pFull = getRawNum(document.getElementById('fldPriceFull').value) || 0;
+            let pCoreMin = getRawNum(document.getElementById('fldPriceCoreMin').value) || 0;
+            let pCoreMax = getRawNum(document.getElementById('fldPriceCoreMax').value) || 0;
+            pCoreAvg = (pCoreMin > 0 && pCoreMax > 0) ? (pCoreMin + pCoreMax) / 2 : (pCoreMin || pCoreMax || 0);
+
+            let pSemiMin = getRawNum(document.getElementById('fldPriceSemiMin').value) || 0;
+            let pSemiMax = getRawNum(document.getElementById('fldPriceSemiMax').value) || 0;
+            pSemiAvg = (pSemiMin > 0 && pSemiMax > 0) ? (pSemiMin + pSemiMax) / 2 : (pSemiMin || pSemiMax || 0);
+
+            let pFullMin = getRawNum(document.getElementById('fldPriceFullMin').value) || 0;
+            let pFullMax = getRawNum(document.getElementById('fldPriceFullMax').value) || 0;
+            pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax) / 2 : (pFullMin || pFullMax || 0);
         }
 
-        if (isAdvOpen && u.finishing === 'core_shell' && pCore > 0) meterPrice = pCore;
-        else if (isAdvOpen && u.finishing === 'semi' && pSemi > 0) meterPrice = pSemi;
-        else if (isAdvOpen && u.finishing === 'full' && pFull > 0) meterPrice = pFull;
+        // ✨ الربط الذكي بيشوف إنت مختار أي تشطيب من المربع السري وياخد المتوسط بتاعه يضرب فيه ✨
+        if (isAdvOpen && u.finishing === 'core_shell' && pCoreAvg > 0) meterPrice = pCoreAvg;
+        else if (isAdvOpen && u.finishing === 'semi' && pSemiAvg > 0) meterPrice = pSemiAvg;
+        else if (isAdvOpen && u.finishing === 'full' && pFullAvg > 0) meterPrice = pFullAvg;
         else if (pAvg > 0) meterPrice = pAvg;
         else meterPrice = pSingle;
     }
@@ -868,17 +918,29 @@ function renderDetailModalContent() {
       pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:14px;">${parts.join('')}</div>` : `<span class="num">${formatNum(c.pricePerMeterMin||0)}</span> ج`;
   } else { 
       let pParts = [];
-      if(c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) {
-          let rng = (c.pricePerMeterMin && c.pricePerMeterMax && c.pricePerMeterMin !== c.pricePerMeterMax) ? formatNum(c.pricePerMeterMin) + ' - ' + formatNum(c.pricePerMeterMax) : formatNum(c.pricePerMeterMin || c.pricePerMeterMax);
-          pParts.push(`<b>نطاق السعر:</b> <span class="num">${rng}</span> ج`);
-      } else if (c.pricePerMeter > 0) {
-          pParts.push(`<b>سعر المتر:</b> <span class="num">${formatNum(c.pricePerMeter)}</span> ج`);
+      if(c.isAdvancedPricing) {
+          if(c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) {
+              let rng = (c.pricePerMeterMin && c.pricePerMeterMax && c.pricePerMeterMin !== c.pricePerMeterMax) ? formatNum(c.pricePerMeterMin) + ' - ' + formatNum(c.pricePerMeterMax) : formatNum(c.pricePerMeterMin || c.pricePerMeterMax);
+              pParts.push(`<b>نطاق السعر:</b> <span class="num">${rng}</span> ج`);
+          } else if (c.pricePerMeter > 0) {
+              pParts.push(`<b>سعر المتر:</b> <span class="num">${formatNum(c.pricePerMeter)}</span> ج`);
+          }
+          
+          let fPriceCore = (c.priceCoreMin > 0 && c.priceCoreMax > 0 && c.priceCoreMin !== c.priceCoreMax) ? `${formatNum(c.priceCoreMin)} - ${formatNum(c.priceCoreMax)}` : formatNum(c.priceCoreMin || c.priceCoreMax || c.priceCore || 0);
+          if (c.priceCoreMin > 0 || c.priceCoreMax > 0 || c.priceCore > 0) pParts.push(`<b>طوب أحمر:</b> <span class="num">${fPriceCore}</span> ج`);
+          
+          let fPriceSemi = (c.priceSemiMin > 0 && c.priceSemiMax > 0 && c.priceSemiMin !== c.priceSemiMax) ? `${formatNum(c.priceSemiMin)} - ${formatNum(c.priceSemiMax)}` : formatNum(c.priceSemiMin || c.priceSemiMax || c.priceSemi || 0);
+          if (c.priceSemiMin > 0 || c.priceSemiMax > 0 || c.priceSemi > 0) pParts.push(`<b>نصف تشطيب:</b> <span class="num">${fPriceSemi}</span> ج`);
+          
+          let fPriceFull = (c.priceFullMin > 0 && c.priceFullMax > 0 && c.priceFullMin !== c.priceFullMax) ? `${formatNum(c.priceFullMin)} - ${formatNum(c.priceFullMax)}` : formatNum(c.priceFullMin || c.priceFullMax || c.priceFull || 0);
+          if (c.priceFullMin > 0 || c.priceFullMax > 0 || c.priceFull > 0) pParts.push(`<b>تشطيب كامل:</b> <span class="num">${fPriceFull}</span> ج`);
+      } else {
+          if (c.pricePerMeter > 0) pParts.push(`<b>سعر المتر:</b> <span class="num">${formatNum(c.pricePerMeter)}</span> ج`);
+          if (c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) {
+              let rng = (c.pricePerMeterMin && c.pricePerMeterMax && c.pricePerMeterMin !== c.pricePerMeterMax) ? formatNum(c.pricePerMeterMin) + ' - ' + formatNum(c.pricePerMeterMax) : formatNum(c.pricePerMeterMin || c.pricePerMeterMax);
+              pParts.push(`<b>نطاق السعر:</b> <span class="num">${rng}</span> ج`);
+          }
       }
-      
-      if(c.priceCore > 0) pParts.push(`<b>طوب أحمر:</b> <span class="num">${formatNum(c.priceCore)}</span> ج`);
-      if(c.priceSemi > 0) pParts.push(`<b>نصف تشطيب:</b> <span class="num">${formatNum(c.priceSemi)}</span> ج`);
-      if(c.priceFull > 0) pParts.push(`<b>تشطيب كامل:</b> <span class="num">${formatNum(c.priceFull)}</span> ج`);
-      
       pText = pParts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:14px;">${pParts.join('')}</div>` : `-`;
   }
   
