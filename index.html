@@ -372,18 +372,18 @@
           <div class="form-field"><label for="fldOwner">المالك</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
           
-          <!-- ✨ قسم الأسعار السكنية (السعر الموحد + النطاق + التشطيب) ✨ -->
+          <!-- ✨ قسم الأسعار السكنية المطور ✨ -->
           <div id="residentialPriceContainer" class="res-field full" style="background:var(--item-bg); padding:1.5rem; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:1.25rem;">
                <div class="section-label" style="margin-top:0;">أسعار المتر السكني والتشطيب</div>
                
-               <!-- الصف الأول: السعر الموحد وحالة التشطيب السائدة -->
+               <!-- السعر الموحد ونطاق السعر -->
                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                    <div class="form-field">
-                       <label for="fldPriceMeter">سعر المتر السكني (رقم موحد)</label>
+                       <label for="fldPriceMeter">سعر المتر السكني (رقم موحد - اختياري)</label>
                        <input id="fldPriceMeter" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="مثال: 35,000">
                    </div>
                    <div class="form-field">
-                       <label for="fldFinishingStatus">حالة التشطيب السائدة</label>
+                       <label for="fldFinishingStatus">حالة التشطيب السائدة للمشروع</label>
                        <select id="fldFinishingStatus">
                            <option value="core_shell">Core &amp; Shell (طوب أحمر)</option>
                            <option value="semi">Semi-finished (نصف تشطيب)</option>
@@ -392,7 +392,6 @@
                    </div>
                </div>
   
-               <!-- الصف الثاني: نطاق السعر والمتوسط -->
                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                    <div class="form-field">
                        <label>سعر المتر (يبدأ من)</label>
@@ -408,21 +407,43 @@
                    </div>
                </div>
   
-               <button class="btn btn-outline-light btn-pill w-100" type="button" id="btnToggleAdvPricing" onclick="toggleAdvPricing()" style="margin-top: 0.5rem; border: 1px dashed var(--border-color); color: var(--text-muted); justify-content: center; font-size: 0.8125rem;">+ إضافة أسعار مخصصة لكل تشطيب (اختياري)</button>
+               <button class="btn btn-outline-light btn-pill w-100" type="button" id="btnToggleAdvPricing" onclick="toggleAdvPricing()" style="margin-top: 0.5rem; border: 1px dashed var(--border-color); color: var(--text-muted); justify-content: center; font-size: 0.8125rem;">+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)</button>
   
-               <!-- الصندوق السري للتشطيبات (مرصوصة تحت بعض زي صورتك) -->
-               <div id="advPricingWrap" style="display:none; margin-top:1rem; padding-top:1rem; border-top:1px dashed var(--border-color);">
-                   <div class="form-field" style="margin-bottom: 0.75rem;">
-                       <label>طوب أحمر (Core & Shell) - اختياري</label>
-                       <input id="fldPriceCore" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="سعر المتر">
+               <!-- الصندوق السري للتشطيبات (نطاق لكل تشطيب) -->
+               <div id="advPricingWrap" style="display:none; background:var(--card-bg); padding:1.5rem; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-top:1rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);">
+                   <div style="text-align: center; margin-bottom: 20px;">
+                       <span style="background: var(--primary); color: var(--btn-text); padding: 8px 25px; border-radius: 50px; font-weight: 800; font-size: 14px; box-shadow: var(--glow);">أسعار التشطيبات المخصصة</span>
                    </div>
-                   <div class="form-field" style="margin-bottom: 0.75rem;">
-                       <label>نصف تشطيب (Semi-finished) - اختياري</label>
-                       <input id="fldPriceSemi" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="سعر المتر">
+                   <p style="font-size:11px; color:var(--text-muted); margin-bottom:20px; text-align:center;">اكتب الحد الأدنى والأقصى لكل تشطيب، وسيقوم النظام بحساب متوسط سعر المتر لكل نوع واستخدامه أوتوماتيكياً عند إضافة الوحدات.</p>
+
+                   <!-- طوب أحمر -->
+                   <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: var(--radius-input); margin-bottom: 15px; border: 1px solid var(--border-color);">
+                       <div style="font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 10px;">🧱 طوب أحمر (Core & Shell)</div>
+                       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                           <div class="form-field"><input id="fldPriceCoreMin" type="text" class="num" oninput="formatInput(this); updateFinishingAvgs();" autocomplete="off" placeholder="سعر المتر (من)"></div>
+                           <div class="form-field"><input id="fldPriceCoreMax" type="text" class="num" oninput="formatInput(this); updateFinishingAvgs();" autocomplete="off" placeholder="سعر المتر (إلى)"></div>
+                           <div class="form-field"><input id="fldPriceCoreAvg" type="text" class="num" disabled style="background:transparent; color:var(--text-muted); text-align:center; border: 1px dashed var(--border-color);" placeholder="المتوسط"></div>
+                       </div>
                    </div>
-                   <div class="form-field">
-                       <label>تشطيب كامل (Fully-finished) - اختياري</label>
-                       <input id="fldPriceFull" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="سعر المتر">
+
+                   <!-- نصف تشطيب -->
+                   <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: var(--radius-input); margin-bottom: 15px; border: 1px solid var(--border-color);">
+                       <div style="font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 10px;">🏗️ نصف تشطيب (Semi-finished)</div>
+                       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                           <div class="form-field"><input id="fldPriceSemiMin" type="text" class="num" oninput="formatInput(this); updateFinishingAvgs();" autocomplete="off" placeholder="سعر المتر (من)"></div>
+                           <div class="form-field"><input id="fldPriceSemiMax" type="text" class="num" oninput="formatInput(this); updateFinishingAvgs();" autocomplete="off" placeholder="سعر المتر (إلى)"></div>
+                           <div class="form-field"><input id="fldPriceSemiAvg" type="text" class="num" disabled style="background:transparent; color:var(--text-muted); text-align:center; border: 1px dashed var(--border-color);" placeholder="المتوسط"></div>
+                       </div>
+                   </div>
+
+                   <!-- تشطيب كامل -->
+                   <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: var(--radius-input); border: 1px solid var(--border-color);">
+                       <div style="font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 10px;">✨ تشطيب كامل (Fully-finished)</div>
+                       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                           <div class="form-field"><input id="fldPriceFullMin" type="text" class="num" oninput="formatInput(this); updateFinishingAvgs();" autocomplete="off" placeholder="سعر المتر (من)"></div>
+                           <div class="form-field"><input id="fldPriceFullMax" type="text" class="num" oninput="formatInput(this); updateFinishingAvgs();" autocomplete="off" placeholder="سعر المتر (إلى)"></div>
+                           <div class="form-field"><input id="fldPriceFullAvg" type="text" class="num" disabled style="background:transparent; color:var(--text-muted); text-align:center; border: 1px dashed var(--border-color);" placeholder="المتوسط"></div>
+                       </div>
                    </div>
                </div>
           </div>
