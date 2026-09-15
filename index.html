@@ -23,7 +23,6 @@
   <div id="landingPageContainer">
       <header class="site-bar">
           <div class="site-bar-brand">
-              <!-- ✨ اللوجو الصغير المقصوص ✨ -->
               <div class="j-logo">
                   <span class="j-top">J</span><span class="j-bot">J</span>
                   <span class="j-text">Broker-Assistant</span>
@@ -45,12 +44,10 @@
               <div class="hero-inner">
                   <div class="hero-content">
                       
-                      <!-- ✨ اللوجو العملاق المقصوص في النص ✨ -->
                       <div class="hero-main-logo">
                           <div class="hero-j-wrapper">
                               <span class="hero-j-top">J</span><span class="hero-j-bot">J</span>
                           </div>
-                          <!-- تم مسح الاسم من هنا بناءً على طلبك -->
                           <h1 class="hero-j-text" data-ar="Broker-Assistant" data-en="Broker-Assistant">Broker-Assistant</h1>
                       </div>
 
@@ -102,7 +99,6 @@
 
               <footer class="landing-footer">
                   <div class="footer-brand" style="display:flex; justify-content:center; margin-bottom: 10px;">
-                      <!-- اللوجو الصغير في الفوتر -->
                       <div class="j-logo">
                           <span class="j-top">J</span><span class="j-bot">J</span>
                           <span class="j-text">Broker-Assistant</span>
@@ -120,7 +116,6 @@
   <div class="app" id="systemApp" style="display: none;">
     <aside class="sidebar">
       <div class="brand">
-          <!-- اللوجو الصغير في السيستم -->
           <div class="j-logo">
               <span class="j-top">J</span><span class="j-bot">J</span>
               <span class="j-text">Broker-Assistant</span>
@@ -377,27 +372,38 @@
           <div class="form-field"><label for="fldOwner">المالك</label><input id="fldOwner" placeholder="مثال: م/ أحمد علي" autocomplete="off"></div>
           <div class="form-field"><label for="fldConsultant">الاستشاري الهندسي</label><input id="fldConsultant" placeholder="مثال: د/ شهاب مظهر" autocomplete="off"></div>
           
-          <div class="form-field res-price-field full" style="background:var(--item-bg); padding:15px; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:15px;">
-             <div class="section-label" style="margin-top:0;">أسعار المتر السكني</div>
-             <p style="font-size:11px; color:var(--text-muted); margin-bottom:15px;">اكتب الحد الأدنى والأقصى ليقوم النظام بحساب المتوسط. لو المشروع يضم تشطيبات بأسعار مختلفة، حدد سعر متر كل تشطيب بالأسفل.</p>
-             
-             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 15px;">
-                 <div class="form-field"><label>سعر المتر (من)</label><input id="fldPriceMeterMin" type="text" class="num" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off" placeholder="الحد الأدنى"></div>
-                 <div class="form-field"><label>سعر المتر (إلى)</label><input id="fldPriceMeterMax" type="text" class="num" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off" placeholder="الحد الأقصى"></div>
-                 <div class="form-field"><label>متوسط السعر (جنيه)</label><input id="fldPriceMeterAvg" type="text" class="num" disabled style="background:rgba(220, 38, 38, 0.05); color:var(--primary); font-weight:bold; border:1px solid var(--primary);" placeholder="يحسب تلقائياً"></div>
-             </div>
-
-             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
-                 <div class="form-field"><label>طوب أحمر (Core & Shell)</label><input id="fldPriceCore" type="text" class="res-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="اختياري (سعر المتر)"></div>
-                 <div class="form-field"><label>نصف تشطيب (Semi-finished)</label><input id="fldPriceSemi" type="text" class="res-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="اختياري (سعر المتر)"></div>
-                 <div class="form-field"><label>تشطيب كامل (Fully-finished)</label><input id="fldPriceFull" type="text" class="res-price-input" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="اختياري (سعر المتر)"></div>
-             </div>
-          </div>
+          <!-- ✨ تحديث: قسم أسعار المتر السكني (العادي والمتقدم) ✨ -->
+          <div id="residentialPriceContainer" class="res-field full">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <div class="form-field"><label for="fldPriceMeter">سعر المتر السكني الرئيسي (جنيه)</label><input id="fldPriceMeter" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="مثال: 35,000"></div>
+                  <div class="form-field"><label for="fldFinishingStatus">حالة التشطيب للوحدات السكنية</label>
+                      <select id="fldFinishingStatus">
+                        <option value="core_shell">Core &amp; Shell (طوب أحمر)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
+                      </select>
+                  </div>
+              </div>
+              
+              <button class="btn btn-outline-light btn-pill w-100" type="button" id="btnToggleAdvPricing" onclick="toggleAdvPricing()" style="margin-top: 15px; border: 1px dashed var(--border-color); color: var(--text-muted); transition: 0.3s; justify-content: center;">+ إضافة أسعار متر متقدمة (متوسط وأسعار حسب التشطيب)</button>
           
-          <div class="form-field res-field"><label for="fldFinishingStatus">حالة التشطيب الرئيسية</label>
-            <select id="fldFinishingStatus">
-              <option value="core_shell">Core &amp; Shell (طوب أحمر)</option><option value="semi">Semi-finished (نصف تشطيب)</option><option value="full">Fully finished (تشطيب كامل)</option>
-            </select>
+              <!-- الصندوق السري للأسعار المتقدمة -->
+              <div id="advPricingWrap" style="display:none; background:var(--item-bg); padding:1.5rem; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-top:15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);">
+                  <div style="text-align: center; margin-bottom: 20px;">
+                      <span style="background: var(--primary); color: var(--btn-text); padding: 8px 25px; border-radius: 50px; font-weight: 800; font-size: 14px; box-shadow: var(--glow);">أسعار المتر السكني</span>
+                  </div>
+                  <p style="font-size:11px; color:var(--text-muted); margin-bottom:20px; text-align:center;">اكتب الحد الأدنى والأقصى ليقوم النظام بحساب المتوسط. لو المشروع يضم تشطيبات بأسعار مختلفة، حدد سعر متر كل تشطيب بالأسفل.</p>
+                  
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                      <div class="form-field"><label>سعر المتر (من)</label><input id="fldPriceMeterMin" type="text" class="num" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off" placeholder="الحد الأدنى"></div>
+                      <div class="form-field"><label>سعر المتر (إلى)</label><input id="fldPriceMeterMax" type="text" class="num" oninput="formatInput(this); updatePriceMeterAvg();" autocomplete="off" placeholder="الحد الأقصى"></div>
+                      <div class="form-field"><label>متوسط السعر (جنيه)</label><input id="fldPriceMeterAvg" type="text" class="num" disabled style="background:transparent; color:var(--text-muted); text-align:center; border: 1px solid var(--primary);" placeholder="يحسب تلقائياً"></div>
+                  </div>
+          
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; border-top: 1px dashed var(--border-color); padding-top: 20px;">
+                      <div class="form-field"><label>طوب أحمر (Core & Shell)</label><input id="fldPriceCore" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="اختياري (سعر المتر)"></div>
+                      <div class="form-field"><label>نصف تشطيب (Semi-finished)</label><input id="fldPriceSemi" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="اختياري (سعر المتر)"></div>
+                      <div class="form-field"><label>تشطيب كامل (Fully-finished)</label><input id="fldPriceFull" type="text" class="num" oninput="formatInput(this); updateAllUnitsPrice();" autocomplete="off" placeholder="اختياري (سعر المتر)"></div>
+                  </div>
+              </div>
           </div>
           
           <div class="form-field res-field">
