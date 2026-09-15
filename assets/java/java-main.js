@@ -422,6 +422,7 @@ function renderGrid(){
     }
     
     if(activeProjectType !== 'all' && (c.projectType || 'residential') !== activeProjectType) return false;
+    
     if(filters.searchText) {
         const searchable = [String(c.projectName||''), String(c.companyName||''), String(c.ownerName||''), String(c.consultant||''), findSubLocationName(c.locationId)].filter(Boolean).join(' ').toLowerCase();
         if (!searchable.includes(filters.searchText)) return false;
@@ -429,27 +430,39 @@ function renderGrid(){
     
     let cUnits = c.unitTypes||[]; 
     
+    // ✨ الفلتر الذكي لأنواع العقار ✨
     if(filters.propertyTypes) {
+        let isCommMatch = filters.propertyTypes.includes('commercial') && c.projectType === 'commercial';
+        
         cUnits = cUnits.filter(u => {
-            let t = u.bedroomType; 
+            let t = String(u.bedroomType || '').toLowerCase(); 
             if (!t) return false;
-            if (filters.propertyTypes.includes('apartment') && t.includes('شقة')) return true;
-            if (filters.propertyTypes.includes('commercial') && (t.includes('تجاري') || t.includes('إداري') || t.includes('عيادة'))) return true;
+            // لو اليوزر اختار شقة.. هيجيب أي حاجة فيها كلمة شقة أو غرف أو ستوديو
+            if (filters.propertyTypes.includes('apartment') && (t.includes('شقة') || t.includes('غرف') || t.includes('غرفة') || t.includes('ستوديو'))) return true;
+            if (filters.propertyTypes.includes('commercial') && (t.includes('تجار') || t.includes('إدار') || t.includes('عياد') || t.includes('طب') || t.includes('مكتب'))) return true;
             if (filters.propertyTypes.includes('villa') && t.includes('فيلا')) return true;
-            if (filters.propertyTypes.includes('twinhouse') && t.includes('توين')) return true;
-            if (filters.propertyTypes.includes('townhouse') && t.includes('تاون')) return true;
+            if (filters.propertyTypes.includes('twinhouse') && (t.includes('توين') || t.includes('twin'))) return true;
+            if (filters.propertyTypes.includes('townhouse') && (t.includes('تاون') || t.includes('town'))) return true;
             if (filters.propertyTypes.includes('duplex') && t.includes('دوبلكس')) return true;
             if (filters.propertyTypes.includes('penthouse') && t.includes('بنتهاوس')) return true;
             if (filters.propertyTypes.includes('studio') && t.includes('استوديو')) return true;
             if (filters.propertyTypes.includes('chalet') && t.includes('شاليه')) return true;
             return false;
         });
-        if(cUnits.length === 0) return false;
+        if (!isCommMatch && cUnits.length === 0) return false;
     }
     
+    // ✨ الفلتر الذكي لعدد الغرف ✨
     if(filters.bedrooms) {
         cUnits = cUnits.filter(u => {
-            let rm = parseFloat(u.rooms) || 0;
+            let rm = parseFloat(u.rooms);
+            // لو خانة الغرف فاضية، هيستخرج الرقم من اسم الوحدة أوتوماتيك
+            if (isNaN(rm) || rm <= 0) {
+                let match = String(u.bedroomType || '').match(/(\d+)/);
+                if (match) rm = parseFloat(match[1]);
+                else if (String(u.bedroomType || '').includes('استوديو')) rm = 1;
+                else rm = 0;
+            }
             if (filters.bedrooms.includes('1') && rm === 1) return true;
             if (filters.bedrooms.includes('2') && rm === 2) return true;
             if (filters.bedrooms.includes('3') && rm === 3) return true;
@@ -509,7 +522,6 @@ function renderGrid(){
   
   let groups = {};
   list.forEach(c => {
-      // إصلاح الخطأ القاتل: تحويل الاسم لنص قبل استخدام trim لتجنب الانهيار إذا كان الاسم أرقام فقط
       let key = `${String(c.projectName||'').trim().toLowerCase()}|${String(c.companyName||'').trim().toLowerCase()}`;
       if(!groups[key]) groups[key] = [];
       groups[key].push(c);
@@ -813,13 +825,13 @@ function renderDetailModalContent() {
           let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
           if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
           
-          let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
-          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+          let unitPriceCol = `<b class="num">${formatNum(planBasePrice)} ج</b>`;
+          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:11px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
           html += `<tr>
               <td>${planNameCol}</td>
               <td>${unitPriceCol}</td>
-              <td><span class="num" style="font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
+              <td><span class="num">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
               <td class="num">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
               <td style="color:var(--primary);" class="num"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
               <td class="num"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
