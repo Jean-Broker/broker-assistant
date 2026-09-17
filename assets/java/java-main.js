@@ -15,7 +15,8 @@ const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", auth
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
-db.enablePersistence().catch(function(err) { console.log("Cache error: ", err); });
+// تفعيل الكاش للتحميل الصاروخي
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) { console.log("Cache error: ", err); });
 
 const auth = firebase.auth();
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
@@ -141,10 +142,7 @@ function isCompoundComplete(c) {
                 (c.pricePerMeterMin && c.pricePerMeterMin > 0) || 
                 (c.priceCore && c.priceCore > 0) || 
                 (c.priceSemi && c.priceSemi > 0) || 
-                (c.priceFull && c.priceFull > 0) ||
-                (c.priceCoreMin && c.priceCoreMin > 0) ||
-                (c.priceSemiMin && c.priceSemiMin > 0) ||
-                (c.priceFullMin && c.priceFullMin > 0)) {
+                (c.priceFull && c.priceFull > 0)) {
                 hasPrice = true;
             }
         }
@@ -176,18 +174,20 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
-// ✨ السحر هنا: الصاروخ في التحميل عبر الكاش المحلي ✨
+// ✨ السحر هنا: تحميل صااااروخي بفضل الكاش المحلي ✨
 async function syncCloudData() { 
     const grid = document.getElementById('compoundGrid'); 
     
-    // محاولة جلب الداتا من الذاكرة المحلية أولاً للعرض الفوري
     let cachedCompounds = localStorage.getItem('broker_compounds_cache');
     let cachedLocations = localStorage.getItem('broker_locations_cache');
     
+    // اعرض من الذاكرة فوراً لو موجودة (صفر ثانية انتظار)
     if (cachedCompounds) {
         try {
             compounds = JSON.parse(cachedCompounds);
+            if (cachedLocations) mainLocations = JSON.parse(cachedLocations);
             renderAdminStats();
+            renderLocationTree();
             applyFilters();
         } catch(e) {}
     } else if (grid && !grid.children.length) {
@@ -195,14 +195,7 @@ async function syncCloudData() {
         grid.innerHTML = skeletonCardsHtml(6);
     }
     
-    if (cachedLocations) {
-        try {
-            mainLocations = JSON.parse(cachedLocations);
-            renderLocationTree();
-        } catch(e) {}
-    }
-    
-    // جلب التحديثات من الفيربيس في الخلفية بكل هدوء
+    // جلب التحديثات في صمت
     db.collection('system').doc('settings').onSnapshot(doc => { 
         if (doc.exists) { 
             let d = doc.data(); 
@@ -306,26 +299,6 @@ function processMagicPaste() {
     });
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
 }
-
-window.updateFinishingAvgs = function() {
-    let fields = [
-        {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
-        {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
-        {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
-    ];
-
-    fields.forEach(f => {
-        let min = getRawNum(document.getElementById(f.min).value) || 0;
-        let max = getRawNum(document.getElementById(f.max).value) || 0;
-        let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
-        let avgInput = document.getElementById(f.avg);
-        if (avgInput) {
-            avgInput.value = avg > 0 ? formatNum(Math.round(avg)) : '';
-        }
-    });
-
-    updateAllUnitsPrice();
-};
 
 window.toggleAdvPricing = function(forceState) {
     const wrap = document.getElementById('advPricingWrap');
@@ -448,18 +421,13 @@ function renderGrid(){
              let pAvg = (pMin > 0 && pMax > 0) ? (pMin + pMax) / 2 : (pMin || pMax || 0);
 
              if (c.isAdvancedPricing) {
-                 let pCoreMin = getRawNum(c.priceCoreMin) || 0, pCoreMax = getRawNum(c.priceCoreMax) || 0;
-                 let pCoreAvg = (pCoreMin > 0 && pCoreMax > 0) ? (pCoreMin + pCoreMax)/2 : (pCoreMin || pCoreMax || getRawNum(c.priceCore) || 0);
+                 let pCore = getRawNum(c.priceCore) || 0;
+                 let pSemi = getRawNum(c.priceSemi) || 0;
+                 let pFull = getRawNum(c.priceFull) || 0;
 
-                 let pSemiMin = getRawNum(c.priceSemiMin) || 0, pSemiMax = getRawNum(c.priceSemiMax) || 0;
-                 let pSemiAvg = (pSemiMin > 0 && pSemiMax > 0) ? (pSemiMin + pSemiMax)/2 : (pSemiMin || pSemiMax || getRawNum(c.priceSemi) || 0);
-
-                 let pFullMin = getRawNum(c.priceFullMin) || 0, pFullMax = getRawNum(c.priceFullMax) || 0;
-                 let pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax)/2 : (pFullMin || pFullMax || getRawNum(c.priceFull) || 0);
-
-                 if (u.finishing === 'core_shell' && pCoreAvg > 0) meterPrice = pCoreAvg;
-                 else if (u.finishing === 'semi' && pSemiAvg > 0) meterPrice = pSemiAvg;
-                 else if (u.finishing === 'full' && pFullAvg > 0) meterPrice = pFullAvg;
+                 if (u.finishing === 'core_shell' && pCore > 0) meterPrice = pCore;
+                 else if (u.finishing === 'semi' && pSemi > 0) meterPrice = pSemi;
+                 else if (u.finishing === 'full' && pFull > 0) meterPrice = pFull;
                  else if (pAvg > 0) meterPrice = pAvg;
                  else meterPrice = pSingle;
              } else {
@@ -517,8 +485,8 @@ function renderGrid(){
   
   if(filters.sortOrder && filters.sortOrder !== 'default') {
       list.sort((a, b) => {
-          let aPrice = a.pricePerMeterMin || a.pricePerMeter || a.priceCoreMin || a.priceCore || 0;
-          let bPrice = b.pricePerMeterMin || b.pricePerMeter || b.priceCoreMin || b.priceCore || 0;
+          let aPrice = a.isAdvancedPricing ? (a.pricePerMeterMin || a.priceCore || 0) : (a.pricePerMeterMin || a.pricePerMeter || 0);
+          let bPrice = b.isAdvancedPricing ? (b.pricePerMeterMin || b.priceCore || 0) : (b.pricePerMeterMin || b.pricePerMeter || 0);
           return filters.sortOrder === 'asc' ? aPrice - bPrice : bPrice - aPrice;
       });
   }
@@ -551,212 +519,100 @@ function renderGrid(){
   }).join('');
 }
 
-async function saveCompoundToCloud() {
-  if(!isEditor) return;
-  const projectName = document.getElementById('fldProject').value.trim();
-  if(!projectName){ showToast('أدخل اسم المشروع'); return; }
+// ✨ تحديث دوال فتح وتعديل الفورم بشكل سليم يمنع أي ايرور ✨
+function openCompoundForm(existing){
+  editingCompoundId = existing ? existing.id : null; document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
   
-  let pSingle = getRawNum(document.getElementById('fldPriceMeter').value) || 0;
-  let pMin = getRawNum(document.getElementById('fldPriceMeterMin').value) || 0;
-  let pMax = getRawNum(document.getElementById('fldPriceMeterMax').value) || 0;
+  let defaultLoc = '';
+  if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => m.subLocations.some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
+  if(existing) document.getElementById('fldLocation').value = existing.locationId || ''; else document.getElementById('fldLocation').value = defaultLoc;
   
-  let isAdvOpen = document.getElementById('advPricingWrap').style.display !== 'none';
-  
-  let pCoreMin = isAdvOpen ? (getRawNum(document.getElementById('fldPriceCoreMin').value) || 0) : 0;
-  let pCoreMax = isAdvOpen ? (getRawNum(document.getElementById('fldPriceCoreMax').value) || 0) : 0;
-  let pSemiMin = isAdvOpen ? (getRawNum(document.getElementById('fldPriceSemiMin').value) || 0) : 0;
-  let pSemiMax = isAdvOpen ? (getRawNum(document.getElementById('fldPriceSemiMax').value) || 0) : 0;
-  let pFullMin = isAdvOpen ? (getRawNum(document.getElementById('fldPriceFullMin').value) || 0) : 0;
-  let pFullMax = isAdvOpen ? (getRawNum(document.getElementById('fldPriceFullMax').value) || 0) : 0;
-  
-  let validPrices = [pCoreMin, pSemiMin, pFullMin].filter(p => p > 0);
-  let finStat = document.getElementById('fldFinishingStatus').value;
-  if(isAdvOpen && validPrices.length > 1) finStat = 'mixed';
+  // تصفير كل الخانات
+  ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant',
+   'fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg',
+   'fldPriceCore', 'fldPriceSemi', 'fldPriceFull',
+   'fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax',
+   'fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { 
+       const el = document.getElementById(id);
+       if(el) el.value = ''; 
+   }); 
+   
+  ['fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { document.getElementById(id).value = 'core_shell'; });
 
-  const data = {
-    locationId: document.getElementById('fldLocation').value || '', projectType: document.getElementById('fldProjectType').value, companyName: document.getElementById('fldCompany').value.trim(), projectName: projectName, phaseName: document.getElementById('fldPhaseName').value.trim(), floors: document.getElementById('fldFloors').value.trim() || '', ownerName: document.getElementById('fldOwner').value.trim(), consultant: document.getElementById('fldConsultant').value.trim(),
-    pricePerMeter: pSingle, pricePerMeterMin: pMin, pricePerMeterMax: pMax, 
-    priceCoreMin: pCoreMin, priceCoreMax: pCoreMax, 
-    priceSemiMin: pSemiMin, priceSemiMax: pSemiMax, 
-    priceFullMin: pFullMin, priceFullMax: pFullMax, 
-    finishingStatus: finStat, isAdvancedPricing: isAdvOpen,
-    commercialPrices: { adminMin: getRawNum(document.getElementById('fldAdminMin').value)||0, adminMax: getRawNum(document.getElementById('fldAdminMax').value)||0, adminFinish: document.getElementById('fldAdminFinish').value || 'core_shell', commMin: getRawNum(document.getElementById('fldCommMin').value)||0, commMax: getRawNum(document.getElementById('fldCommMax').value)||0, commFinish: document.getElementById('fldCommFinish').value || 'core_shell', clinicMin: getRawNum(document.getElementById('fldClinicMin').value)||0, clinicMax: getRawNum(document.getElementById('fldClinicMax').value)||0, clinicFinish: document.getElementById('fldClinicFinish').value || 'core_shell', recMin: getRawNum(document.getElementById('fldRecMin').value)||0, recMax: getRawNum(document.getElementById('fldRecMax').value)||0, recFinish: document.getElementById('fldRecFinish').value || 'core_shell', },
-    maintenanceValue: document.getElementById('fldMaintenanceValue').value.trim() || '', maintenanceType: document.getElementById('fldMaintenanceType').value || 'percent', parkingType: document.getElementById('fldParkingType').value || 'extra', parkingFee: getRawNum(document.getElementById('fldParkingFee').value)||0, projectSize: parseFloat(document.getElementById('fldProjectSize').value) || 0, deliveryDate: document.getElementById('fldDeliveryDate').value.trim(), compoundLocationDetail: document.getElementById('fldLocationDetail').value.trim(), locationLink: document.getElementById('fldLocationLink').value.trim(), cashDiscount: parseFloat(document.getElementById('fldCashDiscount').value) || 0,
-    unitTypes: tempUnits.map(u => ({ id: u.id || uid(), bedroomType: u.bedroomType || '', rooms: u.rooms || '', area: parseFloat(u.area) || 0, gardenArea: parseFloat(u.gardenArea) || 0, roofArea: parseFloat(u.roofArea) || 0, price: getRawNum(u.price) || u.price || 0, finishing: u.finishing || 'core_shell' })),
-    paymentPlans: tempPlans.map(p => ({ ...p, pricePerMeter: getRawNum(p.pricePerMeter) || 0 })), ministerialDecrees: tempDecrees.filter(d=>d.decreeNumber || d.description),
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  
-  try { 
-      if (editingCompoundId) {
-          await db.collection('compounds').doc(editingCompoundId).set(data, { merge: true }); 
+  if (existing) {
+      document.getElementById('fldProjectType').value = existing.projectType || 'residential'; document.getElementById('fldCompany').value = existing.companyName || ''; document.getElementById('fldProject').value = existing.projectName || ''; document.getElementById('fldPhaseName').value = existing.phaseName || ''; document.getElementById('fldFloors').value = existing.floors || ''; document.getElementById('fldOwner').value = existing.ownerName || ''; document.getElementById('fldConsultant').value = existing.consultant || ''; 
+      
+      document.getElementById('fldPriceMeter').value = existing.pricePerMeter ? formatNum(existing.pricePerMeter) : '';
+      document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : '';
+      document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '';
+      
+      let hasAdv = existing.isAdvancedPricing || existing.priceCore > 0 || existing.priceSemi > 0 || existing.priceFull > 0;
+      
+      if(hasAdv) {
+          document.getElementById('fldPriceCore').value = existing.priceCore ? formatNum(existing.priceCore) : '';
+          document.getElementById('fldPriceSemi').value = existing.priceSemi ? formatNum(existing.priceSemi) : '';
+          document.getElementById('fldPriceFull').value = existing.priceFull ? formatNum(existing.priceFull) : '';
+          toggleAdvPricing(true);
       } else {
-          await db.collection('compounds').add(data);
+          toggleAdvPricing(false);
       }
-      document.getElementById('formOverlay').classList.remove('open'); 
-      showToast('تم الحفظ 💾'); 
-  } catch (error) { 
-      alert('خطأ في الحفظ!'); 
+      updatePriceMeterAvg();
+
+      let cp = existing.commercialPrices || {}; document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell';
+      
+      document.getElementById('fldFinishingStatus').value = (existing.finishingStatus && existing.finishingStatus !== 'mixed') ? existing.finishingStatus : 'core_shell';
+
+      document.getElementById('fldMaintenanceValue').value = existing.maintenanceValue || existing.maintenancePercent || ''; 
+      document.getElementById('fldMaintenanceType').value = existing.maintenanceType || 'percent';
+      
+      document.getElementById('fldParkingType').value = existing.parkingType || 'extra';
+      document.getElementById('fldParkingFee').value = existing.parkingFee ? formatNum(existing.parkingFee) : ''; 
+      document.getElementById('fldParkingFee').style.display = (existing.parkingType === 'included') ? 'none' : 'block';
+
+      document.getElementById('fldProjectSize').value = existing.projectSize || ''; document.getElementById('fldDeliveryDate').value = existing.deliveryDate || ''; document.getElementById('fldLocationDetail').value = existing.compoundLocationDetail || ''; document.getElementById('fldLocationLink').value = existing.locationLink || ''; document.getElementById('fldCashDiscount').value = existing.cashDiscount || ''; 
+      
+  } else {
+      document.getElementById('fldProjectType').value = 'residential'; 
+      document.getElementById('fldMaintenanceValue').value = ''; document.getElementById('fldMaintenanceType').value = 'percent';
+      document.getElementById('fldParkingType').value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block';
+      toggleAdvPricing(false);
   }
+  
+  onProjectTypeChange(); 
+  
+  tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : []; 
+  if (existing) { 
+      tempUnits.forEach(u => { u.bedroomType = getUnitEnName(u.bedroomType); }); 
+  } 
+  tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : []; 
+  tempDecrees = existing ? JSON.parse(JSON.stringify(existing.ministerialDecrees||[])) : []; 
+  
+  renderUnitRows(); renderPlanRows(); renderDecreeRows(); document.getElementById('formOverlay').classList.add('open');
 }
 
-async function deleteCurrentCompoundFromCloud() { if(!isEditor || !confirm('متأكد من الحذف؟')) return; await db.collection('compounds').doc(viewingCompoundId).delete(); document.getElementById('detailOverlay').classList.remove('open'); showToast('تم الحذف'); }
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
-function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
-function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
-function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
-function populateDeliverySelects(){ const opts = DELIVERY_TIMELINES.map(d=>`<option value="${d.value}">${d.label}</option>`).join(''); document.getElementById('fldDeliveryDate').innerHTML = opts; }
-function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
-
-function toggleMobileLoc() {
-    const wrap = document.getElementById('locWrapperMobile'); const btn = document.getElementById('mobileLocToggleBtn');
-    if(wrap.classList.contains('show')) { wrap.classList.remove('show'); btn.classList.remove('active'); btn.innerHTML = '📍 تصفية بالمناطق والمدن ▼'; } 
-    else { wrap.classList.add('show'); btn.classList.add('active'); btn.innerHTML = '📍 إخفاء المناطق ▲'; }
-}
-
-function renderLocationTree(){
-  const wrap = document.getElementById('locationTree'); const isAllActive = activeLocationIds.length === 0;
-  let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span class="num">${compounds.length}</span></div>`;
-  mainLocations.forEach((mainLoc) => { 
-      let mainCount = 0; mainLoc.subLocations.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
-      const isOpen = !!openMainLocIds[mainLoc.id]; const isMainActive = activeLocationIds.includes(mainLoc.id);
-      html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="color:var(--text-muted);">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)" role="button" tabindex="0">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
-      mainLoc.subLocations.forEach(sub => { 
-          const subCount = compounds.filter(c => c.locationId === sub.id).length; const isSubActive = activeLocationIds.includes(sub.id);
-          html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
-      }); 
-      html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px; font-size:10px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
-  }); 
-  wrap.innerHTML = html; 
-  if(document.getElementById('fldLocation')) document.getElementById('fldLocation').innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => `<optgroup label="${escapeHtml(m.name)}">` + m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
-}
-
-function selectLocationNode(nodeId){ 
-    if(nodeId === 'all') { activeLocationIds = []; } else {
-        const index = activeLocationIds.indexOf(nodeId);
-        if(index > -1) { activeLocationIds.splice(index, 1); } else { activeLocationIds.push(nodeId); }
-    }
-    renderLocationTree(); renderGrid(); 
-}
-
-async function addMainLocation(){ if(!isEditor) return; const input = document.getElementById('newMainLocInput'); if(!input.value.trim()) return; const newId = uid(); mainLocations.push({ id: newId, name: input.value.trim(), subLocations: [] }); openMainLocIds[newId] = true; input.value = ''; await saveMainLocationsToCloud(); }
-async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف المنطقة؟')) return; const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; mainLocations = mainLocations.filter(m => m.id !== mainId); const batch = db.batch(); compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== mainId && !subIds.includes(id)); await saveMainLocationsToCloud(); }
-async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
-async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
-function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
-
-let searchDebounceTimer = null;
-function handleSearchInput() {
-    const val = document.getElementById('fSearchText').value;
-    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = val ? 'flex' : 'none';
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(applyFilters, 300);
-}
-function clearSearchOnly() {
-    document.getElementById('fSearchText').value = '';
-    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
-    clearTimeout(searchDebounceTimer);
-    applyFilters();
-    document.getElementById('fSearchText').focus();
-}
-
-function applyFilters(){ 
-    const checkedTypes = Array.from(document.querySelectorAll('.prop-type-cb:checked')).map(cb => cb.value);
-    filters = { 
-        searchText: (document.getElementById('fSearchText').value || '').trim().toLowerCase(), 
-        minPrice: getRawNum(document.getElementById('fMinPrice').value), 
-        maxPrice: getRawNum(document.getElementById('fMaxPrice').value), 
-        downPaymentTarget: getRawNum(document.getElementById('fDownPayment').value), 
-        maxMonthlyInstallment: getRawNum(document.getElementById('fMonthlyInstallment').value),
-        propertyTypes: checkedTypes.length > 0 ? checkedTypes : null,
-        bedrooms: selectedBeds.length > 0 ? selectedBeds : null,
-        sortOrder: document.getElementById('fSortOrder').value || 'default'
-    }; 
-    closeAllDropdowns(); renderGrid(); 
-}
-
-function resetFilters(){ 
-    document.getElementById('fSearchText').value = ''; document.getElementById('fMinPrice').value = ''; document.getElementById('fMaxPrice').value = ''; document.getElementById('fDownPayment').value = ''; document.getElementById('fMonthlyInstallment').value = ''; document.getElementById('fSortOrder').value = 'default';
-    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false); document.querySelectorAll('.pill').forEach(p => p.classList.remove('active')); selectedBeds = [];
-    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
-    clearTimeout(searchDebounceTimer);
-    applyFilters(); 
-}
-
-function findSubLocationName(subId){ for(let i=0; i<mainLocations.length; i++){ let m=mainLocations[i]; if(m && m.subLocations) { let s = m.subLocations.find(x => x.id === subId); if(s) return `${m.name} ⬅️ ${s.name}`; } } return '-'; }
-
-function generateDossierHTML(c) {
-    const validPrices = (c.unitTypes||[]).map(u=>getRawNum(u.price)).filter(p => p !== null && !isNaN(p) && p > 0);
-    const minPrice = validPrices.length ? Math.min(...validPrices) : null;
-    let pDisplay = '';
+function onProjectTypeChange() { 
+    const isComm = document.getElementById('fldProjectType').value === 'commercial'; 
+    document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); 
+    document.getElementById('commercialPriceWrap').style.display = isComm ? 'block' : 'none'; 
     
-    if (c.projectType === 'commercial' && c.commercialPrices) {
-        let mins = [c.commercialPrices.adminMin, c.commercialPrices.commMin, c.commercialPrices.clinicMin, c.commercialPrices.recMin].filter(x => x > 0);
-        let absoluteMin = mins.length > 0 ? Math.min(...mins) : 0; 
-        pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
-    } else { 
-        if (c.pricePerMeterMin > 0 && c.pricePerMeterMax > 0 && c.pricePerMeterMin !== c.pricePerMeterMax) {
-            pDisplay = `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}`;
-        } else if (c.pricePerMeterMin > 0) {
-            pDisplay = `يبدأ من ${formatNum(c.pricePerMeterMin)}`;
-        } else if (c.pricePerMeter > 0) {
-            pDisplay = formatNum(c.pricePerMeter);
-        } else {
-            pDisplay = '-';
+    const advWrap = document.getElementById('advPricingWrap');
+    const btnAdv = document.getElementById('btnToggleAdvPricing');
+    if(isComm) {
+        advWrap.style.display = 'none';
+        btnAdv.style.display = 'none';
+    } else {
+        btnAdv.style.display = 'flex';
+        if(btnAdv.innerHTML.includes('إخفاء')) {
+            advWrap.style.display = 'block';
         }
     }
-
-    let phaseTag = c.phaseName ? `<span class="phase-tag">${escapeHtml(c.phaseName)}</span>` : '';
-    let finishText = c.projectType === 'commercial' ? 'متنوع' : (FINISHING_TYPES[c.finishingStatus]||'-');
-    
-    return `<div class="dossier" onclick="openDetail('${c.id}')">
-                ${(c.ministerialDecrees && c.ministerialDecrees.length > 0) ? '<div class="stamp">معتمد</div>' : ''}
-                <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
-                <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)} ${phaseTag}</div>
-                <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
-                <div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div>
-                <div class="dossier-row"><b>ارتفاع العمارات:</b> <span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div>
-                <div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${finishText}</span></div>
-                <div class="dossier-meta">
-                    <div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div>
-                    <div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice ? formatNum(minPrice) : '-'}</div></div>
-                </div>
-            </div>`;
+    renderUnitRows(); 
 }
 
-function generateMasterDossierHTML(group) {
-    let c = group[0]; 
-    return `<div class="dossier master-dossier" onclick="openPhasesModal('${escapeHtml(String(c.projectName||'')).replace(/'/g, "\\'")}', '${escapeHtml(String(c.companyName||'')).replace(/'/g, "\\'")}')">
-        <div class="master-badge">مراحل متعددة</div>
-        <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
-        <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)}</div>
-        <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
-        <div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div>
-        <div class="dossier-meta" style="margin-top:15px; grid-template-columns: 1fr;">
-            <div class="meta-chip" style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.05); border:1px dashed var(--border-color);">
-                <span>اضغط لاختيار المرحلة (${group.length})</span>
-                <div style="font-size:16px;">➤</div>
-            </div>
-        </div>
-    </div>`;
-}
+function getAverageCommercialPrice(bType) { let min = 0, max = 0; if (bType === 'admin' || bType === 'Administrative') { min = getRawNum(document.getElementById('fldAdminMin').value); max = getRawNum(document.getElementById('fldAdminMax').value); } else if (bType === 'commercial' || bType === 'Commercial') { min = getRawNum(document.getElementById('fldCommMin').value); max = getRawNum(document.getElementById('fldCommMax').value); } else if (bType === 'clinic' || bType === 'Clinic') { min = getRawNum(document.getElementById('fldClinicMin').value); max = getRawNum(document.getElementById('fldClinicMax').value); } else if (bType === 'recreational' || bType === 'Recreational') { min = getRawNum(document.getElementById('fldRecMin').value); max = getRawNum(document.getElementById('fldRecMax').value); } if (min > 0 && max > 0) return (min + max) / 2; return min || max || 0; }
 
-function openPhasesModal(projName, compName) {
-    let group = compounds.filter(c => String(c.projectName||'') === projName && String(c.companyName||'') === compName);
-    document.getElementById('phasesTitle').textContent = `مراحل مشروع: ${projName}`;
-    
-    let html = group.map(c => {
-        return `<div class="detail-item" style="cursor:pointer; margin-bottom:10px;" onclick="closeModal('phasesOverlay'); setTimeout(()=>openDetail('${c.id}'), 300)">
-            <div style="color:var(--danger); font-size:18px; font-weight:800; margin-bottom:5px;">${escapeHtml(c.phaseName || 'المرحلة الأساسية')}</div>
-            <div style="font-size:12px; color:var(--text-muted);">عمارات: <span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span> | تسليم: ${deliveryLabel(c.deliveryDate)}</div>
-        </div>`;
-    }).join('');
-    
-    document.getElementById('phasesBody').innerHTML = html;
-    document.getElementById('phasesOverlay').classList.add('open');
-}
+function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: '', rooms: '', area:'', gardenArea:'', roofArea:'', price:'', finishing:'core_shell'}); renderUnitRows(); }
+function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 
 function updateUnitData(id, field, val) {
     const u = tempUnits.find(x => x.id === id);
@@ -795,24 +651,16 @@ function updateUnitData(id, field, val) {
 
         let isAdvOpen = document.getElementById('advPricingWrap').style.display !== 'none';
         
-        let pCoreAvg = 0, pSemiAvg = 0, pFullAvg = 0;
+        let pCore = 0, pSemi = 0, pFull = 0;
         if (isAdvOpen) {
-            let pCoreMin = getRawNum(document.getElementById('fldPriceCoreMin').value) || 0;
-            let pCoreMax = getRawNum(document.getElementById('fldPriceCoreMax').value) || 0;
-            pCoreAvg = (pCoreMin > 0 && pCoreMax > 0) ? (pCoreMin + pCoreMax) / 2 : (pCoreMin || pCoreMax || 0);
-
-            let pSemiMin = getRawNum(document.getElementById('fldPriceSemiMin').value) || 0;
-            let pSemiMax = getRawNum(document.getElementById('fldPriceSemiMax').value) || 0;
-            pSemiAvg = (pSemiMin > 0 && pSemiMax > 0) ? (pSemiMin + pSemiMax) / 2 : (pSemiMin || pSemiMax || 0);
-
-            let pFullMin = getRawNum(document.getElementById('fldPriceFullMin').value) || 0;
-            let pFullMax = getRawNum(document.getElementById('fldPriceFullMax').value) || 0;
-            pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax) / 2 : (pFullMin || pFullMax || 0);
+            pCore = getRawNum(document.getElementById('fldPriceCore').value) || 0;
+            pSemi = getRawNum(document.getElementById('fldPriceSemi').value) || 0;
+            pFull = getRawNum(document.getElementById('fldPriceFull').value) || 0;
         }
 
-        if (isAdvOpen && u.finishing === 'core_shell' && pCoreAvg > 0) meterPrice = pCoreAvg;
-        else if (isAdvOpen && u.finishing === 'semi' && pSemiAvg > 0) meterPrice = pSemiAvg;
-        else if (isAdvOpen && u.finishing === 'full' && pFullAvg > 0) meterPrice = pFullAvg;
+        if (isAdvOpen && u.finishing === 'core_shell' && pCore > 0) meterPrice = pCore;
+        else if (isAdvOpen && u.finishing === 'semi' && pSemi > 0) meterPrice = pSemi;
+        else if (isAdvOpen && u.finishing === 'full' && pFull > 0) meterPrice = pFull;
         else if (pAvg > 0) meterPrice = pAvg;
         else meterPrice = pSingle;
     }
@@ -1009,14 +857,14 @@ function renderDetailModalContent() {
               pParts.push(`<b>سعر المتر:</b> <span class="num">${formatNum(c.pricePerMeter)}</span> ج`);
           }
           
-          let fPriceCore = (c.priceCoreMin > 0 && c.priceCoreMax > 0 && c.priceCoreMin !== c.priceCoreMax) ? `${formatNum(c.priceCoreMin)} - ${formatNum(c.priceCoreMax)}` : formatNum(c.priceCoreMin || c.priceCoreMax || 0);
-          if (c.priceCoreMin > 0 || c.priceCoreMax > 0 || c.priceCore > 0) pParts.push(`<b>طوب أحمر:</b> <span class="num">${fPriceCore}</span> ج`);
+          let fPriceCore = (c.priceCore > 0) ? formatNum(c.priceCore) : 0;
+          if (c.priceCore > 0) pParts.push(`<b>طوب أحمر:</b> <span class="num">${fPriceCore}</span> ج`);
           
-          let fPriceSemi = (c.priceSemiMin > 0 && c.priceSemiMax > 0 && c.priceSemiMin !== c.priceSemiMax) ? `${formatNum(c.priceSemiMin)} - ${formatNum(c.priceSemiMax)}` : formatNum(c.priceSemiMin || c.priceSemiMax || 0);
-          if (c.priceSemiMin > 0 || c.priceSemiMax > 0 || c.priceSemi > 0) pParts.push(`<b>نصف تشطيب:</b> <span class="num">${fPriceSemi}</span> ج`);
+          let fPriceSemi = (c.priceSemi > 0) ? formatNum(c.priceSemi) : 0;
+          if (c.priceSemi > 0) pParts.push(`<b>نصف تشطيب:</b> <span class="num">${fPriceSemi}</span> ج`);
           
-          let fPriceFull = (c.priceFullMin > 0 && c.priceFullMax > 0 && c.priceFullMin !== c.priceFullMax) ? `${formatNum(c.priceFullMin)} - ${formatNum(c.priceFullMax)}` : formatNum(c.priceFullMin || c.priceFullMax || 0);
-          if (c.priceFullMin > 0 || c.priceFullMax > 0 || c.priceFull > 0) pParts.push(`<b>تشطيب كامل:</b> <span class="num">${fPriceFull}</span> ج`);
+          let fPriceFull = (c.priceFull > 0) ? formatNum(c.priceFull) : 0;
+          if (c.priceFull > 0) pParts.push(`<b>تشطيب كامل:</b> <span class="num">${fPriceFull}</span> ج`);
       } else {
           if (c.pricePerMeter > 0) pParts.push(`<b>سعر المتر:</b> <span class="num">${formatNum(c.pricePerMeter)}</span> ج`);
           if (c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) {
