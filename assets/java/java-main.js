@@ -16,8 +16,8 @@ firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
 
-// تفعيل الكاش الرسمي بتاع فايربيس (بدون قفلات) للتحميل الصاروخي
-db.enablePersistence({ synchronizeTabs: true }).catch(function(err) { console.log("Cache error: ", err); });
+// تفعيل الكاش الرسمي لضمان تحميل فوري وبدون أخطاء
+db.enablePersistence().catch(function(err) { console.log("Cache error: ", err); });
 
 const auth = firebase.auth();
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
@@ -87,7 +87,6 @@ const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m',
 function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
 function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
 
-// دالة أمان لمنع أي Crash لو الخانة مش موجودة في الـ HTML
 function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
 function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 
@@ -166,13 +165,15 @@ function isCompoundComplete(c) {
 }
 
 function renderAdminStats() {
-    const board = document.getElementById('adminStatsBoard'); if (!board) return;
-    if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
-    board.style.display = 'flex';
-    let completed = compounds.filter(c => isCompoundComplete(c)).length;
-    document.getElementById('statTotal').textContent = compounds.length;
-    document.getElementById('statCompleted').textContent = completed;
-    document.getElementById('statIncomplete').textContent = compounds.length - completed;
+    try {
+        const board = document.getElementById('adminStatsBoard'); if (!board) return;
+        if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
+        board.style.display = 'flex';
+        let completed = compounds.filter(c => isCompoundComplete(c)).length;
+        document.getElementById('statTotal').textContent = compounds.length;
+        document.getElementById('statCompleted').textContent = completed;
+        document.getElementById('statIncomplete').textContent = compounds.length - completed;
+    } catch(e) { console.error(e); }
 }
 
 function setCompletionFilter(filterType, btnElem) { completionFilter = filterType; document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
@@ -182,39 +183,63 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
-// دالة التحميل المعتمدة على الفايربيس النظيف فقط
+// ✨ دالة تحميل الداتا المضادة للانهيار ✨
 async function syncCloudData() { 
-    const grid = document.getElementById('compoundGrid'); 
-    if (grid && !grid.children.length) {
-        document.getElementById('pageSub').textContent = "جاري تحميل الداتا..."; 
-        grid.innerHTML = skeletonCardsHtml(6);
+    try {
+        const grid = document.getElementById('compoundGrid'); 
+        
+        let cachedCompounds = localStorage.getItem('broker_compounds_cache');
+        let cachedLocations = localStorage.getItem('broker_locations_cache');
+        
+        if (cachedCompounds) {
+            try {
+                compounds = JSON.parse(cachedCompounds);
+                if (cachedLocations) mainLocations = JSON.parse(cachedLocations);
+                renderAdminStats();
+                renderLocationTree();
+                applyFilters();
+            } catch(e) { console.error("Cache Parse Error:", e); }
+        } else if (grid && !grid.children.length) {
+            document.getElementById('pageSub').textContent = "جاري تحميل الداتا..."; 
+            grid.innerHTML = skeletonCardsHtml(6);
+        }
+        
+        db.collection('system').doc('settings').onSnapshot(doc => { 
+            try {
+                if (doc.exists) { 
+                    let d = doc.data(); 
+                    if(d.resTypes) appSettings.resTypes = d.resTypes; 
+                    if(d.commTypes) appSettings.commTypes = d.commTypes; 
+                } 
+            } catch(e) { console.error(e); }
+        });
+        
+        db.collection('system').doc('locations').onSnapshot(doc => { 
+            try {
+                mainLocations = doc.exists ? (doc.data().mainLocations || []) : []; 
+                try { localStorage.setItem('broker_locations_cache', JSON.stringify(mainLocations)); } catch(e){}
+                renderLocationTree(); 
+                applyFilters(); 
+            } catch(e) { console.error(e); }
+        }); 
+        
+        db.collection('compounds').onSnapshot(snapshot => { 
+            try {
+                compounds = []; 
+                snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); 
+                try { localStorage.setItem('broker_compounds_cache', JSON.stringify(compounds)); } catch(e){}
+                renderAdminStats(); 
+                renderLocationTree(); 
+                applyFilters(); 
+                let sub = document.getElementById('pageSub');
+                if(sub) sub.textContent = `${compounds.length} مشروع مسجل بالسحابة`;
+            } catch(e) { console.error("Data Snapshot Error:", e); }
+        }, (error) => {
+            console.error("Firebase Snapshot Error:", error);
+        }); 
+    } catch (err) {
+        console.error("Critical Sync Error:", err);
     }
-    
-    db.collection('system').doc('settings').onSnapshot(doc => { 
-        if (doc.exists) { 
-            let d = doc.data(); 
-            if(d.resTypes) appSettings.resTypes = d.resTypes; 
-            if(d.commTypes) appSettings.commTypes = d.commTypes; 
-        } 
-    });
-    
-    db.collection('system').doc('locations').onSnapshot(doc => { 
-        mainLocations = doc.exists ? (doc.data().mainLocations || []) : []; 
-        renderLocationTree(); 
-        applyFilters(); 
-    }); 
-    
-    db.collection('compounds').onSnapshot(snapshot => { 
-        compounds = []; 
-        snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); 
-        renderAdminStats(); 
-        renderLocationTree(); 
-        applyFilters(); 
-        let sub = document.getElementById('pageSub');
-        if(sub) sub.textContent = `${compounds.length} مشروع مسجل بالسحابة`;
-    }, (error) => {
-        console.error("Firebase Error:", error);
-    }); 
 }
 
 async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collection('system').doc('locations').set({ mainLocations }); } catch (error) {} } }
@@ -296,54 +321,60 @@ function processMagicPaste() {
 }
 
 window.updateFinishingAvgs = function() {
-    let fields = [
-        {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
-        {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
-        {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
-    ];
-
-    fields.forEach(f => {
-        let min = getRawNum(getSafeVal(f.min)) || 0;
-        let max = getRawNum(getSafeVal(f.max)) || 0;
-        let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
-        setSafeVal(f.avg, avg > 0 ? formatNum(Math.round(avg)) : '');
-    });
-
-    updateAllUnitsPrice();
+    try {
+        let fields = [
+            {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
+            {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
+            {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
+        ];
+    
+        fields.forEach(f => {
+            let min = getRawNum(getSafeVal(f.min)) || 0;
+            let max = getRawNum(getSafeVal(f.max)) || 0;
+            let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
+            setSafeVal(f.avg, avg > 0 ? formatNum(Math.round(avg)) : '');
+        });
+    
+        updateAllUnitsPrice();
+    } catch(e){ console.error(e); }
 };
 
 window.toggleAdvPricing = function(forceState) {
-    const wrap = document.getElementById('advPricingWrap');
-    const btn = document.getElementById('btnToggleAdvPricing');
-    if (!wrap || !btn) return;
-    
-    let isOpening = forceState !== undefined ? forceState : wrap.style.display === 'none';
-    
-    if (isOpening) {
-        wrap.style.display = 'block';
-        btn.innerHTML = '✕ إخفاء أسعار التشطيب المخصصة';
-        btn.style.color = 'var(--danger)';
-        btn.style.borderColor = 'var(--danger)';
-        btn.style.borderStyle = 'solid';
-    } else {
-        wrap.style.display = 'none';
-        btn.innerHTML = '+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)';
-        btn.style.color = 'var(--text-muted)';
-        btn.style.borderColor = 'var(--border-color)';
-        btn.style.borderStyle = 'dashed';
-    }
-    updateAllUnitsPrice();
+    try {
+        const wrap = document.getElementById('advPricingWrap');
+        const btn = document.getElementById('btnToggleAdvPricing');
+        if (!wrap || !btn) return;
+        
+        let isOpening = forceState !== undefined ? forceState : wrap.style.display === 'none';
+        
+        if (isOpening) {
+            wrap.style.display = 'block';
+            btn.innerHTML = '✕ إخفاء أسعار التشطيب المخصصة';
+            btn.style.color = 'var(--danger)';
+            btn.style.borderColor = 'var(--danger)';
+            btn.style.borderStyle = 'solid';
+        } else {
+            wrap.style.display = 'none';
+            btn.innerHTML = '+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)';
+            btn.style.color = 'var(--text-muted)';
+            btn.style.borderColor = 'var(--border-color)';
+            btn.style.borderStyle = 'dashed';
+        }
+        updateAllUnitsPrice();
+    } catch(e) { console.error(e); }
 };
 
 window.updatePriceMeterAvg = function() { 
-    const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
-    const max = getRawNum(getSafeVal('fldPriceMeterMax')) || 0; 
-    let avg = 0;
-    if(min > 0 && max > 0) avg = (min + max) / 2; 
-    else avg = min || max || 0; 
-    
-    setSafeVal('fldPriceMeterAvg', avg > 0 ? formatNum(Math.round(avg)) : '');
-    updateAllUnitsPrice(); 
+    try {
+        const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
+        const max = getRawNum(getSafeVal('fldPriceMeterMax')) || 0; 
+        let avg = 0;
+        if(min > 0 && max > 0) avg = (min + max) / 2; 
+        else avg = min || max || 0; 
+        
+        setSafeVal('fldPriceMeterAvg', avg > 0 ? formatNum(Math.round(avg)) : '');
+        updateAllUnitsPrice(); 
+    } catch(e) { console.error(e); }
 }
 
 function renderGrid(){
@@ -538,17 +569,17 @@ function renderGrid(){
   }
 }
 
-// دالة الأمان عشان الزرار يفتح غصب عن أي نقص في الداتا
+// ✨ دالة الأمان عشان الزرار يفتح غصب عن أي نقص أو تهنيج في الداتا ✨
 function openCompoundForm(existing){
   try {
       editingCompoundId = existing ? existing.id : null; 
       document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
       
       let defaultLoc = '';
-      if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => m.subLocations && m.subLocations.some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
+      if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => (m.subLocations || []).some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
       if(existing) setSafeVal('fldLocation', existing.locationId || ''); else setSafeVal('fldLocation', defaultLoc);
       
-      // تصفير كل الخانات بدون أيرورز
+      // تصفير آمن للخانات
       ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant',
        'fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg',
        'fldPriceCore', 'fldPriceSemi', 'fldPriceFull',
@@ -656,26 +687,28 @@ function openCompoundForm(existing){
 }
 
 function onProjectTypeChange() { 
-    const pTypeEl = document.getElementById('fldProjectType');
-    if (!pTypeEl) return;
-    const isComm = pTypeEl.value === 'commercial'; 
-    document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); 
-    
-    const cpWrap = document.getElementById('commercialPriceWrap');
-    if(cpWrap) cpWrap.style.display = isComm ? 'block' : 'none'; 
-    
-    const advWrap = document.getElementById('advPricingWrap');
-    const btnAdv = document.getElementById('btnToggleAdvPricing');
-    if(isComm) {
-        if(advWrap) advWrap.style.display = 'none';
-        if(btnAdv) btnAdv.style.display = 'none';
-    } else {
-        if(btnAdv) btnAdv.style.display = 'flex';
-        if(btnAdv && btnAdv.innerHTML.includes('إخفاء')) {
-            if(advWrap) advWrap.style.display = 'block';
+    try {
+        const pTypeEl = document.getElementById('fldProjectType');
+        if (!pTypeEl) return;
+        const isComm = pTypeEl.value === 'commercial'; 
+        document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); 
+        
+        const cpWrap = document.getElementById('commercialPriceWrap');
+        if(cpWrap) cpWrap.style.display = isComm ? 'block' : 'none'; 
+        
+        const advWrap = document.getElementById('advPricingWrap');
+        const btnAdv = document.getElementById('btnToggleAdvPricing');
+        if(isComm) {
+            if(advWrap) advWrap.style.display = 'none';
+            if(btnAdv) btnAdv.style.display = 'none';
+        } else {
+            if(btnAdv) btnAdv.style.display = 'flex';
+            if(btnAdv && btnAdv.innerHTML.includes('إخفاء')) {
+                if(advWrap) advWrap.style.display = 'block';
+            }
         }
-    }
-    renderUnitRows(); 
+        renderUnitRows(); 
+    } catch(e) { console.error(e); }
 }
 
 function getAverageCommercialPrice(bType) { 
@@ -766,43 +799,45 @@ function updateUnitData(id, field, val) {
 }
 
 function renderUnitRows(){ 
-    const pType = getSafeVal('fldProjectType') || 'residential'; 
-    let typeOptions = pType === 'commercial' ? appSettings.commTypes : appSettings.resTypes;
+    try {
+        const pType = getSafeVal('fldProjectType') || 'residential'; 
+        let typeOptions = pType === 'commercial' ? appSettings.commTypes : appSettings.resTypes;
+        
+        tempUnits.sort((a, b) => {
+            let orderA = UNIT_ORDER[a.bedroomType] || 99;
+            let orderB = UNIT_ORDER[b.bedroomType] || 99;
+            if (orderA !== orderB) return orderA - orderB;
+            return (parseFloat(a.area) || 0) - (parseFloat(b.area) || 0);
+        });
+        
+        const uRows = document.getElementById('unitRows');
+        if(!uRows) return;
+        
+        uRows.innerHTML = tempUnits.map(u=> { 
+            let selectOptions = `<option value="" disabled ${!u.bedroomType ? 'selected' : ''}>اختر النوع...</option>`;
+            if (u.bedroomType && !typeOptions.includes(u.bedroomType) && u.bedroomType !== '__manage__') {
+                 selectOptions += `<option value="${escapeHtml(u.bedroomType)}" selected>${escapeHtml(u.bedroomType)}</option>`;
+            }
+            selectOptions += typeOptions.map(t => `<option value="${escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
+            selectOptions += `<option value="__manage__" style="color:var(--danger); font-weight:bold;">+ إضافة/حذف نوع ⚙️</option>`;
     
-    tempUnits.sort((a, b) => {
-        let orderA = UNIT_ORDER[a.bedroomType] || 99;
-        let orderB = UNIT_ORDER[b.bedroomType] || 99;
-        if (orderA !== orderB) return orderA - orderB;
-        return (parseFloat(a.area) || 0) - (parseFloat(b.area) || 0);
-    });
-    
-    const uRows = document.getElementById('unitRows');
-    if(!uRows) return;
-    
-    uRows.innerHTML = tempUnits.map(u=> { 
-        let selectOptions = `<option value="" disabled ${!u.bedroomType ? 'selected' : ''}>اختر النوع...</option>`;
-        if (u.bedroomType && !typeOptions.includes(u.bedroomType) && u.bedroomType !== '__manage__') {
-             selectOptions += `<option value="${escapeHtml(u.bedroomType)}" selected>${escapeHtml(u.bedroomType)}</option>`;
-        }
-        selectOptions += typeOptions.map(t => `<option value="${escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
-        selectOptions += `<option value="__manage__" style="color:var(--danger); font-weight:bold;">+ إضافة/حذف نوع ⚙️</option>`;
-
-        return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <select style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${selectOptions}</select>
-                    <input type="number" placeholder="غرف" class="num" style="flex:0.6; min-width:55px;" value="${u.rooms||''}" oninput="updateUnitData('${u.id}', 'rooms', this.value)">
-                    <input type="number" placeholder="مباني(م²)" class="num" style="flex:1; min-width:60px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
-                    <input type="number" placeholder="جاردن(م²)" class="num" style="flex:1; min-width:60px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
-                    <input type="number" placeholder="روف(م²)" class="num" style="flex:1; min-width:60px;" value="${u.roofArea||''}" oninput="updateUnitData('${u.id}', 'roofArea', this.value)">
-                    <select style="flex:1; min-width:85px; font-size:11px;" onchange="updateUnitData('${u.id}','finishing',this.value)">
-                        <option value="" disabled ${!u.finishing ? 'selected' : ''}>اختر التشطيب</option>
-                        <option value="core_shell" ${u.finishing==='core_shell'?'selected':''}>طوب أحمر</option>
-                        <option value="semi" ${u.finishing==='semi'?'selected':''}>نصف تشطيب</option>
-                        <option value="full" ${u.finishing==='full'?'selected':''}>تشطيب كامل</option>
-                    </select>
-                    <input type="text" id="price-input-${u.id}" class="num" placeholder="إجمالي السعر" style="flex:1.5; min-width:90px; color:var(--primary); font-weight:bold;" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
-                    <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')">✕</button>
-                </div>` 
-    }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">مفيش وحدات مسجلة!</div>'; 
+            return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <select style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${selectOptions}</select>
+                        <input type="number" placeholder="غرف" class="num" style="flex:0.6; min-width:55px;" value="${u.rooms||''}" oninput="updateUnitData('${u.id}', 'rooms', this.value)">
+                        <input type="number" placeholder="مباني(م²)" class="num" style="flex:1; min-width:60px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
+                        <input type="number" placeholder="جاردن(م²)" class="num" style="flex:1; min-width:60px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
+                        <input type="number" placeholder="روف(م²)" class="num" style="flex:1; min-width:60px;" value="${u.roofArea||''}" oninput="updateUnitData('${u.id}', 'roofArea', this.value)">
+                        <select style="flex:1; min-width:85px; font-size:11px;" onchange="updateUnitData('${u.id}','finishing',this.value)">
+                            <option value="" disabled ${!u.finishing ? 'selected' : ''}>اختر التشطيب</option>
+                            <option value="core_shell" ${u.finishing==='core_shell'?'selected':''}>طوب أحمر</option>
+                            <option value="semi" ${u.finishing==='semi'?'selected':''}>نصف تشطيب</option>
+                            <option value="full" ${u.finishing==='full'?'selected':''}>تشطيب كامل</option>
+                        </select>
+                        <input type="text" id="price-input-${u.id}" class="num" placeholder="إجمالي السعر" style="flex:1.5; min-width:90px; color:var(--primary); font-weight:bold;" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
+                        <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')">✕</button>
+                    </div>` 
+        }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">مفيش وحدات مسجلة!</div>'; 
+    } catch(e){ console.error(e); }
 }
 
 function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', pricePerMeter:'', notes:'', customBullets:[]}); renderPlanRows(); }
@@ -824,37 +859,39 @@ function toggleYearSelection(pId, bId, y){
 }
 
 function renderPlanRows(){ 
-    const pRows = document.getElementById('planRows');
-    if(!pRows) return;
-    pRows.innerHTML = tempPlans.map(p=>`<div class="plan-card">
-        <div class="plan-card-header">
-            <input placeholder="اسم الخطة" style="flex:2; min-width:120px;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)" autocomplete="off">
-            <input type="number" placeholder="% خصم" class="num" style="width:70px; flex-shrink:0;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)">
-            <input type="number" placeholder="% مقدم" class="num" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
-            <input type="number" placeholder="سنوات" class="num" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
-            <select style="min-width:100px; flex-shrink:0;" onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select>
-            <input type="text" placeholder="سعر متر الخطة (اختياري)" class="num" style="width:140px; flex-shrink:0;" value="${p.pricePerMeter ? formatNum(p.pricePerMeter) : ''}" oninput="formatInput(this); updatePlan('${p.id}','pricePerMeter',this.value)" autocomplete="off">
-            <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')">✕</button>
-        </div>
-        <input placeholder="ملاحظات اضافية" style="width:100%; margin-top:10px;" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)" autocomplete="off">
-        <div class="bullets-container">
-            ${(p.customBullets || []).map(b=>`<div class="bullet-row" style="display:flex; gap:10px; align-items:center;">
-                    <select style="flex:1; min-width:100px;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)">
-                        <option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option>
-                        <option value="deferred" ${b.type==='deferred'?'selected':''}>مؤجلة</option>
-                        <option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option>
-                        <option value="after_3m" ${b.type==='after_3m'?'selected':''}>بعد 3 شهور</option>
-                        <option value="after_6m" ${b.type==='after_6m'?'selected':''}>بعد 6 شهور</option>
-                        <option value="after_9m" ${b.type==='after_9m'?'selected':''}>بعد 9 شهور</option>
-                    </select>
-                    <input type="number" placeholder="%" class="num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
-                    <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
-                </div>
-                ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
-            `).join('')}
-            <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:10px;" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
-        </div>
-    </div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">مفيش خطط سداد!</div>'; 
+    try {
+        const pRows = document.getElementById('planRows');
+        if(!pRows) return;
+        pRows.innerHTML = tempPlans.map(p=>`<div class="plan-card">
+            <div class="plan-card-header">
+                <input placeholder="اسم الخطة" style="flex:2; min-width:120px;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)" autocomplete="off">
+                <input type="number" placeholder="% خصم" class="num" style="width:70px; flex-shrink:0;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)">
+                <input type="number" placeholder="% مقدم" class="num" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
+                <input type="number" placeholder="سنوات" class="num" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
+                <select style="min-width:100px; flex-shrink:0;" onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select>
+                <input type="text" placeholder="سعر متر الخطة (اختياري)" class="num" style="width:140px; flex-shrink:0;" value="${p.pricePerMeter ? formatNum(p.pricePerMeter) : ''}" oninput="formatInput(this); updatePlan('${p.id}','pricePerMeter',this.value)" autocomplete="off">
+                <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')">✕</button>
+            </div>
+            <input placeholder="ملاحظات اضافية" style="width:100%; margin-top:10px;" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)" autocomplete="off">
+            <div class="bullets-container">
+                ${(p.customBullets || []).map(b=>`<div class="bullet-row" style="display:flex; gap:10px; align-items:center;">
+                        <select style="flex:1; min-width:100px;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)">
+                            <option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option>
+                            <option value="deferred" ${b.type==='deferred'?'selected':''}>مؤجلة</option>
+                            <option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option>
+                            <option value="after_3m" ${b.type==='after_3m'?'selected':''}>بعد 3 شهور</option>
+                            <option value="after_6m" ${b.type==='after_6m'?'selected':''}>بعد 6 شهور</option>
+                            <option value="after_9m" ${b.type==='after_9m'?'selected':''}>بعد 9 شهور</option>
+                        </select>
+                        <input type="number" placeholder="%" class="num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
+                        <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
+                    </div>
+                    ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+                `).join('')}
+                <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:10px;" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
+            </div>
+        </div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">مفيش خطط سداد!</div>'; 
+    } catch(e){ console.error(e); }
 }
 
 function updatePlan(id, field, val){ 
@@ -1075,7 +1112,7 @@ function renderDetailModalContent() {
     
       document.getElementById('detailBody').innerHTML = html;
   } catch (err) {
-      console.log("Detail HTML Render Error:", err);
+      console.error("Detail HTML Render Error:", err);
   }
 }
 
@@ -1153,6 +1190,7 @@ window.runProjectMiniCalc = function(cId) {
     resultDiv.innerHTML = html;
 };
 
+// ✨ دالة حساب الأقساط المحمية من مشاكل الذاكرة ✨
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = originalTotal * ((discountPct||0)/100);
     const netTotal = originalTotal - discountVal;
@@ -1164,12 +1202,13 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
         const pct = parseFloat(b.percent) || 0; 
         if(pct > 0){ 
             if(b.type === 'annual'){ 
-                const count = (b.selectedYears || []).length;
+                const yearsArray = b.selectedYears || [];
+                const count = yearsArray.length;
                 if (count > 0) {
                     const perYearVal = netTotal * (pct / 100);
                     const ordinals = {1: 'الأولى', 2: 'الثانية', 3: 'الثالثة', 4: 'الرابعة', 5: 'الخامسة', 6: 'السادسة', 7: 'السابعة', 8: 'الثامنة', 9: 'التاسعة', 10: 'العاشرة'};
                     
-                    [...b.selectedYears].sort((a,b)=>a-b).forEach(yr => {
+                    [...yearsArray].sort((a,b)=>a-b).forEach(yr => {
                         const yName = ordinals[yr] || yr;
                         bulletsSummary.push({ type: 'annual', label: `سنة ${yName}: %${pct} = ${formatNum(Math.round(perYearVal))} ج`, val: perYearVal });
                         extraPaymentsTotal += perYearVal; 
