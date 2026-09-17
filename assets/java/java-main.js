@@ -15,7 +15,8 @@ const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", auth
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
-// تفعيل الكاش للتحميل الصاروخي
+
+// تفعيل الكاش الأصلي لضمان تحميل فوري بدون تعليق
 db.enablePersistence({ synchronizeTabs: true }).catch(function(err) { console.log("Cache error: ", err); });
 
 const auth = firebase.auth();
@@ -86,6 +87,10 @@ const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m',
 function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
 function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
 
+// دالة أمان لمنع أي Crash لو الخانة مش موجودة في الـ HTML
+function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+
 function submitLogin() { 
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim(); 
@@ -142,7 +147,10 @@ function isCompoundComplete(c) {
                 (c.pricePerMeterMin && c.pricePerMeterMin > 0) || 
                 (c.priceCore && c.priceCore > 0) || 
                 (c.priceSemi && c.priceSemi > 0) || 
-                (c.priceFull && c.priceFull > 0)) {
+                (c.priceFull && c.priceFull > 0) ||
+                (c.priceCoreMin && c.priceCoreMin > 0) ||
+                (c.priceSemiMin && c.priceSemiMin > 0) ||
+                (c.priceFullMin && c.priceFullMin > 0)) {
                 hasPrice = true;
             }
         }
@@ -174,28 +182,14 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
-// ✨ السحر هنا: تحميل صااااروخي بفضل الكاش المحلي ✨
+// دالة التحميل بدون تهنيج
 async function syncCloudData() { 
     const grid = document.getElementById('compoundGrid'); 
-    
-    let cachedCompounds = localStorage.getItem('broker_compounds_cache');
-    let cachedLocations = localStorage.getItem('broker_locations_cache');
-    
-    // اعرض من الذاكرة فوراً لو موجودة (صفر ثانية انتظار)
-    if (cachedCompounds) {
-        try {
-            compounds = JSON.parse(cachedCompounds);
-            if (cachedLocations) mainLocations = JSON.parse(cachedLocations);
-            renderAdminStats();
-            renderLocationTree();
-            applyFilters();
-        } catch(e) {}
-    } else if (grid && !grid.children.length) {
+    if (grid && !grid.children.length) {
         document.getElementById('pageSub').textContent = "جاري تحميل الداتا..."; 
         grid.innerHTML = skeletonCardsHtml(6);
     }
     
-    // جلب التحديثات في صمت
     db.collection('system').doc('settings').onSnapshot(doc => { 
         if (doc.exists) { 
             let d = doc.data(); 
@@ -205,8 +199,7 @@ async function syncCloudData() {
     });
     
     db.collection('system').doc('locations').onSnapshot(doc => { 
-        mainLocations = doc.exists ? doc.data().mainLocations || [] : []; 
-        try { localStorage.setItem('broker_locations_cache', JSON.stringify(mainLocations)); } catch(e){}
+        mainLocations = doc.exists ? (doc.data().mainLocations || []) : []; 
         renderLocationTree(); 
         applyFilters(); 
     }); 
@@ -214,11 +207,11 @@ async function syncCloudData() {
     db.collection('compounds').onSnapshot(snapshot => { 
         compounds = []; 
         snapshot.forEach(doc => compounds.push({ id: doc.id, ...doc.data() })); 
-        try { localStorage.setItem('broker_compounds_cache', JSON.stringify(compounds)); } catch(e){}
         renderAdminStats(); 
         renderLocationTree(); 
         applyFilters(); 
-        document.getElementById('pageSub').textContent = `${compounds.length} مشروع مسجل بالسحابة`;
+        let sub = document.getElementById('pageSub');
+        if(sub) sub.textContent = `${compounds.length} مشروع مسجل بالسحابة`;
     }); 
 }
 
@@ -303,6 +296,7 @@ function processMagicPaste() {
 window.toggleAdvPricing = function(forceState) {
     const wrap = document.getElementById('advPricingWrap');
     const btn = document.getElementById('btnToggleAdvPricing');
+    if (!wrap || !btn) return;
     
     let isOpening = forceState !== undefined ? forceState : wrap.style.display === 'none';
     
@@ -323,8 +317,8 @@ window.toggleAdvPricing = function(forceState) {
 };
 
 window.updatePriceMeterAvg = function() { 
-    const min = getRawNum(document.getElementById('fldPriceMeterMin').value) || 0; 
-    const max = getRawNum(document.getElementById('fldPriceMeterMax').value) || 0; 
+    const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
+    const max = getRawNum(getSafeVal('fldPriceMeterMax')) || 0; 
     let avg = 0;
     if(min > 0 && max > 0) avg = (min + max) / 2; 
     else avg = min || max || 0; 
@@ -421,9 +415,9 @@ function renderGrid(){
              let pAvg = (pMin > 0 && pMax > 0) ? (pMin + pMax) / 2 : (pMin || pMax || 0);
 
              if (c.isAdvancedPricing) {
-                 let pCore = getRawNum(c.priceCore) || 0;
-                 let pSemi = getRawNum(c.priceSemi) || 0;
-                 let pFull = getRawNum(c.priceFull) || 0;
+                 let pCore = getRawNum(c.priceCore) || getRawNum(c.priceCoreMin) || 0;
+                 let pSemi = getRawNum(c.priceSemi) || getRawNum(c.priceSemiMin) || 0;
+                 let pFull = getRawNum(c.priceFull) || getRawNum(c.priceFullMin) || 0;
 
                  if (u.finishing === 'core_shell' && pCore > 0) meterPrice = pCore;
                  else if (u.finishing === 'semi' && pSemi > 0) meterPrice = pSemi;
@@ -449,6 +443,7 @@ function renderGrid(){
         if(!passPrice) return false;
     }
     
+    // ✨ فلتر الأقساط والمقدم يشمل الدفعات عشان يجيب الصافي بالضبط ✨
     if(filters.downPaymentTarget != null || filters.maxMonthlyInstallment != null){
         const plans = c.paymentPlans || []; 
         if(!plans.length) return false; 
@@ -485,8 +480,8 @@ function renderGrid(){
   
   if(filters.sortOrder && filters.sortOrder !== 'default') {
       list.sort((a, b) => {
-          let aPrice = a.isAdvancedPricing ? (a.pricePerMeterMin || a.priceCore || 0) : (a.pricePerMeterMin || a.pricePerMeter || 0);
-          let bPrice = b.isAdvancedPricing ? (b.pricePerMeterMin || b.priceCore || 0) : (b.pricePerMeterMin || b.pricePerMeter || 0);
+          let aPrice = a.isAdvancedPricing ? (a.pricePerMeterMin || a.priceCoreMin || a.priceCore || 0) : (a.pricePerMeterMin || a.pricePerMeter || 0);
+          let bPrice = b.isAdvancedPricing ? (b.pricePerMeterMin || b.priceCoreMin || b.priceCore || 0) : (b.pricePerMeterMin || b.pricePerMeter || 0);
           return filters.sortOrder === 'asc' ? aPrice - bPrice : bPrice - aPrice;
       });
   }
@@ -519,67 +514,97 @@ function renderGrid(){
   }).join('');
 }
 
-// ✨ تحديث دوال فتح وتعديل الفورم بشكل سليم يمنع أي ايرور ✨
+// ✨ دالة الأمان عشان الزرار ما يعلقش ويقرا الخانات الموجودة بس ✨
 function openCompoundForm(existing){
-  editingCompoundId = existing ? existing.id : null; document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
+  editingCompoundId = existing ? existing.id : null; 
+  document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
   
   let defaultLoc = '';
   if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => m.subLocations.some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
-  if(existing) document.getElementById('fldLocation').value = existing.locationId || ''; else document.getElementById('fldLocation').value = defaultLoc;
+  if(existing) setSafeVal('fldLocation', existing.locationId || ''); else setSafeVal('fldLocation', defaultLoc);
   
-  // تصفير كل الخانات
+  // تصفير كل الخانات بدون أيرورز
   ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant',
    'fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg',
    'fldPriceCore', 'fldPriceSemi', 'fldPriceFull',
    'fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax',
    'fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { 
-       const el = document.getElementById(id);
-       if(el) el.value = ''; 
+       setSafeVal(id, ''); 
    }); 
    
-  ['fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { document.getElementById(id).value = 'core_shell'; });
+  ['fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { setSafeVal(id, 'core_shell'); });
 
   if (existing) {
-      document.getElementById('fldProjectType').value = existing.projectType || 'residential'; document.getElementById('fldCompany').value = existing.companyName || ''; document.getElementById('fldProject').value = existing.projectName || ''; document.getElementById('fldPhaseName').value = existing.phaseName || ''; document.getElementById('fldFloors').value = existing.floors || ''; document.getElementById('fldOwner').value = existing.ownerName || ''; document.getElementById('fldConsultant').value = existing.consultant || ''; 
+      setSafeVal('fldProjectType', existing.projectType || 'residential'); 
+      setSafeVal('fldCompany', existing.companyName || ''); 
+      setSafeVal('fldProject', existing.projectName || ''); 
+      setSafeVal('fldPhaseName', existing.phaseName || ''); 
+      setSafeVal('fldFloors', existing.floors || ''); 
+      setSafeVal('fldOwner', existing.ownerName || ''); 
+      setSafeVal('fldConsultant', existing.consultant || ''); 
       
-      document.getElementById('fldPriceMeter').value = existing.pricePerMeter ? formatNum(existing.pricePerMeter) : '';
-      document.getElementById('fldPriceMeterMin').value = existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : '';
-      document.getElementById('fldPriceMeterMax').value = existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '';
+      setSafeVal('fldPriceMeter', existing.pricePerMeter ? formatNum(existing.pricePerMeter) : '');
+      setSafeVal('fldPriceMeterMin', existing.pricePerMeterMin ? formatNum(existing.pricePerMeterMin) : '');
+      setSafeVal('fldPriceMeterMax', existing.pricePerMeterMax ? formatNum(existing.pricePerMeterMax) : '');
       
       let hasAdv = existing.isAdvancedPricing || existing.priceCore > 0 || existing.priceSemi > 0 || existing.priceFull > 0;
       
       if(hasAdv) {
-          document.getElementById('fldPriceCore').value = existing.priceCore ? formatNum(existing.priceCore) : '';
-          document.getElementById('fldPriceSemi').value = existing.priceSemi ? formatNum(existing.priceSemi) : '';
-          document.getElementById('fldPriceFull').value = existing.priceFull ? formatNum(existing.priceFull) : '';
+          // دمج الأرقام القديمة أو الجديدة عشان متضيعش
+          setSafeVal('fldPriceCore', existing.priceCore ? formatNum(existing.priceCore) : (existing.priceCoreMin ? formatNum(existing.priceCoreMin) : ''));
+          setSafeVal('fldPriceSemi', existing.priceSemi ? formatNum(existing.priceSemi) : (existing.priceSemiMin ? formatNum(existing.priceSemiMin) : ''));
+          setSafeVal('fldPriceFull', existing.priceFull ? formatNum(existing.priceFull) : (existing.priceFullMin ? formatNum(existing.priceFullMin) : ''));
           toggleAdvPricing(true);
       } else {
           toggleAdvPricing(false);
       }
       updatePriceMeterAvg();
 
-      let cp = existing.commercialPrices || {}; document.getElementById('fldAdminMin').value = cp.adminMin ? formatNum(cp.adminMin) : ''; document.getElementById('fldAdminMax').value = cp.adminMax ? formatNum(cp.adminMax) : ''; document.getElementById('fldAdminFinish').value = cp.adminFinish || 'core_shell'; document.getElementById('fldCommMin').value = cp.commMin ? formatNum(cp.commMin) : ''; document.getElementById('fldCommMax').value = cp.commMax ? formatNum(cp.commMax) : ''; document.getElementById('fldCommFinish').value = cp.commFinish || 'core_shell'; document.getElementById('fldClinicMin').value = cp.clinicMin ? formatNum(cp.clinicMin) : ''; document.getElementById('fldClinicMax').value = cp.clinicMax ? formatNum(cp.clinicMax) : ''; document.getElementById('fldClinicFinish').value = cp.clinicFinish || 'core_shell'; document.getElementById('fldRecMin').value = cp.recMin ? formatNum(cp.recMin) : ''; document.getElementById('fldRecMax').value = cp.recMax ? formatNum(cp.recMax) : ''; document.getElementById('fldRecFinish').value = cp.recFinish || 'core_shell';
+      let cp = existing.commercialPrices || {}; 
+      setSafeVal('fldAdminMin', cp.adminMin ? formatNum(cp.adminMin) : ''); 
+      setSafeVal('fldAdminMax', cp.adminMax ? formatNum(cp.adminMax) : ''); 
+      setSafeVal('fldAdminFinish', cp.adminFinish || 'core_shell'); 
+      setSafeVal('fldCommMin', cp.commMin ? formatNum(cp.commMin) : ''); 
+      setSafeVal('fldCommMax', cp.commMax ? formatNum(cp.commMax) : ''); 
+      setSafeVal('fldCommFinish', cp.commFinish || 'core_shell'); 
+      setSafeVal('fldClinicMin', cp.clinicMin ? formatNum(cp.clinicMin) : ''); 
+      setSafeVal('fldClinicMax', cp.clinicMax ? formatNum(cp.clinicMax) : ''); 
+      setSafeVal('fldClinicFinish', cp.clinicFinish || 'core_shell'); 
+      setSafeVal('fldRecMin', cp.recMin ? formatNum(cp.recMin) : ''); 
+      setSafeVal('fldRecMax', cp.recMax ? formatNum(cp.recMax) : ''); 
+      setSafeVal('fldRecFinish', cp.recFinish || 'core_shell');
       
-      document.getElementById('fldFinishingStatus').value = (existing.finishingStatus && existing.finishingStatus !== 'mixed') ? existing.finishingStatus : 'core_shell';
+      setSafeVal('fldFinishingStatus', (existing.finishingStatus && existing.finishingStatus !== 'mixed') ? existing.finishingStatus : 'core_shell');
 
-      document.getElementById('fldMaintenanceValue').value = existing.maintenanceValue || existing.maintenancePercent || ''; 
-      document.getElementById('fldMaintenanceType').value = existing.maintenanceType || 'percent';
+      setSafeVal('fldMaintenanceValue', existing.maintenanceValue || existing.maintenancePercent || ''); 
+      setSafeVal('fldMaintenanceType', existing.maintenanceType || 'percent');
       
-      document.getElementById('fldParkingType').value = existing.parkingType || 'extra';
-      document.getElementById('fldParkingFee').value = existing.parkingFee ? formatNum(existing.parkingFee) : ''; 
-      document.getElementById('fldParkingFee').style.display = (existing.parkingType === 'included') ? 'none' : 'block';
+      setSafeVal('fldParkingType', existing.parkingType || 'extra');
+      setSafeVal('fldParkingFee', existing.parkingFee ? formatNum(existing.parkingFee) : ''); 
+      
+      const pkFeeEl = document.getElementById('fldParkingFee');
+      if(pkFeeEl) pkFeeEl.style.display = (existing.parkingType === 'included') ? 'none' : 'block';
 
-      document.getElementById('fldProjectSize').value = existing.projectSize || ''; document.getElementById('fldDeliveryDate').value = existing.deliveryDate || ''; document.getElementById('fldLocationDetail').value = existing.compoundLocationDetail || ''; document.getElementById('fldLocationLink').value = existing.locationLink || ''; document.getElementById('fldCashDiscount').value = existing.cashDiscount || ''; 
+      setSafeVal('fldProjectSize', existing.projectSize || ''); 
+      setSafeVal('fldDeliveryDate', existing.deliveryDate || ''); 
+      setSafeVal('fldLocationDetail', existing.compoundLocationDetail || ''); 
+      setSafeVal('fldLocationLink', existing.locationLink || ''); 
+      setSafeVal('fldCashDiscount', existing.cashDiscount || ''); 
       
   } else {
-      document.getElementById('fldProjectType').value = 'residential'; 
-      document.getElementById('fldMaintenanceValue').value = ''; document.getElementById('fldMaintenanceType').value = 'percent';
-      document.getElementById('fldParkingType').value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block';
+      setSafeVal('fldProjectType', 'residential'); 
+      setSafeVal('fldMaintenanceValue', ''); 
+      setSafeVal('fldMaintenanceType', 'percent');
+      setSafeVal('fldParkingType', 'extra'); 
+      
+      const pkFeeEl = document.getElementById('fldParkingFee');
+      if(pkFeeEl) pkFeeEl.style.display = 'block';
       toggleAdvPricing(false);
   }
   
   onProjectTypeChange(); 
   
+  // تحديث أسماء الوحدات للإنجليزي وترتيبهم
   tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : []; 
   if (existing) { 
       tempUnits.forEach(u => { u.bedroomType = getUnitEnName(u.bedroomType); }); 
@@ -587,31 +612,51 @@ function openCompoundForm(existing){
   tempPlans = existing ? JSON.parse(JSON.stringify(existing.paymentPlans||[])) : []; 
   tempDecrees = existing ? JSON.parse(JSON.stringify(existing.ministerialDecrees||[])) : []; 
   
-  renderUnitRows(); renderPlanRows(); renderDecreeRows(); document.getElementById('formOverlay').classList.add('open');
+  renderUnitRows(); 
+  renderPlanRows(); 
+  renderDecreeRows(); 
+  document.getElementById('formOverlay').classList.add('open');
 }
 
 function onProjectTypeChange() { 
-    const isComm = document.getElementById('fldProjectType').value === 'commercial'; 
+    const pTypeEl = document.getElementById('fldProjectType');
+    if (!pTypeEl) return;
+    const isComm = pTypeEl.value === 'commercial'; 
     document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); 
-    document.getElementById('commercialPriceWrap').style.display = isComm ? 'block' : 'none'; 
+    
+    const cpWrap = document.getElementById('commercialPriceWrap');
+    if(cpWrap) cpWrap.style.display = isComm ? 'block' : 'none'; 
     
     const advWrap = document.getElementById('advPricingWrap');
     const btnAdv = document.getElementById('btnToggleAdvPricing');
     if(isComm) {
-        advWrap.style.display = 'none';
-        btnAdv.style.display = 'none';
+        if(advWrap) advWrap.style.display = 'none';
+        if(btnAdv) btnAdv.style.display = 'none';
     } else {
-        btnAdv.style.display = 'flex';
-        if(btnAdv.innerHTML.includes('إخفاء')) {
-            advWrap.style.display = 'block';
+        if(btnAdv) btnAdv.style.display = 'flex';
+        if(btnAdv && btnAdv.innerHTML.includes('إخفاء')) {
+            if(advWrap) advWrap.style.display = 'block';
         }
     }
     renderUnitRows(); 
 }
 
-function getAverageCommercialPrice(bType) { let min = 0, max = 0; if (bType === 'admin' || bType === 'Administrative') { min = getRawNum(document.getElementById('fldAdminMin').value); max = getRawNum(document.getElementById('fldAdminMax').value); } else if (bType === 'commercial' || bType === 'Commercial') { min = getRawNum(document.getElementById('fldCommMin').value); max = getRawNum(document.getElementById('fldCommMax').value); } else if (bType === 'clinic' || bType === 'Clinic') { min = getRawNum(document.getElementById('fldClinicMin').value); max = getRawNum(document.getElementById('fldClinicMax').value); } else if (bType === 'recreational' || bType === 'Recreational') { min = getRawNum(document.getElementById('fldRecMin').value); max = getRawNum(document.getElementById('fldRecMax').value); } if (min > 0 && max > 0) return (min + max) / 2; return min || max || 0; }
+function getAverageCommercialPrice(bType) { 
+    let min = 0, max = 0; 
+    if (bType === 'admin' || bType === 'Administrative') { 
+        min = getRawNum(getSafeVal('fldAdminMin')); max = getRawNum(getSafeVal('fldAdminMax')); 
+    } else if (bType === 'commercial' || bType === 'Commercial') { 
+        min = getRawNum(getSafeVal('fldCommMin')); max = getRawNum(getSafeVal('fldCommMax')); 
+    } else if (bType === 'clinic' || bType === 'Clinic') { 
+        min = getRawNum(getSafeVal('fldClinicMin')); max = getRawNum(getSafeVal('fldClinicMax')); 
+    } else if (bType === 'recreational' || bType === 'Recreational') { 
+        min = getRawNum(getSafeVal('fldRecMin')); max = getRawNum(getSafeVal('fldRecMax')); 
+    } 
+    if (min > 0 && max > 0) return (min + max) / 2; 
+    return min || max || 0; 
+}
 
-function addUnitRow(){ const pType = document.getElementById('fldProjectType').value; tempUnits.push({id:uid(), bedroomType: '', rooms: '', area:'', gardenArea:'', roofArea:'', price:'', finishing:'core_shell'}); renderUnitRows(); }
+function addUnitRow(){ const pType = getSafeVal('fldProjectType') || 'residential'; tempUnits.push({id:uid(), bedroomType: '', rooms: '', area:'', gardenArea:'', roofArea:'', price:'', finishing:'core_shell'}); renderUnitRows(); }
 function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
 
 function updateUnitData(id, field, val) {
@@ -638,24 +683,25 @@ function updateUnitData(id, field, val) {
 
     if (u.lockedPrice) return;
 
-    const pType = document.getElementById('fldProjectType').value;
+    const pType = getSafeVal('fldProjectType') || 'residential';
     let meterPrice = 0;
 
     if (pType === 'commercial') {
         meterPrice = getAverageCommercialPrice(u.bedroomType);
     } else {
-        let pSingle = getRawNum(document.getElementById('fldPriceMeter').value) || 0;
-        let pMin = getRawNum(document.getElementById('fldPriceMeterMin').value) || 0;
-        let pMax = getRawNum(document.getElementById('fldPriceMeterMax').value) || 0;
+        let pSingle = getRawNum(getSafeVal('fldPriceMeter')) || 0;
+        let pMin = getRawNum(getSafeVal('fldPriceMeterMin')) || 0;
+        let pMax = getRawNum(getSafeVal('fldPriceMeterMax')) || 0;
         let pAvg = (pMin > 0 && pMax > 0) ? (pMin + pMax) / 2 : (pMin || pMax || 0);
 
-        let isAdvOpen = document.getElementById('advPricingWrap').style.display !== 'none';
+        let advWrap = document.getElementById('advPricingWrap');
+        let isAdvOpen = advWrap && advWrap.style.display !== 'none';
         
         let pCore = 0, pSemi = 0, pFull = 0;
         if (isAdvOpen) {
-            pCore = getRawNum(document.getElementById('fldPriceCore').value) || 0;
-            pSemi = getRawNum(document.getElementById('fldPriceSemi').value) || 0;
-            pFull = getRawNum(document.getElementById('fldPriceFull').value) || 0;
+            pCore = getRawNum(getSafeVal('fldPriceCore')) || 0;
+            pSemi = getRawNum(getSafeVal('fldPriceSemi')) || 0;
+            pFull = getRawNum(getSafeVal('fldPriceFull')) || 0;
         }
 
         if (isAdvOpen && u.finishing === 'core_shell' && pCore > 0) meterPrice = pCore;
@@ -683,7 +729,7 @@ function updateUnitData(id, field, val) {
 }
 
 function renderUnitRows(){ 
-    const pType = document.getElementById('fldProjectType').value; 
+    const pType = getSafeVal('fldProjectType') || 'residential'; 
     let typeOptions = pType === 'commercial' ? appSettings.commTypes : appSettings.resTypes;
     
     tempUnits.sort((a, b) => {
@@ -693,7 +739,10 @@ function renderUnitRows(){
         return (parseFloat(a.area) || 0) - (parseFloat(b.area) || 0);
     });
     
-    document.getElementById('unitRows').innerHTML = tempUnits.map(u=> { 
+    const uRows = document.getElementById('unitRows');
+    if(!uRows) return;
+    
+    uRows.innerHTML = tempUnits.map(u=> { 
         let selectOptions = `<option value="" disabled ${!u.bedroomType ? 'selected' : ''}>اختر النوع...</option>`;
         if (u.bedroomType && !typeOptions.includes(u.bedroomType) && u.bedroomType !== '__manage__') {
              selectOptions += `<option value="${escapeHtml(u.bedroomType)}" selected>${escapeHtml(u.bedroomType)}</option>`;
@@ -738,7 +787,9 @@ function toggleYearSelection(pId, bId, y){
 }
 
 function renderPlanRows(){ 
-    document.getElementById('planRows').innerHTML = tempPlans.map(p=>`<div class="plan-card">
+    const pRows = document.getElementById('planRows');
+    if(!pRows) return;
+    pRows.innerHTML = tempPlans.map(p=>`<div class="plan-card">
         <div class="plan-card-header">
             <input placeholder="اسم الخطة" style="flex:2; min-width:120px;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)" autocomplete="off">
             <input type="number" placeholder="% خصم" class="num" style="width:70px; flex-shrink:0;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)">
@@ -791,7 +842,11 @@ function updateBullet(pId, bId, field, val){
 
 function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', description:'', date:''}); renderDecreeRows(); }
 function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
-function renderDecreeRows(){ document.getElementById('decreeRows').innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); }
+function renderDecreeRows(){ 
+    const dRows = document.getElementById('decreeRows');
+    if(!dRows) return;
+    dRows.innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); 
+}
 
 function openDetail(id){
   const c = compounds.find(x=>x.id===id); if(!c) return; viewingCompoundId = id;
@@ -1089,7 +1144,7 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
     return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
 }
 
-function openCalculator(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>document.getElementById(id).value=''); document.getElementById('calcResult').style.display='none'; renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); }
+function openCalculator(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>setSafeVal(id, '')); document.getElementById('calcResult').style.display='none'; renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); }
 function addCalcBulletRow(){ calcCustomBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderCalcBulletsRows(); }
 function removeCalcBulletRow(id){ calcCustomBullets=calcCustomBullets.filter(b=>b.id!==id); renderCalcBulletsRows(); }
 
@@ -1107,7 +1162,9 @@ function updateCalcBullet(id, f, v){
 }
 
 function renderCalcBulletsRows(){ 
-    document.getElementById('calcBulletsRows').innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row" style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+    const cbRows = document.getElementById('calcBulletsRows');
+    if(!cbRows) return;
+    cbRows.innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row" style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
             <select style="flex:1; min-width:100px; padding:8px; border-radius:4px; background:var(--item-bg); border:1px solid var(--border-color); color:var(--text-main);" onchange="updateCalcBullet('${b.id}','type',this.value)">
                 <option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option>
                 <option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option>
@@ -1124,11 +1181,11 @@ function renderCalcBulletsRows(){
 }
 
 function runUniversalCalculator(){ 
-    const inputVal = document.getElementById('calcTotal').value.replace(/,/g, '');
+    const inputVal = getSafeVal('calcTotal').replace(/,/g, '');
     const t = getRawNum(inputVal); 
     if(!t || isNaN(t)) return showToast('أدخل إجمالي سعر صحيح'); 
     
-    const r = calcInstallmentWithDiscount(t, parseFloat(document.getElementById('calcDiscountPct').value)||0, parseFloat(document.getElementById('calcDownPct').value)||0, calcCustomBullets, parseFloat(document.getElementById('calcYears').value)||0, 12); 
+    const r = calcInstallmentWithDiscount(t, parseFloat(getSafeVal('calcDiscountPct'))||0, parseFloat(getSafeVal('calcDownPct'))||0, calcCustomBullets, parseFloat(getSafeVal('calcYears'))||0, 12); 
     
     const box = document.getElementById('calcResult'); 
     box.style.display='grid'; 
@@ -1150,7 +1207,8 @@ function runUniversalCalculator(){
     `; 
 }
 
-document.getElementById('calcTotal').addEventListener('input', function() { formatInput(this); });
+const cTotal = document.getElementById('calcTotal');
+if(cTotal) { cTotal.addEventListener('input', function() { formatInput(this); }); }
 
 function closeModal(id){ 
     if (id === 'formOverlay') { if(!confirm('هل أنت متأكد من إغلاق النافذة؟ لن يتم حفظ التعديلات الأخيرة.')) return; }
@@ -1177,6 +1235,7 @@ function ensureXLSXLoaded() {
     });
     return xlsxLoadPromise;
 }
+
 async function handleExcelUpload(event) {
     const file = event.target.files[0]; if (!file) return; document.getElementById('loadingOverlay').style.display = 'flex'; document.getElementById('loadingMsg').textContent = "جاري تجهيز أداة قراءة الإكسيل...";
     try { await ensureXLSXLoaded(); } catch (e) { alert("تعذر تحميل مكتبة قراءة ملفات الإكسيل."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; return; }
@@ -1210,4 +1269,3 @@ async function handleExcelUpload(event) {
         } catch (error) { alert("حدث خطأ."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; }
     }; reader.readAsArrayBuffer(file);
 }
-populateDeliverySelects();
