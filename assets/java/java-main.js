@@ -16,8 +16,8 @@ firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
 
-// مسح أي كاش قديم يسبب مشاكل
-try { localStorage.removeItem('broker_compounds_cache'); localStorage.removeItem('broker_locations_cache'); } catch(e){}
+// تفعيل الكاش الرسمي لضمان تحميل فوري 
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) { console.log("Cache error: ", err); });
 
 const auth = firebase.auth();
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
@@ -164,27 +164,15 @@ function isCompoundComplete(c) {
     }
 }
 
-// ✨ إصلاح لوحة الإحصائيات (عشان تظهر للمدير، وتختفي للمشترك بدون ما توقف الكود) ✨
 function renderAdminStats() {
     try {
-        const board = document.getElementById('adminStatsBoard'); 
-        if (!board) return;
-        
-        if (!isEditor && !isAdmin) { 
-            board.style.display = 'none'; 
-            return; // هنا المشكلة كانت: لو هو مشترك الكود مابيكملش فالمشاريع مش بتترسم
-        }
-        
+        const board = document.getElementById('adminStatsBoard'); if (!board) return;
+        if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
         board.style.display = 'flex';
         let completed = compounds.filter(c => isCompoundComplete(c)).length;
-        
-        const stTotal = document.getElementById('statTotal');
-        const stComp = document.getElementById('statCompleted');
-        const stInc = document.getElementById('statIncomplete');
-        
-        if(stTotal) stTotal.textContent = compounds.length;
-        if(stComp) stComp.textContent = completed;
-        if(stInc) stInc.textContent = compounds.length - completed;
+        document.getElementById('statTotal').textContent = compounds.length;
+        document.getElementById('statCompleted').textContent = completed;
+        document.getElementById('statIncomplete').textContent = compounds.length - completed;
     } catch(e) { console.error("Stats Error:", e); }
 }
 
@@ -195,7 +183,48 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
-// ✨ دالة تحميل الداتا النقية (بدون كاش يضرب الكود) ✨
+// ✨ الدالة اللي كانت ناقصة اللي بترسم المناطق في القائمة الجانبية ✨
+function renderLocationTree(){
+  try {
+      const wrap = document.getElementById('locationTree'); 
+      if(!wrap) return;
+      const isAllActive = activeLocationIds.length === 0;
+      let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span class="num">${compounds ? compounds.length : 0}</span></div>`;
+      
+      if (Array.isArray(mainLocations)) {
+          mainLocations.forEach((mainLoc) => { 
+              if(!mainLoc) return;
+              let mainCount = 0; 
+              let subs = Array.isArray(mainLoc.subLocations) ? mainLoc.subLocations : [];
+              subs.forEach(sub => { 
+                  if(sub && compounds) mainCount += compounds.filter(c => c.locationId === sub.id).length; 
+              }); 
+              
+              const isOpen = !!openMainLocIds[mainLoc.id]; const isMainActive = activeLocationIds.includes(mainLoc.id);
+              html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name||'')}</span></div><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="color:var(--text-muted);">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)" role="button" tabindex="0">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
+              
+              subs.forEach(sub => { 
+                  if(!sub) return;
+                  const subCount = compounds ? compounds.filter(c => c.locationId === sub.id).length : 0; 
+                  const isSubActive = activeLocationIds.includes(sub.id);
+                  html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name||'')}</span><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
+              }); 
+              html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px; font-size:10px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
+          }); 
+      }
+      wrap.innerHTML = html; 
+      
+      const fldLoc = document.getElementById('fldLocation');
+      if(fldLoc && Array.isArray(mainLocations)) {
+          fldLoc.innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + mainLocations.map(m => {
+              if(!m) return '';
+              let subOptions = Array.isArray(m.subLocations) ? m.subLocations.map(s => `<option value="${s.id}">${escapeHtml(m.name||'')} ⬅️ ${escapeHtml(s.name||'')}</option>`).join('') : '';
+              return `<optgroup label="${escapeHtml(m.name||'')}">${subOptions}</optgroup>`;
+          }).join('');
+      }
+  } catch(e) { console.error("Render Location Error:", e); }
+}
+
 async function syncCloudData() { 
     try {
         const grid = document.getElementById('compoundGrid'); 
@@ -219,7 +248,7 @@ async function syncCloudData() {
             try {
                 mainLocations = doc.exists ? (doc.data().mainLocations || []) : []; 
                 renderLocationTree(); 
-                applyFilters(); // تحديث الفلاتر بعد تحميل المناطق
+                applyFilters(); 
             } catch(e) { console.error(e); }
         }); 
         
@@ -229,9 +258,9 @@ async function syncCloudData() {
                 snapshot.forEach(doc => tempCompounds.push({ id: doc.id, ...doc.data() })); 
                 compounds = tempCompounds;
                 
-                renderAdminStats(); // تحديث أرقام البوردة
-                renderLocationTree(); // تحديث الأرقام اللي في القائمة الجانبية
-                applyFilters(); // رسم المشاريع
+                renderAdminStats(); 
+                renderLocationTree(); 
+                applyFilters(); 
                 
                 let sub = document.getElementById('pageSub');
                 if(sub) sub.textContent = `${compounds.length} مشروع مسجل بالسحابة`;
@@ -378,6 +407,150 @@ window.updatePriceMeterAvg = function() {
         setSafeVal('fldPriceMeterAvg', avg > 0 ? formatNum(Math.round(avg)) : '');
         updateAllUnitsPrice(); 
     } catch(e) { console.error(e); }
+}
+
+function selectLocationNode(nodeId){ 
+    if(nodeId === 'all') { activeLocationIds = []; } else {
+        const index = activeLocationIds.indexOf(nodeId);
+        if(index > -1) { activeLocationIds.splice(index, 1); } else { activeLocationIds.push(nodeId); }
+    }
+    renderLocationTree(); renderGrid(); 
+}
+
+function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
+
+function toggleMobileLoc() {
+    const wrap = document.getElementById('locWrapperMobile'); const btn = document.getElementById('mobileLocToggleBtn');
+    if(wrap.classList.contains('show')) { wrap.classList.remove('show'); btn.classList.remove('active'); btn.innerHTML = '📍 تصفية بالمناطق والمدن ▼'; } 
+    else { wrap.classList.add('show'); btn.classList.add('active'); btn.innerHTML = '📍 إخفاء المناطق ▲'; }
+}
+
+async function addMainLocation(){ if(!isEditor) return; const input = document.getElementById('newMainLocInput'); if(!input.value.trim()) return; const newId = uid(); mainLocations.push({ id: newId, name: input.value.trim(), subLocations: [] }); openMainLocIds[newId] = true; input.value = ''; await saveMainLocationsToCloud(); }
+async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف المنطقة؟')) return; const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; mainLocations = mainLocations.filter(m => m.id !== mainId); const batch = db.batch(); compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== mainId && !subIds.includes(id)); await saveMainLocationsToCloud(); }
+async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
+async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
+
+function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
+
+let searchDebounceTimer = null;
+function handleSearchInput() {
+    const val = document.getElementById('fSearchText').value;
+    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = val ? 'flex' : 'none';
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(applyFilters, 300);
+}
+function clearSearchOnly() {
+    document.getElementById('fSearchText').value = '';
+    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
+    clearTimeout(searchDebounceTimer);
+    applyFilters();
+    document.getElementById('fSearchText').focus();
+}
+
+function applyFilters(){ 
+    const checkedTypes = Array.from(document.querySelectorAll('.prop-type-cb:checked')).map(cb => cb.value);
+    filters = { 
+        searchText: (document.getElementById('fSearchText').value || '').trim().toLowerCase(), 
+        minPrice: getRawNum(document.getElementById('fMinPrice').value), 
+        maxPrice: getRawNum(document.getElementById('fMaxPrice').value), 
+        downPaymentTarget: getRawNum(document.getElementById('fDownPayment').value), 
+        maxMonthlyInstallment: getRawNum(document.getElementById('fMonthlyInstallment').value),
+        propertyTypes: checkedTypes.length > 0 ? checkedTypes : null,
+        bedrooms: selectedBeds.length > 0 ? selectedBeds : null,
+        sortOrder: document.getElementById('fSortOrder').value || 'default'
+    }; 
+    closeAllDropdowns(); renderGrid(); 
+}
+
+function resetFilters(){ 
+    document.getElementById('fSearchText').value = ''; document.getElementById('fMinPrice').value = ''; document.getElementById('fMaxPrice').value = ''; document.getElementById('fDownPayment').value = ''; document.getElementById('fMonthlyInstallment').value = ''; document.getElementById('fSortOrder').value = 'default';
+    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false); document.querySelectorAll('.pill').forEach(p => p.classList.remove('active')); selectedBeds = [];
+    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
+    clearTimeout(searchDebounceTimer);
+    applyFilters(); 
+}
+
+function findSubLocationName(subId){ 
+    if(!Array.isArray(mainLocations)) return '-';
+    for(let i=0; i<mainLocations.length; i++){ 
+        let m=mainLocations[i]; 
+        if(m && Array.isArray(m.subLocations)) { 
+            let s = m.subLocations.find(x => x.id === subId); 
+            if(s) return `${m.name||''} ⬅️ ${s.name||''}`; 
+        } 
+    } 
+    return '-'; 
+}
+
+function generateDossierHTML(c) {
+    const validPrices = (c.unitTypes||[]).map(u=>getRawNum(u.price)).filter(p => p !== null && !isNaN(p) && p > 0);
+    const minPrice = validPrices.length ? Math.min(...validPrices) : null;
+    let pDisplay = '';
+    
+    if (c.projectType === 'commercial' && c.commercialPrices) {
+        let mins = [c.commercialPrices.adminMin, c.commercialPrices.commMin, c.commercialPrices.clinicMin, c.commercialPrices.recMin].filter(x => x > 0);
+        let absoluteMin = mins.length > 0 ? Math.min(...mins) : 0; 
+        pDisplay = absoluteMin > 0 ? `يبدأ من ${formatNum(absoluteMin)}` : '-';
+    } else { 
+        if (c.pricePerMeterMin > 0 && c.pricePerMeterMax > 0 && c.pricePerMeterMin !== c.pricePerMeterMax) {
+            pDisplay = `${formatNum(c.pricePerMeterMin)} - ${formatNum(c.pricePerMeterMax)}`;
+        } else if (c.pricePerMeterMin > 0) {
+            pDisplay = `يبدأ من ${formatNum(c.pricePerMeterMin)}`;
+        } else if (c.pricePerMeter > 0) {
+            pDisplay = formatNum(c.pricePerMeter);
+        } else {
+            pDisplay = '-';
+        }
+    }
+
+    let phaseTag = c.phaseName ? `<span class="phase-tag">${escapeHtml(c.phaseName)}</span>` : '';
+    let finishText = c.projectType === 'commercial' ? 'متنوع' : (FINISHING_TYPES[c.finishingStatus]||'-');
+    
+    return `<div class="dossier" onclick="openDetail('${c.id}')">
+                ${(c.ministerialDecrees && c.ministerialDecrees.length > 0) ? '<div class="stamp">معتمد</div>' : ''}
+                <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
+                <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)} ${phaseTag}</div>
+                <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
+                <div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div>
+                <div class="dossier-row"><b>ارتفاع العمارات:</b> <span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div>
+                <div class="dossier-row" style="border-bottom:none;"><b>التشطيب:</b> <span>${finishText}</span></div>
+                <div class="dossier-meta">
+                    <div class="meta-chip"><span>سعر المتر</span><div>${pDisplay}</div></div>
+                    <div class="meta-chip"><span>أقل سعر وحدة</span><div>${minPrice ? formatNum(minPrice) : '-'}</div></div>
+                </div>
+            </div>`;
+}
+
+function generateMasterDossierHTML(group) {
+    let c = group[0]; 
+    return `<div class="dossier master-dossier" onclick="openPhasesModal('${escapeHtml(String(c.projectName||'')).replace(/'/g, "\\'")}', '${escapeHtml(String(c.companyName||'')).replace(/'/g, "\\'")}')">
+        <div class="master-badge">مراحل متعددة</div>
+        <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
+        <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)}</div>
+        <div class="dossier-badge">${PROJECT_TYPES[c.projectType||'residential']}</div>
+        <div class="dossier-row"><b>الفرع:</b> <span>${highlightText(findSubLocationName(c.locationId), filters.searchText)}</span></div>
+        <div class="dossier-meta" style="margin-top:15px; grid-template-columns: 1fr;">
+            <div class="meta-chip" style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.05); border:1px dashed var(--border-color);">
+                <span>اضغط لاختيار المرحلة (${group.length})</span>
+                <div style="font-size:16px;">➤</div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function openPhasesModal(projName, compName) {
+    let group = compounds.filter(c => String(c.projectName||'') === projName && String(c.companyName||'') === compName);
+    document.getElementById('phasesTitle').textContent = `مراحل مشروع: ${projName}`;
+    
+    let html = group.map(c => {
+        return `<div class="detail-item" style="cursor:pointer; margin-bottom:10px;" onclick="closeModal('phasesOverlay'); setTimeout(()=>openDetail('${c.id}'), 300)">
+            <div style="color:var(--danger); font-size:18px; font-weight:800; margin-bottom:5px;">${escapeHtml(c.phaseName || 'المرحلة الأساسية')}</div>
+            <div style="font-size:12px; color:var(--text-muted);">عمارات: <span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span> | تسليم: ${deliveryLabel(c.deliveryDate)}</div>
+        </div>`;
+    }).join('');
+    
+    document.getElementById('phasesBody').innerHTML = html;
+    document.getElementById('phasesOverlay').classList.add('open');
 }
 
 function renderGrid(){
@@ -593,6 +766,7 @@ function renderGrid(){
   }
 }
 
+// ✨ دالة الأمان عشان الزرار يفتح غصب عن أي نقص أو تهنيج في الداتا القديمة ✨
 function openCompoundForm(existing){
   try {
       editingCompoundId = existing ? existing.id : null; 
