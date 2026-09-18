@@ -49,19 +49,16 @@ function selectPill(groupId, val) {
     if (el.classList.contains('active')) { selectedBeds.push(val); } 
     else { selectedBeds = selectedBeds.filter(v => v !== val); } 
 }
-
 function selectDelivery(val, el) {
     el.classList.toggle('active');
     if (el.classList.contains('active')) { selectedDelivery.push(val); }
     else { selectedDelivery = selectedDelivery.filter(v => v !== val); }
 }
-
 function selectFinishing(val, el) {
     el.classList.toggle('active');
     if (el.classList.contains('active')) { selectedFinishing.push(val); }
     else { selectedFinishing = selectedFinishing.filter(v => v !== val); }
 }
-
 function openFilterDrawer() {
     const ov = document.getElementById('filterDrawerOverlay');
     const dr = document.getElementById('filterDrawer');
@@ -246,7 +243,6 @@ async function syncCloudData() {
                 let tempCompounds = [];
                 snapshot.forEach(doc => tempCompounds.push({ id: doc.id, ...doc.data() })); 
                 compounds = tempCompounds;
-                
                 renderAdminStats(); 
                 renderLocationTree(); 
                 applyFilters(); 
