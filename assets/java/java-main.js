@@ -15,8 +15,6 @@ const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", auth
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
-// ❌ تم إزالة db.enablePersistence() نهائياً لأنه كان يسبب التعليق والشاشة السوداء ❌
-
 const auth = firebase.auth();
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
@@ -526,7 +524,7 @@ function renderGrid(){
               
               return true;
           } catch(e) {
-              return false; // تجاهل أي مشروع فيه خطأ
+              return false; 
           }
       });
       
@@ -1196,7 +1194,7 @@ window.runProjectMiniCalc = function(cId) {
     resultDiv.innerHTML = html;
 };
 
-// ✨ حماية مطلقة لكود حساب الأقساط ✨
+// دالة الأقساط المحمية 100% من أخطاء الذاكرة
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = (originalTotal || 0) * ((discountPct||0)/100);
     const netTotal = (originalTotal || 0) - discountVal;
