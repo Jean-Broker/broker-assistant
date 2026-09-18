@@ -392,7 +392,9 @@ body.light-mode .paywall-overlay { background: rgba(255,255,255,0.85); }
 
 .toast { position: fixed; bottom: -6.25rem; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--btn-text); padding: 0.75rem 1.875rem; border-radius: var(--radius-pill); font-weight: 800; box-shadow: var(--glow); transition: bottom 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 9999; font-size: 0.8125rem;}
 .toast.show { bottom: 1.875rem; }
-#loadingOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column; justify-content:center; align-items:center; }
+
+/* 🚨 شاشة التحميل متأمنة عشان متظهرش وتخفي الموقع 🚨 */
+#loadingOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column; justify-content:center; align-items:center; }
 .loader { border: 3px solid rgba(220, 38, 38, 0.2); border-top: 3px solid var(--primary); border-radius: 50%; width: 2.5rem; height: 2.5rem; animation: spin 1s linear infinite; margin-bottom:0.9375rem; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
