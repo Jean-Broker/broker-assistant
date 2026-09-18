@@ -1,15 +1,3 @@
-// --- الدوال الأساسية اللي كانت بتعمل Crash لما اتمسحت ---
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function showToast(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
-function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
-function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
-function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
-function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
-function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
-function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
-
 // --- Theme & Setup ---
 function setNavForApp(isAppView) { const links = document.getElementById('siteBarLinks'), loginBtn = document.getElementById('siteBarLoginBtn'); if (links) links.classList.toggle('nav-app-hidden', isAppView); if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); }
 if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPageContainer').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
@@ -42,11 +30,17 @@ window.addEventListener('load', () => {
 
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (document.getElementById('filterDrawer').classList.contains('open')) closeFilterDrawer();
+    closeAllDropdowns();
+    if (document.getElementById('filterDrawer') && document.getElementById('filterDrawer').classList.contains('open')) closeFilterDrawer();
     if (document.getElementById('paywallModal').style.display === 'flex') closeLoginModal();
     document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay' || ov.id === 'typesOverlay') return; ov.classList.remove('open'); });
 });
 
+function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
+function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
+document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper') && !event.target.closest('.glass-search-container') && !event.target.closest('.filter-drawer')) { closeAllDropdowns(); } });
+
+// ✨ متغيرات الفلاتر الجديدة ✨
 let selectedBeds = [];
 let selectedDelivery = [];
 let selectedFinishing = [];
@@ -56,23 +50,30 @@ function selectPill(groupId, val) {
     if (el.classList.contains('active')) { selectedBeds.push(val); } 
     else { selectedBeds = selectedBeds.filter(v => v !== val); } 
 }
+
 function selectDelivery(val, el) {
     el.classList.toggle('active');
     if (el.classList.contains('active')) { selectedDelivery.push(val); }
     else { selectedDelivery = selectedDelivery.filter(v => v !== val); }
 }
+
 function selectFinishing(val, el) {
     el.classList.toggle('active');
     if (el.classList.contains('active')) { selectedFinishing.push(val); }
     else { selectedFinishing = selectedFinishing.filter(v => v !== val); }
 }
+
 function openFilterDrawer() {
-    document.getElementById('filterDrawerOverlay').classList.add('open');
-    document.getElementById('filterDrawer').classList.add('open');
+    const ov = document.getElementById('filterDrawerOverlay');
+    const dr = document.getElementById('filterDrawer');
+    if(ov) ov.classList.add('open');
+    if(dr) dr.classList.add('open');
 }
 function closeFilterDrawer() {
-    document.getElementById('filterDrawerOverlay').classList.remove('open');
-    document.getElementById('filterDrawer').classList.remove('open');
+    const ov = document.getElementById('filterDrawerOverlay');
+    const dr = document.getElementById('filterDrawer');
+    if(ov) ov.classList.remove('open');
+    if(dr) dr.classList.remove('open');
 }
 
 let currentUser = null, isAdmin = false, isEditor = false;
@@ -98,6 +99,19 @@ const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إد�
 const FINISHING_TYPES = { core_shell: 'طوب أحمر', semi: 'نصف تشطيب', full: 'تشطيب كامل', mixed: 'متنوع' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'} ];
+
+function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
+function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function showToast(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
+
+function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
+function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
+
+function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 
 function submitLogin() { 
     const email = document.getElementById('loginEmail').value.trim();
@@ -312,7 +326,12 @@ async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف ال
 async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
 async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
 
-function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.glass-tab').forEach(b => b.classList.remove('active')); if(btnElem) btnElem.classList.add('active'); renderGrid(); }
+function selectProjectType(type, btnElem){ 
+    activeProjectType = type; 
+    document.querySelectorAll('.glass-tab').forEach(b => b.classList.remove('active')); 
+    if(btnElem) btnElem.classList.add('active'); 
+    renderGrid(); 
+}
 
 let searchDebounceTimer = null;
 function handleSearchInput() {
@@ -854,6 +873,63 @@ function processMagicPaste() {
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
 }
 
+window.updateFinishingAvgs = function() {
+    try {
+        let fields = [
+            {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
+            {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
+            {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
+        ];
+    
+        fields.forEach(f => {
+            let min = getRawNum(getSafeVal(f.min)) || 0;
+            let max = getRawNum(getSafeVal(f.max)) || 0;
+            let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
+            setSafeVal(f.avg, avg > 0 ? formatNum(Math.round(avg)) : '');
+        });
+    
+        updateAllUnitsPrice();
+    } catch(e){ console.error(e); }
+};
+
+window.toggleAdvPricing = function(forceState) {
+    try {
+        const wrap = document.getElementById('advPricingWrap');
+        const btn = document.getElementById('btnToggleAdvPricing');
+        if (!wrap || !btn) return;
+        
+        let isOpening = forceState !== undefined ? forceState : wrap.style.display === 'none';
+        
+        if (isOpening) {
+            wrap.style.display = 'block';
+            btn.innerHTML = '✕ إخفاء أسعار التشطيب المخصصة';
+            btn.style.color = 'var(--danger)';
+            btn.style.borderColor = 'var(--danger)';
+            btn.style.borderStyle = 'solid';
+        } else {
+            wrap.style.display = 'none';
+            btn.innerHTML = '+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)';
+            btn.style.color = 'var(--text-muted)';
+            btn.style.borderColor = 'var(--border-color)';
+            btn.style.borderStyle = 'dashed';
+        }
+        updateAllUnitsPrice();
+    } catch(e) { console.error(e); }
+};
+
+window.updatePriceMeterAvg = function() { 
+    try {
+        const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
+        const max = getRawNum(getSafeVal('fldPriceMeterMax')) || 0; 
+        let avg = 0;
+        if(min > 0 && max > 0) avg = (min + max) / 2; 
+        else avg = min || max || 0; 
+        
+        setSafeVal('fldPriceMeterAvg', avg > 0 ? formatNum(Math.round(avg)) : '');
+        updateAllUnitsPrice(); 
+    } catch(e) { console.error(e); }
+}
+
 function onProjectTypeChange() { 
     try {
         const pTypeEl = document.getElementById('fldProjectType');
@@ -1098,6 +1174,45 @@ function renderDecreeRows(){
     dRows.innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); 
 }
 
+function openDetail(id){
+  try {
+      const c = compounds.find(x=>x.id===id); if(!c) return; viewingCompoundId = id;
+      const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => getUnitEnName(u.bedroomType))));
+      availTypes.sort((a,b) => (UNIT_ORDER[a]||99) - (UNIT_ORDER[b]||99));
+      
+      activeDetailCategory = availTypes.length ? availTypes[0] : null; 
+      if (activeDetailCategory) {
+          let filtered = (c.unitTypes||[]).filter(u => getUnitEnName(u.bedroomType) === activeDetailCategory);
+          filtered.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
+          activeDetailUnitId = filtered.length > 0 ? filtered[0].id : null;
+      } else {
+          activeDetailUnitId = null;
+      }
+      
+      renderDetailModalContent(); 
+      const ov = document.getElementById('detailOverlay');
+      if(ov) ov.classList.add('open');
+  } catch(e) {
+      console.log("Detail Error:", e);
+  }
+}
+
+function setDetailCategory(catKey) { 
+    try {
+        activeDetailCategory = catKey; 
+        const c = compounds.find(x => x.id === viewingCompoundId); 
+        if (c && c.unitTypes) { 
+            const matched = c.unitTypes.filter(u => getUnitEnName(u.bedroomType) === catKey); 
+            matched.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
+            if (matched.length > 0) activeDetailUnitId = matched[0].id; 
+        } 
+        renderDetailModalContent(); 
+    } catch(e) { console.error(e); }
+}
+
+function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
+function editCurrentCompound(){ const c = compounds.find(x=>x.id===viewingCompoundId); if(!c) return; closeModal('detailOverlay'); openCompoundForm(c); }
+
 function renderDetailModalContent() {
   try {
       const c = compounds.find(x => x.id === viewingCompoundId); if (!c) return;
@@ -1329,6 +1444,7 @@ window.runProjectMiniCalc = function(cId) {
     resultDiv.innerHTML = html;
 };
 
+// دالة الأقساط المحمية 100%
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = (originalTotal || 0) * ((discountPct||0)/100);
     const netTotal = (originalTotal || 0) - discountVal;
