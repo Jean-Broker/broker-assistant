@@ -1,3 +1,15 @@
+// --- الدوال الأساسية اللي كانت بتعمل Crash لما اتمسحت ---
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function showToast(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
+function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
+function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
+function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
+function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
+function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+
 // --- Theme & Setup ---
 function setNavForApp(isAppView) { const links = document.getElementById('siteBarLinks'), loginBtn = document.getElementById('siteBarLoginBtn'); if (links) links.classList.toggle('nav-app-hidden', isAppView); if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); }
 if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPageContainer').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
@@ -30,17 +42,38 @@ window.addEventListener('load', () => {
 
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    closeAllDropdowns();
+    if (document.getElementById('filterDrawer').classList.contains('open')) closeFilterDrawer();
     if (document.getElementById('paywallModal').style.display === 'flex') closeLoginModal();
     document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay' || ov.id === 'typesOverlay') return; ov.classList.remove('open'); });
 });
 
-function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
-function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
-document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper')) { closeAllDropdowns(); } });
-
 let selectedBeds = [];
-function selectPill(groupId, val) { const el = event.target; el.classList.toggle('active'); if (el.classList.contains('active')) { selectedBeds.push(val); } else { selectedBeds = selectedBeds.filter(v => v !== val); } applyFilters(); }
+let selectedDelivery = [];
+let selectedFinishing = [];
+
+function selectPill(groupId, val) { 
+    const el = event.target; el.classList.toggle('active'); 
+    if (el.classList.contains('active')) { selectedBeds.push(val); } 
+    else { selectedBeds = selectedBeds.filter(v => v !== val); } 
+}
+function selectDelivery(val, el) {
+    el.classList.toggle('active');
+    if (el.classList.contains('active')) { selectedDelivery.push(val); }
+    else { selectedDelivery = selectedDelivery.filter(v => v !== val); }
+}
+function selectFinishing(val, el) {
+    el.classList.toggle('active');
+    if (el.classList.contains('active')) { selectedFinishing.push(val); }
+    else { selectedFinishing = selectedFinishing.filter(v => v !== val); }
+}
+function openFilterDrawer() {
+    document.getElementById('filterDrawerOverlay').classList.add('open');
+    document.getElementById('filterDrawer').classList.add('open');
+}
+function closeFilterDrawer() {
+    document.getElementById('filterDrawerOverlay').classList.remove('open');
+    document.getElementById('filterDrawer').classList.remove('open');
+}
 
 let currentUser = null, isAdmin = false, isEditor = false;
 let mainLocations = [], compounds = [], activeProjectType = 'all';
@@ -56,44 +89,15 @@ let appSettings = {
     commTypes: ['Commercial', 'Administrative', 'Clinic', 'Recreational']
 };
 
-const UNIT_EN_NAMES = {
-    'استوديو': 'Studio', '1 غرفة نوم': '1 Bedroom', '2 غرفة نوم': '2 Bedrooms',
-    '3 غرف نوم': '3 Bedrooms', '4 غرف نوم': '4 Bedrooms', '5 غرف نوم': '5 Bedrooms',
-    'دوبلكس': 'Duplex', 'بنتهاوس': 'Penthouse', 'تاون هاوس': 'Townhouse',
-    'توين هاوس': 'Twinhouse', 'فيلا': 'Villa', 'شاليه': 'Chalet', 'شقة': 'Apartment',
-    'تجاري': 'Commercial', 'إداري': 'Administrative', 'عيادة': 'Clinic', 'ترفيهي': 'Recreational'
-};
+const UNIT_EN_NAMES = { 'استوديو': 'Studio', '1 غرفة نوم': '1 Bedroom', '2 غرفة نوم': '2 Bedrooms', '3 غرف نوم': '3 Bedrooms', '4 غرف نوم': '4 Bedrooms', '5 غرف نوم': '5 Bedrooms', 'دوبلكس': 'Duplex', 'بنتهاوس': 'Penthouse', 'تاون هاوس': 'Townhouse', 'توين هاوس': 'Twinhouse', 'فيلا': 'Villa', 'شاليه': 'Chalet', 'شقة': 'Apartment', 'تجاري': 'Commercial', 'إداري': 'Administrative', 'عيادة': 'Clinic', 'ترفيهي': 'Recreational' };
+const UNIT_ORDER = { 'Studio': 1, '1 Bedroom': 2, '2 Bedrooms': 3, '3 Bedrooms': 4, '4 Bedrooms': 5, '5 Bedrooms': 6, 'Apartment': 7, 'Duplex': 8, 'Penthouse': 9, 'Townhouse': 10, 'Twinhouse': 11, 'Villa': 12, 'Chalet': 13, 'Commercial': 20, 'Administrative': 21, 'Clinic': 22, 'Recreational': 23 };
 
-const UNIT_ORDER = {
-    'Studio': 1, '1 Bedroom': 2, '2 Bedrooms': 3, '3 Bedrooms': 4, '4 Bedrooms': 5, '5 Bedrooms': 6,
-    'Apartment': 7, 'Duplex': 8, 'Penthouse': 9, 'Townhouse': 10, 'Twinhouse': 11, 'Villa': 12, 'Chalet': 13,
-    'Commercial': 20, 'Administrative': 21, 'Clinic': 22, 'Recreational': 23
-};
-
-function getUnitEnName(name) {
-    if(!name) return 'Other';
-    return UNIT_EN_NAMES[name] || name;
-}
+function getUnitEnName(name) { return UNIT_EN_NAMES[name] || name || 'Other'; }
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
 const FINISHING_TYPES = { core_shell: 'طوب أحمر', semi: 'نصف تشطيب', full: 'تشطيب كامل', mixed: 'متنوع' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'} ];
-
-// ✨ الدوال المساعدة اللي كانت ممسوحة ورجعت عشان الإيرورات تختفي ✨
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function showToast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
-function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
-function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
-function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
-function populateDeliverySelects(){ const opts = DELIVERY_TIMELINES.map(d=>`<option value="${d.value}">${d.label}</option>`).join(''); const el = document.getElementById('fldDeliveryDate'); if(el) el.innerHTML = opts; }
-
-function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
-function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
-
-function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 
 function submitLogin() { 
     const email = document.getElementById('loginEmail').value.trim();
@@ -121,13 +125,30 @@ auth.onAuthStateChanged(async (user) => {
     if (userDoc && userDoc.exists) { role = userDoc.data().role || 'viewer'; expiryDate = userDoc.data().expiryDate || '2024-01-01'; } else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') { role = 'admin'; expiryDate = '2099-12-31'; await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' }); } else { auth.signOut(); alert("هذا الحساب غير مسجل."); return; }
     if (new Date() > new Date(expiryDate)) { auth.signOut(); alert("لقد انتهت فترة اشتراكك."); return; }
     currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
-    document.getElementById('userEmailLabel').textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
-    document.getElementById('superAdminActions').style.display = isAdmin ? 'flex' : 'none'; document.getElementById('addMainLocWrap').style.display = isEditor ? 'flex' : 'none'; document.getElementById('adminActions').style.display = isEditor ? 'flex' : 'none';
     
-    if(document.getElementById('loginSubmitBtn')) document.getElementById('loginSubmitBtn').innerHTML = 'دخول';
+    let uLabel = document.getElementById('userEmailLabel');
+    if(uLabel) uLabel.textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
     
-    await syncCloudData(); document.getElementById('paywallModal').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true);
-  } else { currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); document.getElementById('userEmailLabel').textContent = 'يرجى تسجيل الدخول'; document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'block'; setNavForApp(false); }
+    let suAct = document.getElementById('superAdminActions'); if(suAct) suAct.style.display = isAdmin ? 'flex' : 'none'; 
+    let addLoc = document.getElementById('addMainLocWrap'); if(addLoc) addLoc.style.display = isEditor ? 'flex' : 'none'; 
+    let adAct = document.getElementById('adminActions'); if(adAct) adAct.style.display = isEditor ? 'flex' : 'none';
+    
+    let btnLog = document.getElementById('loginSubmitBtn');
+    if(btnLog) btnLog.innerHTML = 'دخول';
+    
+    await syncCloudData(); 
+    document.getElementById('paywallModal').style.display = 'none'; 
+    document.getElementById('landingPageContainer').style.display = 'none'; 
+    document.getElementById('systemApp').style.display = 'flex'; 
+    setNavForApp(true);
+  } else { 
+      currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); 
+      let uLabel = document.getElementById('userEmailLabel');
+      if(uLabel) uLabel.textContent = 'يرجى تسجيل الدخول'; 
+      document.getElementById('systemApp').style.display = 'none'; 
+      document.getElementById('landingPageContainer').style.display = 'block'; 
+      setNavForApp(false); 
+  }
 });
 
 function handleAuthAction() { currentUser ? (auth.signOut(), sessionStorage.removeItem('isSystemOpen'), backToLanding()) : document.getElementById('paywallModal').style.display = 'flex'; }
@@ -147,26 +168,14 @@ function isCompoundComplete(c) {
         if (c.projectType === 'commercial' && c.commercialPrices) { 
             if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true; 
         } else { 
-            if ((c.pricePerMeter && c.pricePerMeter > 0) || 
-                (c.pricePerMeterMin && c.pricePerMeterMin > 0) || 
-                (c.priceCore && c.priceCore > 0) || 
-                (c.priceSemi && c.priceSemi > 0) || 
-                (c.priceFull && c.priceFull > 0) ||
-                (c.priceCoreMin && c.priceCoreMin > 0) ||
-                (c.priceSemiMin && c.priceSemiMin > 0) ||
-                (c.priceFullMin && c.priceFullMin > 0)) {
-                hasPrice = true;
-            }
+            if ((c.pricePerMeter && c.pricePerMeter > 0) || (c.pricePerMeterMin && c.pricePerMeterMin > 0) || (c.priceCore && c.priceCore > 0) || (c.priceSemi && c.priceSemi > 0) || (c.priceFull && c.priceFull > 0) || (c.priceCoreMin && c.priceCoreMin > 0) || (c.priceSemiMin && c.priceSemiMin > 0) || (c.priceFullMin && c.priceFullMin > 0)) { hasPrice = true; }
         }
         if (!hasPrice) return false;
-
         if (!c.unitTypes || !Array.isArray(c.unitTypes) || c.unitTypes.length < 1) return false;
         if (!c.paymentPlans || !Array.isArray(c.paymentPlans) || c.paymentPlans.length < 1) return false;
         
         return true;
-    } catch (e) {
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 function renderAdminStats() {
@@ -175,9 +184,13 @@ function renderAdminStats() {
         if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
         board.style.display = 'flex';
         let completed = compounds.filter(c => isCompoundComplete(c)).length;
-        document.getElementById('statTotal').textContent = compounds.length;
-        document.getElementById('statCompleted').textContent = completed;
-        document.getElementById('statIncomplete').textContent = compounds.length - completed;
+        
+        let stTotal = document.getElementById('statTotal');
+        let stComp = document.getElementById('statCompleted');
+        let stInc = document.getElementById('statIncomplete');
+        if(stTotal) stTotal.textContent = compounds.length;
+        if(stComp) stComp.textContent = completed;
+        if(stInc) stInc.textContent = compounds.length - completed;
     } catch(e) { console.error("Stats Error:", e); }
 }
 
@@ -191,7 +204,6 @@ function skeletonCardsHtml(count) {
 async function syncCloudData() { 
     try {
         const grid = document.getElementById('compoundGrid'); 
-        
         if (grid && !grid.children.length) {
             const sub = document.getElementById('pageSub');
             if(sub) sub.textContent = "جاري تحميل الداتا..."; 
@@ -221,6 +233,7 @@ async function syncCloudData() {
                 let tempCompounds = [];
                 snapshot.forEach(doc => tempCompounds.push({ id: doc.id, ...doc.data() })); 
                 compounds = tempCompounds;
+                
                 renderAdminStats(); 
                 renderLocationTree(); 
                 applyFilters(); 
@@ -232,134 +245,10 @@ async function syncCloudData() {
             console.error("Firebase Snapshot Error:", error);
             if (grid) grid.innerHTML = `<div class="empty-state"><div class="empty-state-title">حدث خطأ في جلب البيانات من السيرفر. تأكد من اتصالك بالإنترنت.</div></div>`;
         }); 
-    } catch (err) {
-        console.error("Critical Sync Error:", err);
-    }
+    } catch (err) { console.error("Critical Sync Error:", err); }
 }
 
 async function saveMainLocationsToCloud() { if(isEditor) { try { await db.collection('system').doc('locations').set({ mainLocations }); } catch (error) {} } }
-
-function processMagicPaste() {
-    const text = document.getElementById('magicPasteInput').value;
-    if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
-    let cleanText = text.replace(/[\u200B-\u200D\uFEFF\u2060\u200E\u200F\u00A0]/g, ' ');
-    const lines = cleanText.split('\n');
-    let currentType = appSettings.resTypes[0] || 'Studio'; 
-    let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
-    
-    let defaultFinishing = 'core_shell';
-
-    let firstLine = lines.find(l => l.replace(/[*🚨\-\s📢🏡]/g, '').length > 0);
-    if (firstLine && !document.getElementById('fldProject').value) { document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By📢🏡]/ig, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]/g, '').trim(); fieldsFilled++; }
-    let foundBy = false;
-    for (let i = 0; i < lines.length; i++) {
-        let l = lines[i].trim().replace(/[*]/g, '');
-        if (l.toLowerCase().endsWith('by')) { foundBy = true; continue; }
-        if (foundBy && l) { if (!document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = l; fieldsFilled++; } foundBy = false; }
-    }
-    lines.forEach(line => {
-        const cleanLine = line.replace(/[*`~•▫️▶️➡️📍🔧🏢🚨🏡📢]/g, '').trim(); const lowerLine = cleanLine.toLowerCase(); if (!cleanLine) return; 
-        let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']); if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
-        let owner = extractValueAfterKeyword(cleanLine, ['Owner', 'المالك']); if (owner && !document.getElementById('fldOwner').value) { document.getElementById('fldOwner').value = owner; fieldsFilled++; }
-        let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']); if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
-        let delivery = extractValueAfterKeyword(cleanLine, ['Delivery Date', 'Delivery', 'التسليم', 'استلام']);
-        if (delivery) { let dSelect = document.getElementById('fldDeliveryDate'); if (lowerLine.includes('immediate') || lowerLine.includes('فوري')) dSelect.value = 'immediate'; else if (lowerLine.includes('1') || lowerLine.includes('one')) dSelect.value = '1y'; else if (lowerLine.includes('2') || lowerLine.includes('two')) dSelect.value = '2y'; else if (lowerLine.includes('3') || lowerLine.includes('three')) dSelect.value = '3y'; else if (lowerLine.includes('4') || lowerLine.includes('four')) dSelect.value = '4y'; }
-        
-        let finishingMatch = extractValueAfterKeyword(cleanLine, ['Finishing', 'التشطيب', 'تشطيب']);
-        if (finishingMatch) { 
-            if (lowerLine.includes('core') || lowerLine.includes('shell') || lowerLine.includes('بدون')) defaultFinishing = 'core_shell'; 
-            else if (lowerLine.includes('semi') || lowerLine.includes('نصف')) defaultFinishing = 'semi'; 
-            else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) defaultFinishing = 'full'; 
-        }
-        
-        let maintenance = extractValueAfterKeyword(cleanLine, ['Maintenance', 'صيانة', 'الصيانة']);
-        if (maintenance) { let mVal = maintenance.replace(/[^0-9.]/g, ''); if (mVal && !document.getElementById('fldMaintenanceValue').value) { document.getElementById('fldMaintenanceValue').value = mVal; if (maintenance.includes('%')) { document.getElementById('fldMaintenanceType').value = 'percent'; } else { document.getElementById('fldMaintenanceType').value = 'per_meter'; } fieldsFilled++; } }
-        if (lowerLine.includes('cash discount') || lowerLine.includes('خصم كاش')) { let cdMatch = cleanLine.match(/(\d+(?:\.\d+)?)%/); if (cdMatch && !document.getElementById('fldCashDiscount').value) { document.getElementById('fldCashDiscount').value = cdMatch[1]; fieldsFilled++; } }
-        if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
-            let pSelect = document.getElementById('fldParkingType');
-            if(lowerLine.includes('free') || lowerLine.includes('شامل') || lowerLine.includes('مجان')) { pSelect.value = 'included'; document.getElementById('fldParkingFee').style.display = 'none'; } 
-            else if (lowerLine.includes('optional') || lowerLine.includes('اختيار')) { pSelect.value = 'optional'; document.getElementById('fldParkingFee').style.display = 'block'; } 
-            else { pSelect.value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block'; let pMatch = cleanLine.match(/([\d,]+(?:\.\d+)?)\s*(k|egp|ج|جنيه|الف)?/i); if (pMatch && !document.getElementById('fldParkingFee').value) { let pVal = parseFloat(pMatch[1].replace(/,/g, '')); let mult = pMatch[2] ? pMatch[2].toLowerCase() : ''; if (mult === 'k' || mult === 'الف') pVal *= 1000; document.getElementById('fldParkingFee').value = formatNum(pVal); fieldsFilled++; } }
-        }
-        const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i); if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
-        const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/); if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
-        const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i); if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
-        
-        let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
-        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?|[A-Za-z\u0600-\u06FF]+)/i); 
-        if (unitMatch) {
-            const area = parseFloat(unitMatch[1]); const extraArea = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
-            let garden = ''; let roof = '';
-            if (extraArea) { if (processingLine.match(/roof|روف|بنتهاوس|penthouse/i)) { roof = extraArea; } else { garden = extraArea; } }
-            if (area > 10) { tempUnits.push({ id: uid(), bedroomType: currentType, rooms: '', area: area, gardenArea: garden, roofArea: roof, price: '', finishing: defaultFinishing }); unitsAdded++; }
-        }
-        if (!lowerLine.includes('delivery') && !lowerLine.includes('تسليم') && !lowerLine.includes('استلام')) {
-            const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|d\.p|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
-            if (planMatch && !cleanLine.includes('?')) {
-                const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : ''); let dpText = cleanLine.match(/(\d+)%\s*(?:dp|d\.p|down|مقدم)/i); const dp = dpText ? parseFloat(dpText[1]) : 0; const years = parseFloat(planMatch[4]);
-                if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) { tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', pricePerMeter: '', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] }); plansAdded++; }
-            }
-        }
-    });
-    renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
-}
-
-window.updateFinishingAvgs = function() {
-    try {
-        let fields = [
-            {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
-            {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
-            {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
-        ];
-    
-        fields.forEach(f => {
-            let min = getRawNum(getSafeVal(f.min)) || 0;
-            let max = getRawNum(getSafeVal(f.max)) || 0;
-            let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
-            setSafeVal(f.avg, avg > 0 ? formatNum(Math.round(avg)) : '');
-        });
-    
-        updateAllUnitsPrice();
-    } catch(e){ console.error(e); }
-};
-
-window.toggleAdvPricing = function(forceState) {
-    try {
-        const wrap = document.getElementById('advPricingWrap');
-        const btn = document.getElementById('btnToggleAdvPricing');
-        if (!wrap || !btn) return;
-        
-        let isOpening = forceState !== undefined ? forceState : wrap.style.display === 'none';
-        
-        if (isOpening) {
-            wrap.style.display = 'block';
-            btn.innerHTML = '✕ إخفاء أسعار التشطيب المخصصة';
-            btn.style.color = 'var(--danger)';
-            btn.style.borderColor = 'var(--danger)';
-            btn.style.borderStyle = 'solid';
-        } else {
-            wrap.style.display = 'none';
-            btn.innerHTML = '+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)';
-            btn.style.color = 'var(--text-muted)';
-            btn.style.borderColor = 'var(--border-color)';
-            btn.style.borderStyle = 'dashed';
-        }
-        updateAllUnitsPrice();
-    } catch(e) { console.error(e); }
-};
-
-window.updatePriceMeterAvg = function() { 
-    try {
-        const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
-        const max = getRawNum(getSafeVal('fldPriceMeterMax')) || 0; 
-        let avg = 0;
-        if(min > 0 && max > 0) avg = (min + max) / 2; 
-        else avg = min || max || 0; 
-        
-        setSafeVal('fldPriceMeterAvg', avg > 0 ? formatNum(Math.round(avg)) : '');
-        updateAllUnitsPrice(); 
-    } catch(e) { console.error(e); }
-}
 
 function renderLocationTree(){
   try {
@@ -423,42 +312,46 @@ async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف ال
 async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
 async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
 
-function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.type-nav-btn').forEach(b => b.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
+function selectProjectType(type, btnElem){ activeProjectType = type; document.querySelectorAll('.glass-tab').forEach(b => b.classList.remove('active')); if(btnElem) btnElem.classList.add('active'); renderGrid(); }
 
 let searchDebounceTimer = null;
 function handleSearchInput() {
-    const val = document.getElementById('fSearchText').value;
-    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = val ? 'flex' : 'none';
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(applyFilters, 300);
-}
-function clearSearchOnly() {
-    document.getElementById('fSearchText').value = '';
-    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
-    clearTimeout(searchDebounceTimer);
-    applyFilters();
-    document.getElementById('fSearchText').focus();
 }
 
 function applyFilters(){ 
     const checkedTypes = Array.from(document.querySelectorAll('.prop-type-cb:checked')).map(cb => cb.value);
+    
     filters = { 
-        searchText: (document.getElementById('fSearchText').value || '').trim().toLowerCase(), 
-        minPrice: getRawNum(document.getElementById('fMinPrice').value), 
-        maxPrice: getRawNum(document.getElementById('fMaxPrice').value), 
-        downPaymentTarget: getRawNum(document.getElementById('fDownPayment').value), 
-        maxMonthlyInstallment: getRawNum(document.getElementById('fMonthlyInstallment').value),
+        searchText: (getSafeVal('fSearchText') || '').trim().toLowerCase(), 
+        minPrice: getRawNum(getSafeVal('fMinPrice')), 
+        maxPrice: getRawNum(getSafeVal('fMaxPrice')), 
+        downPaymentTarget: getRawNum(getSafeVal('fDownPayment')), 
+        maxMonthlyInstallment: getRawNum(getSafeVal('fMonthlyInstallment')),
         propertyTypes: checkedTypes.length > 0 ? checkedTypes : null,
         bedrooms: selectedBeds.length > 0 ? selectedBeds : null,
-        sortOrder: document.getElementById('fSortOrder').value || 'default'
+        delivery: selectedDelivery.length > 0 ? selectedDelivery : null,
+        finishing: selectedFinishing.length > 0 ? selectedFinishing : null,
+        sortOrder: getSafeVal('fSortOrder') || 'default'
     }; 
-    closeAllDropdowns(); renderGrid(); 
+    renderGrid(); 
 }
 
 function resetFilters(){ 
-    document.getElementById('fSearchText').value = ''; document.getElementById('fMinPrice').value = ''; document.getElementById('fMaxPrice').value = ''; document.getElementById('fDownPayment').value = ''; document.getElementById('fMonthlyInstallment').value = ''; document.getElementById('fSortOrder').value = 'default';
-    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false); document.querySelectorAll('.pill').forEach(p => p.classList.remove('active')); selectedBeds = [];
-    const clearBtn = document.getElementById('searchClearBtn'); if (clearBtn) clearBtn.style.display = 'none';
+    setSafeVal('fSearchText', ''); 
+    setSafeVal('fMinPrice', ''); 
+    setSafeVal('fMaxPrice', ''); 
+    setSafeVal('fDownPayment', ''); 
+    setSafeVal('fMonthlyInstallment', ''); 
+    setSafeVal('fSortOrder', 'default');
+    
+    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false); 
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active')); 
+    selectedBeds = [];
+    selectedDelivery = [];
+    selectedFinishing = [];
+    
     clearTimeout(searchDebounceTimer);
     applyFilters(); 
 }
@@ -576,7 +469,29 @@ function renderGrid(){
                   if (!searchable.includes(filters.searchText)) return false;
               }
               
+              if (filters.delivery && filters.delivery.length > 0) {
+                  let cDel = c.deliveryDate || '';
+                  let matchDel = false;
+                  if (filters.delivery.includes('RTM') && (cDel === 'immediate' || cDel === '6m')) matchDel = true;
+                  if (filters.delivery.includes('1y') && cDel === '1y') matchDel = true;
+                  if (filters.delivery.includes('2y') && (cDel === '1.5y' || cDel === '2y')) matchDel = true;
+                  if (filters.delivery.includes('3y') && (cDel === '2.5y' || cDel === '3y')) matchDel = true;
+                  if (filters.delivery.includes('4y') && cDel === '4y') matchDel = true;
+                  if (!matchDel) return false;
+              }
+
               let cUnits = Array.isArray(c.unitTypes) ? c.unitTypes : []; 
+              
+              if (filters.finishing && filters.finishing.length > 0) {
+                  let matchFin = false;
+                  if (filters.finishing.includes(c.finishingStatus)) matchFin = true;
+                  if (c.finishingStatus === 'mixed' || !c.finishingStatus) {
+                      if (cUnits.some(u => filters.finishing.includes(u.finishing))) {
+                          matchFin = true;
+                      }
+                  }
+                  if (!matchFin) return false;
+              }
               
               if(filters.propertyTypes) {
                   let isCommMatch = filters.propertyTypes.includes('commercial') && c.projectType === 'commercial';
@@ -874,6 +789,71 @@ function openCompoundForm(existing){
   }
 }
 
+function processMagicPaste() {
+    const text = document.getElementById('magicPasteInput').value;
+    if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
+    let cleanText = text.replace(/[\u200B-\u200D\uFEFF\u2060\u200E\u200F\u00A0]/g, ' ');
+    const lines = cleanText.split('\n');
+    let currentType = appSettings.resTypes[0] || 'Studio'; 
+    let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
+    
+    let defaultFinishing = 'core_shell';
+
+    let firstLine = lines.find(l => l.replace(/[*🚨\-\s📢🏡]/g, '').length > 0);
+    if (firstLine && !document.getElementById('fldProject').value) { document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By📢🏡]/ig, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]/g, '').trim(); fieldsFilled++; }
+    let foundBy = false;
+    for (let i = 0; i < lines.length; i++) {
+        let l = lines[i].trim().replace(/[*]/g, '');
+        if (l.toLowerCase().endsWith('by')) { foundBy = true; continue; }
+        if (foundBy && l) { if (!document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = l; fieldsFilled++; } foundBy = false; }
+    }
+    lines.forEach(line => {
+        const cleanLine = line.replace(/[*`~•▫️▶️➡️📍🔧🏢🚨🏡📢]/g, '').trim(); const lowerLine = cleanLine.toLowerCase(); if (!cleanLine) return; 
+        let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']); if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
+        let owner = extractValueAfterKeyword(cleanLine, ['Owner', 'المالك']); if (owner && !document.getElementById('fldOwner').value) { document.getElementById('fldOwner').value = owner; fieldsFilled++; }
+        let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']); if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
+        let delivery = extractValueAfterKeyword(cleanLine, ['Delivery Date', 'Delivery', 'التسليم', 'استلام']);
+        if (delivery) { let dSelect = document.getElementById('fldDeliveryDate'); if (lowerLine.includes('immediate') || lowerLine.includes('فوري')) dSelect.value = 'immediate'; else if (lowerLine.includes('1') || lowerLine.includes('one')) dSelect.value = '1y'; else if (lowerLine.includes('2') || lowerLine.includes('two')) dSelect.value = '2y'; else if (lowerLine.includes('3') || lowerLine.includes('three')) dSelect.value = '3y'; else if (lowerLine.includes('4') || lowerLine.includes('four')) dSelect.value = '4y'; }
+        
+        let finishingMatch = extractValueAfterKeyword(cleanLine, ['Finishing', 'التشطيب', 'تشطيب']);
+        if (finishingMatch) { 
+            if (lowerLine.includes('core') || lowerLine.includes('shell') || lowerLine.includes('بدون')) defaultFinishing = 'core_shell'; 
+            else if (lowerLine.includes('semi') || lowerLine.includes('نصف')) defaultFinishing = 'semi'; 
+            else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) defaultFinishing = 'full'; 
+        }
+        
+        let maintenance = extractValueAfterKeyword(cleanLine, ['Maintenance', 'صيانة', 'الصيانة']);
+        if (maintenance) { let mVal = maintenance.replace(/[^0-9.]/g, ''); if (mVal && !document.getElementById('fldMaintenanceValue').value) { document.getElementById('fldMaintenanceValue').value = mVal; if (maintenance.includes('%')) { document.getElementById('fldMaintenanceType').value = 'percent'; } else { document.getElementById('fldMaintenanceType').value = 'per_meter'; } fieldsFilled++; } }
+        if (lowerLine.includes('cash discount') || lowerLine.includes('خصم كاش')) { let cdMatch = cleanLine.match(/(\d+(?:\.\d+)?)%/); if (cdMatch && !document.getElementById('fldCashDiscount').value) { document.getElementById('fldCashDiscount').value = cdMatch[1]; fieldsFilled++; } }
+        if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
+            let pSelect = document.getElementById('fldParkingType');
+            if(lowerLine.includes('free') || lowerLine.includes('شامل') || lowerLine.includes('مجان')) { pSelect.value = 'included'; document.getElementById('fldParkingFee').style.display = 'none'; } 
+            else if (lowerLine.includes('optional') || lowerLine.includes('اختيار')) { pSelect.value = 'optional'; document.getElementById('fldParkingFee').style.display = 'block'; } 
+            else { pSelect.value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block'; let pMatch = cleanLine.match(/([\d,]+(?:\.\d+)?)\s*(k|egp|ج|جنيه|الف)?/i); if (pMatch && !document.getElementById('fldParkingFee').value) { let pVal = parseFloat(pMatch[1].replace(/,/g, '')); let mult = pMatch[2] ? pMatch[2].toLowerCase() : ''; if (mult === 'k' || mult === 'الف') pVal *= 1000; document.getElementById('fldParkingFee').value = formatNum(pVal); fieldsFilled++; } }
+        }
+        const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i); if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
+        const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/); if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
+        const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i); if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
+        
+        let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
+        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?|[A-Za-z\u0600-\u06FF]+)/i); 
+        if (unitMatch) {
+            const area = parseFloat(unitMatch[1]); const extraArea = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
+            let garden = ''; let roof = '';
+            if (extraArea) { if (processingLine.match(/roof|روف|بنتهاوس|penthouse/i)) { roof = extraArea; } else { garden = extraArea; } }
+            if (area > 10) { tempUnits.push({ id: uid(), bedroomType: currentType, rooms: '', area: area, gardenArea: garden, roofArea: roof, price: '', finishing: defaultFinishing }); unitsAdded++; }
+        }
+        if (!lowerLine.includes('delivery') && !lowerLine.includes('تسليم') && !lowerLine.includes('استلام')) {
+            const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|d\.p|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
+            if (planMatch && !cleanLine.includes('?')) {
+                const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : ''); let dpText = cleanLine.match(/(\d+)%\s*(?:dp|d\.p|down|مقدم)/i); const dp = dpText ? parseFloat(dpText[1]) : 0; const years = parseFloat(planMatch[4]);
+                if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) { tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', pricePerMeter: '', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] }); plansAdded++; }
+            }
+        }
+    });
+    renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
+}
+
 function onProjectTypeChange() { 
     try {
         const pTypeEl = document.getElementById('fldProjectType');
@@ -1118,45 +1098,6 @@ function renderDecreeRows(){
     dRows.innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); 
 }
 
-function openDetail(id){
-  try {
-      const c = compounds.find(x=>x.id===id); if(!c) return; viewingCompoundId = id;
-      const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => getUnitEnName(u.bedroomType))));
-      availTypes.sort((a,b) => (UNIT_ORDER[a]||99) - (UNIT_ORDER[b]||99));
-      
-      activeDetailCategory = availTypes.length ? availTypes[0] : null; 
-      if (activeDetailCategory) {
-          let filtered = (c.unitTypes||[]).filter(u => getUnitEnName(u.bedroomType) === activeDetailCategory);
-          filtered.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
-          activeDetailUnitId = filtered.length > 0 ? filtered[0].id : null;
-      } else {
-          activeDetailUnitId = null;
-      }
-      
-      renderDetailModalContent(); 
-      const ov = document.getElementById('detailOverlay');
-      if(ov) ov.classList.add('open');
-  } catch(e) {
-      console.log("Detail Error:", e);
-  }
-}
-
-function setDetailCategory(catKey) { 
-    try {
-        activeDetailCategory = catKey; 
-        const c = compounds.find(x => x.id === viewingCompoundId); 
-        if (c && c.unitTypes) { 
-            const matched = c.unitTypes.filter(u => getUnitEnName(u.bedroomType) === catKey); 
-            matched.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
-            if (matched.length > 0) activeDetailUnitId = matched[0].id; 
-        } 
-        renderDetailModalContent(); 
-    } catch(e) { console.error(e); }
-}
-
-function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
-function editCurrentCompound(){ const c = compounds.find(x=>x.id===viewingCompoundId); if(!c) return; closeModal('detailOverlay'); openCompoundForm(c); }
-
 function renderDetailModalContent() {
   try {
       const c = compounds.find(x => x.id === viewingCompoundId); if (!c) return;
@@ -1388,7 +1329,6 @@ window.runProjectMiniCalc = function(cId) {
     resultDiv.innerHTML = html;
 };
 
-// دالة الأقساط المحمية 100%
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = (originalTotal || 0) * ((discountPct||0)/100);
     const netTotal = (originalTotal || 0) - discountVal;
