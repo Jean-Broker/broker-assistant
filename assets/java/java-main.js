@@ -15,6 +15,10 @@ const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", auth
 firebase.initializeApp(firebaseConfig);
 
 const db = firebase.firestore();
+
+// تفعيل الكاش الرسمي لضمان تحميل فوري 
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) { console.log("Cache error: ", err); });
+
 const auth = firebase.auth();
 const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
 
@@ -169,7 +173,7 @@ function renderAdminStats() {
         document.getElementById('statTotal').textContent = compounds.length;
         document.getElementById('statCompleted').textContent = completed;
         document.getElementById('statIncomplete').textContent = compounds.length - completed;
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Stats Error:", e); }
 }
 
 function setCompletionFilter(filterType, btnElem) { completionFilter = filterType; document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
@@ -179,7 +183,7 @@ function skeletonCardsHtml(count) {
     return card.repeat(count);
 }
 
-// ✨ دالة تحميل الداتا المضادة للانهيار ✨
+// ✨ دالة تحميل الداتا المضادة للانهيار 100% ✨
 async function syncCloudData() { 
     try {
         const grid = document.getElementById('compoundGrid'); 
@@ -189,14 +193,15 @@ async function syncCloudData() {
         
         if (cachedCompounds) {
             try {
-                compounds = JSON.parse(cachedCompounds);
-                if (cachedLocations) mainLocations = JSON.parse(cachedLocations);
+                compounds = JSON.parse(cachedCompounds) || [];
+                if (cachedLocations) mainLocations = JSON.parse(cachedLocations) || [];
                 renderAdminStats();
                 renderLocationTree();
                 applyFilters();
             } catch(e) { console.error("Cache Parse Error:", e); }
         } else if (grid && !grid.children.length) {
-            document.getElementById('pageSub').textContent = "جاري تحميل الداتا..."; 
+            const sub = document.getElementById('pageSub');
+            if(sub) sub.textContent = "جاري تحميل الداتا..."; 
             grid.innerHTML = skeletonCardsHtml(6);
         }
         
@@ -228,6 +233,7 @@ async function syncCloudData() {
                 renderAdminStats(); 
                 renderLocationTree(); 
                 applyFilters(); 
+                
                 let sub = document.getElementById('pageSub');
                 if(sub) sub.textContent = `${compounds.length} مشروع مسجل بالسحابة`;
             } catch(e) { console.error("Data Snapshot Error:", e); }
@@ -372,6 +378,37 @@ window.updatePriceMeterAvg = function() {
         setSafeVal('fldPriceMeterAvg', avg > 0 ? formatNum(Math.round(avg)) : '');
         updateAllUnitsPrice(); 
     } catch(e) { console.error(e); }
+}
+
+// ✨ إصلاح الفروع وحماية الشاشة من أي تعليق مفاجئ ✨
+function renderLocationTree(){
+  try {
+      const wrap = document.getElementById('locationTree'); 
+      if(!wrap) return;
+      const isAllActive = activeLocationIds.length === 0;
+      let html = `<div class="sub-loc-tab ${isAllActive ? 'active' : ''}" onclick="selectLocationNode('all')"><span>🌐 كل المشروعات</span><span class="num">${compounds.length}</span></div>`;
+      
+      (mainLocations || []).forEach((mainLoc) => { 
+          let mainCount = 0; 
+          let subs = mainLoc.subLocations || [];
+          subs.forEach(sub => { mainCount += compounds.filter(c => c.locationId === sub.id).length; }); 
+          
+          const isOpen = !!openMainLocIds[mainLoc.id]; const isMainActive = activeLocationIds.includes(mainLoc.id);
+          html += `<div class="loc-group"><div class="loc-group-header-row"><div class="loc-main-clickable ${isMainActive ? 'active' : ''}" onclick="selectLocationNode('${mainLoc.id}')"><span>📍 ${escapeHtml(mainLoc.name)}</span></div><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="color:var(--text-muted);">${mainCount}</span><span class="arrow-toggle ${isOpen ? 'open' : ''}" onclick="toggleMainLoc('${mainLoc.id}', event)" role="button" tabindex="0">▶</span>${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${mainLoc.id}')">✕</button>` : ''}</div></div><div class="sub-loc-list ${isOpen ? 'show' : ''}">`; 
+          
+          subs.forEach(sub => { 
+              const subCount = compounds.filter(c => c.locationId === sub.id).length; const isSubActive = activeLocationIds.includes(sub.id);
+              html += `<div class="sub-loc-tab ${isSubActive ? 'active' : ''}" onclick="selectLocationNode('${sub.id}')"><span>↳ ${escapeHtml(sub.name)}</span><div style="display:flex; align-items:center; gap:6px;"><span class="num" style="opacity:0.9;">${subCount}</span>${isEditor ? `<button class="loc-del-btn" onclick="event.stopPropagation(); deleteSubLocation('${mainLoc.id}', '${sub.id}')">✕</button>` : ''}</div></div>`; 
+          }); 
+          html += `</div>${isEditor ? `<div class="add-sub-loc-box"><input id="subInput_${mainLoc.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') addSubLocation('${mainLoc.id}')"><button class="btn btn-outline-light btn-pill" style="padding:4px 12px; font-size:10px;" onclick="addSubLocation('${mainLoc.id}')">إضافة</button></div>` : ''}</div>`; 
+      }); 
+      wrap.innerHTML = html; 
+      
+      const fldLoc = document.getElementById('fldLocation');
+      if(fldLoc) {
+          fldLoc.innerHTML = `<option value="">-- لم يتم تحديد فرع --</option>` + (mainLocations || []).map(m => `<optgroup label="${escapeHtml(m.name)}">` + (m.subLocations || []).map(s => `<option value="${s.id}">${escapeHtml(m.name)} ⬅️ ${escapeHtml(s.name)}</option>`).join('') + `</optgroup>`).join('');
+      }
+  } catch(e) { console.error("Render Location Error:", e); }
 }
 
 function renderGrid(){
@@ -524,7 +561,7 @@ function renderGrid(){
               
               return true;
           } catch(e) {
-              return false; 
+              return false; // تجاهل أي مشروع فيه خطأ
           }
       });
       
@@ -551,11 +588,13 @@ function renderGrid(){
       const grid = document.getElementById('compoundGrid');
       if(!grid) return;
       if(!list.length) {
-          document.getElementById('pageSub').textContent = `0 مشروعات مطابقة`;
+          const sub = document.getElementById('pageSub');
+          if(sub) sub.textContent = `0 مشروعات مطابقة`;
           return grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-title">لا توجد مشروعات مطابقة</div><div class="empty-state-sub">جرّب تعديل كلمة البحث أو الفلاتر المستخدمة</div><button class="btn btn-outline-light btn-pill" onclick="resetFilters()">مسح كل الفلاتر</button></div>`;
       }
       
-      document.getElementById('pageSub').textContent = `${list.length} مشروع مسجل بالسحابة`;
+      const sub = document.getElementById('pageSub');
+      if(sub) sub.textContent = `${list.length} مشروع مسجل بالسحابة`;
       
       let groups = {};
       list.forEach(c => {
@@ -573,7 +612,6 @@ function renderGrid(){
   }
 }
 
-// ✨ دالة الأمان عشان الزرار يفتح غصب عن أي نقص أو تهنيج في الداتا ✨
 function openCompoundForm(existing){
   try {
       editingCompoundId = existing ? existing.id : null; 
@@ -583,7 +621,6 @@ function openCompoundForm(existing){
       if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => (m.subLocations || []).some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
       if(existing) setSafeVal('fldLocation', existing.locationId || ''); else setSafeVal('fldLocation', defaultLoc);
       
-      // تصفير آمن للخانات
       ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant',
        'fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg',
        'fldPriceCore', 'fldPriceSemi', 'fldPriceFull',
@@ -771,16 +808,24 @@ function updateUnitData(id, field, val) {
         let advWrap = document.getElementById('advPricingWrap');
         let isAdvOpen = advWrap && advWrap.style.display !== 'none';
         
-        let pCore = 0, pSemi = 0, pFull = 0;
+        let pCoreAvg = 0, pSemiAvg = 0, pFullAvg = 0;
         if (isAdvOpen) {
-            pCore = getRawNum(getSafeVal('fldPriceCoreAvg')) || getRawNum(getSafeVal('fldPriceCoreMin')) || getRawNum(getSafeVal('fldPriceCore')) || 0;
-            pSemi = getRawNum(getSafeVal('fldPriceSemiAvg')) || getRawNum(getSafeVal('fldPriceSemiMin')) || getRawNum(getSafeVal('fldPriceSemi')) || 0;
-            pFull = getRawNum(getSafeVal('fldPriceFullAvg')) || getRawNum(getSafeVal('fldPriceFullMin')) || getRawNum(getSafeVal('fldPriceFull')) || 0;
+            let pCoreMin = getRawNum(getSafeVal('fldPriceCoreMin')) || 0;
+            let pCoreMax = getRawNum(getSafeVal('fldPriceCoreMax')) || 0;
+            pCoreAvg = (pCoreMin > 0 && pCoreMax > 0) ? (pCoreMin + pCoreMax) / 2 : (pCoreMin || pCoreMax || getRawNum(document.getElementById('fldPriceCore').value) || 0);
+
+            let pSemiMin = getRawNum(getSafeVal('fldPriceSemiMin')) || 0;
+            let pSemiMax = getRawNum(getSafeVal('fldPriceSemiMax')) || 0;
+            pSemiAvg = (pSemiMin > 0 && pSemiMax > 0) ? (pSemiMin + pSemiMax) / 2 : (pSemiMin || pSemiMax || getRawNum(document.getElementById('fldPriceSemi').value) || 0);
+
+            let pFullMin = getRawNum(getSafeVal('fldPriceFullMin')) || 0;
+            let pFullMax = getRawNum(getSafeVal('fldPriceFullMax')) || 0;
+            pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax) / 2 : (pFullMin || pFullMax || getRawNum(document.getElementById('fldPriceFull').value) || 0);
         }
 
-        if (isAdvOpen && u.finishing === 'core_shell' && pCore > 0) meterPrice = pCore;
-        else if (isAdvOpen && u.finishing === 'semi' && pSemi > 0) meterPrice = pSemi;
-        else if (isAdvOpen && u.finishing === 'full' && pFull > 0) meterPrice = pFull;
+        if (isAdvOpen && u.finishing === 'core_shell' && pCoreAvg > 0) meterPrice = pCoreAvg;
+        else if (isAdvOpen && u.finishing === 'semi' && pSemiAvg > 0) meterPrice = pSemiAvg;
+        else if (isAdvOpen && u.finishing === 'full' && pFullAvg > 0) meterPrice = pFullAvg;
         else if (pAvg > 0) meterPrice = pAvg;
         else meterPrice = pSingle;
     }
@@ -950,14 +995,16 @@ function openDetail(id){
 }
 
 function setDetailCategory(catKey) { 
-    activeDetailCategory = catKey; 
-    const c = compounds.find(x => x.id === viewingCompoundId); 
-    if (c && c.unitTypes) { 
-        const matched = c.unitTypes.filter(u => getUnitEnName(u.bedroomType) === catKey); 
-        matched.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
-        if (matched.length > 0) activeDetailUnitId = matched[0].id; 
-    } 
-    renderDetailModalContent(); 
+    try {
+        activeDetailCategory = catKey; 
+        const c = compounds.find(x => x.id === viewingCompoundId); 
+        if (c && c.unitTypes) { 
+            const matched = c.unitTypes.filter(u => getUnitEnName(u.bedroomType) === catKey); 
+            matched.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
+            if (matched.length > 0) activeDetailUnitId = matched[0].id; 
+        } 
+        renderDetailModalContent(); 
+    } catch(e) { console.error(e); }
 }
 
 function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
@@ -967,7 +1014,7 @@ function renderDetailModalContent() {
   try {
       const c = compounds.find(x => x.id === viewingCompoundId); if (!c) return;
       
-      let modalTitle = c.projectName;
+      let modalTitle = c.projectName || '';
       if(c.phaseName) modalTitle += ` - ${c.phaseName}`;
       document.getElementById('detailTitle').textContent = modalTitle;
       
@@ -1194,7 +1241,7 @@ window.runProjectMiniCalc = function(cId) {
     resultDiv.innerHTML = html;
 };
 
-// دالة الأقساط المحمية 100% من أخطاء الذاكرة
+// دالة الأقساط المحمية 100%
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = (originalTotal || 0) * ((discountPct||0)/100);
     const netTotal = (originalTotal || 0) - discountVal;
