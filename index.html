@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>J Broker Assistant</title>
     
-    <!-- 🚨 تم تصليح المسار هنا ليقرأ من فولدر assets/css/ 🚨 -->
+    <!-- مسار الـ CSS المظبوط على حسب الجيت هاب بتاعك -->
     <link rel="stylesheet" href="assets/css/css-main.css">
     
     <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -125,7 +125,7 @@
                 <div class="stat-card stat-warning" onclick="setCompletionFilter('incomplete', this)"><h4 data-ar="نواقص في الداتا ⏳" data-en="Incomplete ⏳">نواقص في الداتا ⏳</h4><b id="statIncomplete" class="num">0</b></div>
             </div>
 
-            <!-- ✨ شريط البحث الزجاجي الجديد ✨ -->
+            <!-- شريط البحث الزجاجي -->
             <div class="glass-search-container">
                 <div class="glass-search-tabs">
                     <button class="glass-tab active" onclick="selectProjectType('all', this)">الكل</button>
@@ -156,7 +156,7 @@
         </main>
     </div>
 
-    <!-- ✨ القائمة الجانبية للفلاتر المتقدمة ✨ -->
+    <!-- القائمة الجانبية للفلاتر المتقدمة -->
     <div id="filterDrawerOverlay" class="drawer-overlay" onclick="closeFilterDrawer()"></div>
     <div id="filterDrawer" class="filter-drawer">
         <div class="drawer-header">
@@ -418,12 +418,14 @@
     </div>
 
     <div id="toast" class="toast"></div>
-    <div id="loadingOverlay">
+    
+    <!-- 🚨 السر هنا: إخفاء الشاشة السوداء في الـ HTML مباشرة 🚨 -->
+    <div id="loadingOverlay" style="display: none;">
         <div class="loader"></div>
         <div id="loadingMsg" style="color:#fff; font-weight:bold; font-size:14px;">جاري التحميل...</div>
     </div>
 
-    <!-- 🚨 تم تصليح المسار هنا ليقرأ من فولدر assets/java/ 🚨 -->
+    <!-- مسار الـ JS المظبوط على حسب الجيت هاب بتاعك -->
     <script src="assets/java/java-main.js"></script>
 </body>
 </html>
