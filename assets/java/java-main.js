@@ -570,18 +570,20 @@ function generateMasterDossierHTML(group) {
 }
 
 function openPhasesModal(projName, compName) {
-    let group = compounds.filter(c => String(c.projectName||'') === projName && String(c.companyName||'') === compName);
-    document.getElementById('phasesTitle').textContent = `مراحل مشروع: ${projName}`;
-    
-    let html = group.map(c => {
-        return `<div class="detail-item" style="cursor:pointer; margin-bottom:10px;" onclick="closeModal('phasesOverlay'); setTimeout(()=>openDetail('${c.id}'), 300)">
-            <div style="color:var(--danger); font-size:18px; font-weight:800; margin-bottom:5px;">${escapeHtml(c.phaseName || 'المرحلة الأساسية')}</div>
-            <div style="font-size:12px; color:var(--text-muted);">عمارات: <span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span> | تسليم: ${deliveryLabel(c.deliveryDate)}</div>
-        </div>`;
-    }).join('');
-    
-    document.getElementById('phasesBody').innerHTML = html;
-    document.getElementById('phasesOverlay').classList.add('open');
+    try {
+        let group = compounds.filter(c => String(c.projectName||'') === projName && String(c.companyName||'') === compName);
+        document.getElementById('phasesTitle').textContent = `مراحل مشروع: ${projName}`;
+        
+        let html = group.map(c => {
+            return `<div class="detail-item" style="cursor:pointer; margin-bottom:10px;" onclick="closeModal('phasesOverlay'); setTimeout(()=>openDetail('${c.id}'), 300)">
+                <div style="color:var(--danger); font-size:18px; font-weight:800; margin-bottom:5px;">${escapeHtml(c.phaseName || 'المرحلة الأساسية')}</div>
+                <div style="font-size:12px; color:var(--text-muted);">عمارات: <span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span> | تسليم: ${deliveryLabel(c.deliveryDate)}</div>
+            </div>`;
+        }).join('');
+        
+        document.getElementById('phasesBody').innerHTML = html;
+        document.getElementById('phasesOverlay').classList.add('open');
+    } catch(e) { console.error("Phases Error:", e); }
 }
 
 function renderGrid(){
@@ -1012,7 +1014,6 @@ function processMagicPaste() {
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
 }
 
-// 🚨 دالة تحديث متوسط سعر المتر بعد التعديل 🚨
 window.updatePriceMeterAvg = function() { 
     try {
         const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
@@ -1281,7 +1282,7 @@ function renderPlanRows(){
                         <input type="number" placeholder="%" class="num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
                         <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
                     </div>
-                    ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+                    ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
                 `).join('')}
                 <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:10px;" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
             </div>
@@ -1316,6 +1317,69 @@ function renderDecreeRows(){
     if(!dRows) return;
     dRows.innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); 
 }
+
+// 🚨 دالة الفتح محمية تماماً وبتفتح فوراً بمجرد الضغط 🚨
+function openDetail(id){
+    const ov = document.getElementById('detailOverlay');
+    if(ov) ov.classList.add('open'); 
+    
+    try {
+        const c = compounds.find(x=>x.id===id); 
+        if(!c) {
+            document.getElementById('detailBody').innerHTML = "<div style='color:red; text-align:center; padding:20px;'>المشروع غير موجود.</div>";
+            return; 
+        }
+        
+        viewingCompoundId = id;
+        
+        const rawTypes = Array.isArray(c.unitTypes) ? c.unitTypes : [];
+        const availTypes = Array.from(new Set(rawTypes.map(u => getUnitEnName(u.bedroomType))));
+        availTypes.sort((a,b) => (UNIT_ORDER[a]||99) - (UNIT_ORDER[b]||99));
+        
+        activeDetailCategory = availTypes.length ? availTypes[0] : null; 
+        if (activeDetailCategory) {
+            let filtered = rawTypes.filter(u => getUnitEnName(u.bedroomType) === activeDetailCategory);
+            filtered.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
+            activeDetailUnitId = filtered.length > 0 ? filtered[0].id : null;
+        } else {
+            activeDetailUnitId = null;
+        }
+        
+        renderDetailModalContent(); 
+    } catch(e) {
+        console.error("Detail Error:", e);
+        document.getElementById('detailBody').innerHTML = `<div style="text-align:center; color:var(--danger); padding:30px;"><b>حدث خطأ في تحميل بيانات هذا المشروع.</b><br><br>${e.message}</div>`;
+    }
+}
+
+// 🚨 دالة التعديل محمية 🚨
+function editCurrentCompound(){ 
+    try {
+        const c = compounds.find(x=>x.id===viewingCompoundId); 
+        if(!c) return; 
+        closeModal('detailOverlay'); 
+        openCompoundForm(c); 
+    } catch(e) {
+        console.error("Edit Button Error:", e);
+        alert("زرار التعديل متوقف لخطأ في بيانات المشروع.");
+    }
+}
+
+function setDetailCategory(catKey) { 
+    try {
+        activeDetailCategory = catKey; 
+        const c = compounds.find(x => x.id === viewingCompoundId); 
+        if (c && c.unitTypes) { 
+            const rawTypes = Array.isArray(c.unitTypes) ? c.unitTypes : [];
+            const matched = rawTypes.filter(u => getUnitEnName(u.bedroomType) === catKey); 
+            matched.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
+            if (matched.length > 0) activeDetailUnitId = matched[0].id; 
+        } 
+        renderDetailModalContent(); 
+    } catch(e) { console.error(e); }
+}
+
+function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
 
 function renderDetailModalContent() {
   try {
@@ -1378,7 +1442,8 @@ function renderDetailModalContent() {
       let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>أسعار المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
     
       const grouped = {}; 
-      (c.unitTypes||[]).forEach(u => { 
+      const rawTypesModal = Array.isArray(c.unitTypes) ? c.unitTypes : [];
+      rawTypesModal.forEach(u => { 
           let t = getUnitEnName(u.bedroomType); 
           (grouped[t] = grouped[t] || []).push(u); 
       }); 
@@ -1406,7 +1471,7 @@ function renderDetailModalContent() {
             return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')"><span class="num">${u.area}</span>m²${rmText}${gText}${rText}${fText} | <span class="num">${pText}</span></div>`
         }).join('') + `</div>`;
         
-        const sUnit = (c.unitTypes || []).find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
+        const sUnit = rawTypesModal.find(u => u.id === activeDetailUnitId) || (grouped[activeDetailCategory] ? grouped[activeDetailCategory][0] : null);
         
         let isTextPrice = false;
         let sUnitNumericPrice = 0;
@@ -1426,9 +1491,10 @@ function renderDetailModalContent() {
                      </div>`;
         }
     
-        if(sUnit && c.paymentPlans && c.paymentPlans.length > 0 && !isTextPrice && sUnitNumericPrice > 0){
+        const safePlans = Array.isArray(c.paymentPlans) ? c.paymentPlans : [];
+        if(sUnit && safePlans.length > 0 && !isTextPrice && sUnitNumericPrice > 0){
           html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
-          c.paymentPlans.forEach(p => { 
+          safePlans.forEach(p => { 
               let planBasePrice = sUnitNumericPrice;
               let planMeterText = '';
               
@@ -1471,81 +1537,87 @@ function renderDetailModalContent() {
       document.getElementById('detailBody').innerHTML = html;
   } catch (err) {
       console.error("Detail HTML Render Error:", err);
+      document.getElementById('detailBody').innerHTML = `<div style="text-align:center; color:var(--danger); padding:30px;"><b>حدث خطأ أثناء رسم شاشة المشروع.</b><br><br>${err.message}</div>`;
   }
 }
 
 window.runProjectMiniCalc = function(cId) {
-    const c = compounds.find(x => x.id === cId);
-    if(!c) return;
+    try {
+        const c = compounds.find(x => x.id === cId);
+        if(!c) return;
 
-    let area = parseFloat(document.getElementById('miniCalcArea').value) || 0;
-    let garden = parseFloat(document.getElementById('miniCalcGarden').value) || 0;
-    let roof = parseFloat(document.getElementById('miniCalcRoof').value) || 0;
+        let area = parseFloat(document.getElementById('miniCalcArea').value) || 0;
+        let garden = parseFloat(document.getElementById('miniCalcGarden').value) || 0;
+        let roof = parseFloat(document.getElementById('miniCalcRoof').value) || 0;
 
-    let resultDiv = document.getElementById('miniCalcResult');
-    if(area === 0 && garden === 0 && roof === 0) { resultDiv.innerHTML = ''; return; }
+        let resultDiv = document.getElementById('miniCalcResult');
+        if(area === 0 && garden === 0 && roof === 0) { resultDiv.innerHTML = ''; return; }
 
-    let avgPrice = 0;
-    if (c.projectType !== 'commercial') {
-        if (c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) {
-            avgPrice = ((c.pricePerMeterMin || 0) + (c.pricePerMeterMax || 0)) / 2;
-            if (!avgPrice) avgPrice = c.pricePerMeterMin || c.pricePerMeterMax || 0;
-        } else {
-            avgPrice = c.pricePerMeter || 0;
+        let avgPrice = 0;
+        if (c.projectType !== 'commercial') {
+            if (c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) {
+                avgPrice = ((c.pricePerMeterMin || 0) + (c.pricePerMeterMax || 0)) / 2;
+                if (!avgPrice) avgPrice = c.pricePerMeterMin || c.pricePerMeterMax || 0;
+            } else {
+                avgPrice = c.pricePerMeter || 0;
+            }
         }
+
+        if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:10px; border:1px dashed var(--danger); text-align:center; background:rgba(220,38,38,0.05); border-radius:8px;">لا يوجد متوسط سعر متر مسجل لهذا المشروع.</div>'; return; }
+
+        let effArea = area + (garden/3) + (roof/3);
+        let basePrice = Math.round(effArea * avgPrice);
+
+        let html = '';
+        let cashDiscount = c.cashDiscount || 0;
+        if (cashDiscount > 0) {
+            let discountAmount = basePrice * (cashDiscount / 100);
+            let finalCashPrice = basePrice - discountAmount;
+            html += `<div style="border:2px dashed var(--success); padding:15px; background:rgba(16,185,129,0.05); border-radius:8px; display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
+                        <div style="text-align:center;"><span>السعر الأساسي</span><br><b class="num" style="font-size:22px;">${formatNum(basePrice)} ج</b></div>
+                        <div style="text-align:center; color:var(--danger);"><span>خصم الكاش (${cashDiscount}%)</span><br><b class="num" style="font-size:22px;">- ${formatNum(Math.round(discountAmount))} ج</b></div>
+                        <div style="text-align:center; color:var(--success);"><span>النهائي (كاش)</span><br><b class="num" style="font-size:26px;">${formatNum(Math.round(finalCashPrice))} ج</b></div>
+                     </div>`;
+        }
+
+        const safePlans = Array.isArray(c.paymentPlans) ? c.paymentPlans : [];
+        if(safePlans.length > 0){
+          html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
+          safePlans.forEach(p => { 
+              let planBasePrice = basePrice;
+              let planMeterText = '';
+              
+              if (p.pricePerMeter > 0) {
+                  planBasePrice = Math.round(effArea * p.pricePerMeter);
+                  planMeterText = `<br><span style="color:var(--primary); font-size:10px; font-weight:800; background:var(--item-bg); padding:2px 6px; border-radius:4px; border:1px dashed var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
+              }
+              
+              const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
+              
+              let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
+              if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
+              
+              let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
+              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+
+              html += `<tr>
+                  <td>${planNameCol}</td>
+                  <td>${unitPriceCol}</td>
+                  <td><span class="num" style="font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
+                  <td class="num">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
+                  <td style="color:var(--primary);" class="num"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
+                  <td class="num"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
+              </tr>`; 
+          }); 
+          html += `</table></div>`;
+        } else {
+            html += `<div style="text-align:center; padding:20px; color:var(--text-muted);">مفيش خطط سداد مسجلة.</div>`;
+        }
+
+        resultDiv.innerHTML = html;
+    } catch(e) {
+        document.getElementById('miniCalcResult').innerHTML = `<div style="color:red; text-align:center; padding:10px;">حدث خطأ في الحاسبة.</div>`;
     }
-
-    if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:10px; border:1px dashed var(--danger); text-align:center; background:rgba(220,38,38,0.05); border-radius:8px;">لا يوجد متوسط سعر متر مسجل لهذا المشروع.</div>'; return; }
-
-    let effArea = area + (garden/3) + (roof/3);
-    let basePrice = Math.round(effArea * avgPrice);
-
-    let html = '';
-    let cashDiscount = c.cashDiscount || 0;
-    if (cashDiscount > 0) {
-        let discountAmount = basePrice * (cashDiscount / 100);
-        let finalCashPrice = basePrice - discountAmount;
-        html += `<div style="border:2px dashed var(--success); padding:15px; background:rgba(16,185,129,0.05); border-radius:8px; display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
-                    <div style="text-align:center;"><span>السعر الأساسي</span><br><b class="num" style="font-size:22px;">${formatNum(basePrice)} ج</b></div>
-                    <div style="text-align:center; color:var(--danger);"><span>خصم الكاش (${cashDiscount}%)</span><br><b class="num" style="font-size:22px;">- ${formatNum(Math.round(discountAmount))} ج</b></div>
-                    <div style="text-align:center; color:var(--success);"><span>النهائي (كاش)</span><br><b class="num" style="font-size:26px;">${formatNum(Math.round(finalCashPrice))} ج</b></div>
-                 </div>`;
-    }
-
-    if(c.paymentPlans && c.paymentPlans.length > 0){
-      html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
-      c.paymentPlans.forEach(p => { 
-          let planBasePrice = basePrice;
-          let planMeterText = '';
-          
-          if (p.pricePerMeter > 0) {
-              planBasePrice = Math.round(effArea * p.pricePerMeter);
-              planMeterText = `<br><span style="color:var(--primary); font-size:10px; font-weight:800; background:var(--item-bg); padding:2px 6px; border-radius:4px; border:1px dashed var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
-          }
-          
-          const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
-          
-          let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
-          if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
-          
-          let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
-          if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
-
-          html += `<tr>
-              <td>${planNameCol}</td>
-              <td>${unitPriceCol}</td>
-              <td><span class="num" style="font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
-              <td class="num">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
-              <td style="color:var(--primary);" class="num"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
-              <td class="num"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
-          </tr>`; 
-      }); 
-      html += `</table></div>`;
-    } else {
-        html += `<div style="text-align:center; padding:20px; color:var(--text-muted);">مفيش خطط سداد مسجلة.</div>`;
-    }
-
-    resultDiv.innerHTML = html;
 };
 
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
@@ -1555,7 +1627,9 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
     let extraPaymentsTotal = 0; 
     let bulletsSummary = []; 
     
-    (customBullets || []).forEach(b => { 
+    let validBullets = Array.isArray(customBullets) ? customBullets : [];
+    
+    validBullets.forEach(b => { 
         const pct = parseFloat(b.percent) || 0; 
         if(pct > 0){ 
             if(b.type === 'annual'){ 
