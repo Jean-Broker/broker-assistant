@@ -211,7 +211,7 @@
             <div class="filter-section">
                 <h4>الميزانية والأقساط</h4>
                 <div class="form-grid" style="gap: 15px;">
-                    <div class="form-field full"><label>نطاق السعر الإجمالي</label>
+                    <div class="form-field full"><label>نطاق السعر الإجمالي (أو المتر)</label>
                         <div style="display:flex; gap:10px;">
                             <input type="text" id="fMinPrice" placeholder="من" oninput="formatInput(this)">
                             <input type="text" id="fMaxPrice" placeholder="إلى" oninput="formatInput(this)">
@@ -283,7 +283,6 @@
                     </div>
                 </div>
 
-                <!-- 🚨 تعديل HTML الخاص بأسعار التشطيب عشان يترص جنب بعضه 🚨 -->
                 <div class="form-grid res-field">
                     <div class="form-field"><label>أقل سعر للمتر</label><input type="text" id="fldPriceMeterMin" class="num" placeholder="من" oninput="formatInput(this); updatePriceMeterAvg();"></div>
                     <div class="form-field"><label>أعلى سعر للمتر</label><input type="text" id="fldPriceMeterMax" class="num" placeholder="إلى" oninput="formatInput(this); updatePriceMeterAvg();"></div>
@@ -291,32 +290,36 @@
                 </div>
 
                 <div class="form-field full res-field" style="margin: 15px 0;">
-                    <button class="btn-reset-text" id="btnToggleAdvPricing" onclick="toggleAdvPricing()" style="width: 100%; border: 1px dashed var(--border-color); padding: 10px; border-radius: 8px; transition: 0.3s;">+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)</button>
+                    <button class="btn-reset-text" id="btnToggleAdvPricing" onclick="toggleAdvPricing()" style="width: 100%; border: 1px dashed var(--border-color); background: var(--item-bg); color: var(--text-muted); padding: 10px; border-radius: 8px; transition: 0.3s;">+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)</button>
                 </div>
 
-                <div id="advPricingWrap" class="full res-field" style="display:none; background:var(--bg-main); padding:15px; border-radius:8px; border:1px solid var(--border-color); margin-bottom: 15px;">
-                    <!-- الطوب الأحمر -->
-                    <div style="margin-bottom: 8px;"><label style="color:var(--text-muted); font-weight:800; font-size:13px;">طوب أحمر:</label></div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <input type="text" id="fldPriceCoreMin" class="num" placeholder="أقل سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
-                        <input type="text" id="fldPriceCoreMax" class="num" placeholder="أعلى سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
-                        <input type="text" id="fldPriceCoreAvg" class="num" placeholder="المتوسط" style="flex:1; border-color: var(--text-muted);" oninput="formatInput(this); updateAllUnitsPrice();">
+                <!-- تصميم أنيق وبدون ألوان مقرفة لأسعار التشطيب -->
+                <div id="advPricingWrap" class="full res-field" style="display:none; background:var(--item-bg); padding:1.25rem; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom: 15px;">
+                    <div style="margin-bottom: 12px;">
+                        <label style="color:var(--text-main); font-weight:800; font-size:13px; display:block; margin-bottom:5px;">طوب أحمر</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="fldPriceCoreMin" class="num" placeholder="أقل سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
+                            <input type="text" id="fldPriceCoreMax" class="num" placeholder="أعلى سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
+                            <input type="text" id="fldPriceCoreAvg" class="num" placeholder="المتوسط" style="flex:1; background:var(--bg-main);" oninput="formatInput(this); updateAllUnitsPrice();">
+                        </div>
                     </div>
 
-                    <!-- النصف تشطيب -->
-                    <div style="margin-bottom: 8px;"><label style="color:#F59E0B; font-weight:800; font-size:13px;">نصف تشطيب:</label></div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <input type="text" id="fldPriceSemiMin" class="num" placeholder="أقل سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
-                        <input type="text" id="fldPriceSemiMax" class="num" placeholder="أعلى سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
-                        <input type="text" id="fldPriceSemiAvg" class="num" placeholder="المتوسط" style="flex:1; border-color: #F59E0B;" oninput="formatInput(this); updateAllUnitsPrice();">
+                    <div style="margin-bottom: 12px;">
+                        <label style="color:var(--text-main); font-weight:800; font-size:13px; display:block; margin-bottom:5px;">نصف تشطيب</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="fldPriceSemiMin" class="num" placeholder="أقل سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
+                            <input type="text" id="fldPriceSemiMax" class="num" placeholder="أعلى سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
+                            <input type="text" id="fldPriceSemiAvg" class="num" placeholder="المتوسط" style="flex:1; background:var(--bg-main);" oninput="formatInput(this); updateAllUnitsPrice();">
+                        </div>
                     </div>
 
-                    <!-- التشطيب الكامل -->
-                    <div style="margin-bottom: 8px;"><label style="color:var(--primary); font-weight:800; font-size:13px;">تشطيب كامل:</label></div>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="fldPriceFullMin" class="num" placeholder="أقل سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
-                        <input type="text" id="fldPriceFullMax" class="num" placeholder="أعلى سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
-                        <input type="text" id="fldPriceFullAvg" class="num" placeholder="المتوسط" style="flex:1; border-color: var(--primary);" oninput="formatInput(this); updateAllUnitsPrice();">
+                    <div>
+                        <label style="color:var(--text-main); font-weight:800; font-size:13px; display:block; margin-bottom:5px;">تشطيب كامل</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="fldPriceFullMin" class="num" placeholder="أقل سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
+                            <input type="text" id="fldPriceFullMax" class="num" placeholder="أعلى سعر" style="flex:1;" oninput="formatInput(this); updateFinishingAvgs();">
+                            <input type="text" id="fldPriceFullAvg" class="num" placeholder="المتوسط" style="flex:1; background:var(--bg-main);" oninput="formatInput(this); updateAllUnitsPrice();">
+                        </div>
                     </div>
                 </div>
 
