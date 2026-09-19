@@ -312,6 +312,14 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 .overlay.open { display: flex; opacity: 1; }
 
 .curved-modal { background: var(--card-bg); width: 95%; max-width: 46.875rem; max-height: 85vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); transform: scale(0.95) translateY(1.25rem); transition: var(--transition); border: 1px solid var(--border-color); border-radius: var(--radius-card); overflow: hidden;}
+
+/* 🚨 شاشة المشروع بقت عريضة جداً زي عقار ماب 🚨 */
+#detailOverlay .detail-modal-wrapper {
+    max-width: 90vw !important;
+    height: 90vh !important;
+    max-height: 90vh !important;
+}
+
 .overlay.open .curved-modal { transform: scale(1) translateY(0); }
 .modal-header { padding: 1.25rem 1.5625rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--gradient-header); color: var(--text-main);}
 .modal-header h3 { font-size: 1.125rem; font-weight: 800; color: #fff; text-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.5);}
@@ -493,11 +501,18 @@ body.light-mode .filter-drawer { box-shadow: -0.625rem 0 2.5rem rgba(0,0,0,0.1);
 
 .drawer-footer { padding: 1.5rem; border-top: 1px solid var(--border-color); background: var(--item-bg); }
 
+/* 🚨 تضبيط أوردر الموبايل 🚨 */
 @media (max-width: 900px) {
     .app { flex-direction: column; overflow-y: auto; height: auto; gap: 0.9375rem;}
     .form-grid, .comm-prices-grid, .detail-grid, .calc-result { grid-template-columns: 1fr; }
     .sidebar, .main { display: contents; }
     
+    /* 🚨 تعديل المودال في الموبايل عشان ينزل البوكس بتاع الواتساب تحت 🚨 */
+    .detail-page-layout { flex-direction: column; }
+    .detail-side-col { width: 100% !important; }
+    .action-card { position: static !important; }
+    #detailOverlay .detail-modal-wrapper { max-width: 95vw !important; }
+
     .topbar { order: 1; flex-direction: column; align-items: flex-start; gap: 0.625rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; margin: 0; }
     .admin-stats-board { order: 2; flex-direction: row; flex-wrap: wrap; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; margin: 0; }
     .glass-search-container { order: 3; padding: 0.75rem; border-radius: var(--radius-card); background: var(--card-bg); border: 1px solid var(--border-color); width: 100%; margin: 0; }
