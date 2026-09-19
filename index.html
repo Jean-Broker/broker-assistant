@@ -261,9 +261,19 @@
                 <div class="form-grid">
                     <div class="form-field full"><label>المنطقة / الفرع</label><select id="fldLocation"></select></div>
                     <div class="form-field"><label>تصنيف المشروع</label><select id="fldProjectType"><option value="residential">سكني</option><option value="commercial">تجاري / إداري</option><option value="hotel">شقق فندقية</option></select></div>
+                    
                     <div class="form-field"><label>الشركة المطورة</label><input type="text" id="fldCompany" placeholder="اسم الشركة"></div>
+                    <!-- ✨ الحقل الجديد: سابقة الأعمال ✨ -->
+                    <div class="form-field"><label style="color:var(--primary);">سابقة الأعمال للمطور (اختياري)</label><input type="text" id="fldPreviousWorks" placeholder="رابط سابقة الأعمال (Link)"></div>
+                    
                     <div class="form-field"><label>اسم المشروع</label><input type="text" id="fldProject" placeholder="اسم المشروع"></div>
+                    <!-- ✨ الحقل الجديد: رابط الـ PDF ✨ -->
+                    <div class="form-field"><label style="color:var(--primary);">بروشور المشروع PDF (اختياري)</label><input type="text" id="fldProjectPDF" placeholder="رابط ملف הـ PDF"></div>
+                    
                     <div class="form-field"><label>اسم المرحلة (اختياري)</label><input type="text" id="fldPhaseName" placeholder="مثال: Phase 1"></div>
+                    <!-- ✨ الحقل الجديد: رقم الواتساب ✨ -->
+                    <div class="form-field"><label style="color:#25D366; font-weight:800;">رقم واتساب المبيعات (اختياري)</label><input type="text" id="fldWhatsapp" placeholder="مثال: 201000000000"></div>
+                    
                     <div class="form-field"><label>المالك</label><input type="text" id="fldOwner" placeholder="اسم المالك"></div>
                     <div class="form-field"><label>الاستشاري الهندسي</label><input type="text" id="fldConsultant" placeholder="اسم الاستشاري"></div>
                     <div class="form-field res-field"><label>مساحة المشروع الإجمالية</label><input type="number" id="fldProjectSize" placeholder="الفدان"></div>
@@ -353,19 +363,17 @@
         </div>
     </div>
 
-    <!-- Detail Modal -->
+    <!-- 🚨 Detail Modal (بدون الفوتر القديم عشان الزراير بقت في الجنب) 🚨 -->
     <div id="detailOverlay" class="overlay">
-        <div class="curved-modal">
+        <div class="curved-modal detail-modal-wrapper">
             <div class="modal-header">
-                <h3 id="detailTitle">...</h3>
+                <h3 id="detailTitle" style="display: none;">...</h3>
+                <!-- اللوجو فوق عشان يدي فخامة -->
+                <div class="j-logo" style="width:5rem; height:1.5rem; margin:0;"><div class="j-top" style="font-size:2rem;">J</div><div class="j-text" style="font-size:0.4rem;">BROKER-ASSISTANT</div><div class="j-bot" style="font-size:2rem;">J</div></div>
                 <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
             </div>
-            <div class="modal-body" id="detailBody"></div>
-            <div class="modal-footer">
-                <button class="btn btn-outline-light btn-pill" style="margin-right:auto; background:var(--danger); color:#fff; border:none;" id="btnDeleteCompound" onclick="deleteCurrentCompoundFromCloud()">حذف المشروع</button>
-                <button class="btn btn-outline-light btn-pill" id="btnEditCompound" onclick="editCurrentCompound()">تعديل المشروع</button>
-                <button class="btn btn-primary-style btn-pill" onclick="closeModal('detailOverlay')">إغلاق</button>
-            </div>
+            <!-- الداتا كلها هتترمي هنا بالديزاين الجديد -->
+            <div class="modal-body" id="detailBody" style="padding: 2rem;"></div>
         </div>
     </div>
 
@@ -382,16 +390,16 @@
         <div class="curved-modal" style="max-width:31.25rem;">
             <div class="modal-header"><h3>حاسبة الأقساط الشاملة</h3><button class="modal-close" onclick="closeModal('calcOverlay')">✕</button></div>
             <div class="modal-body">
-                <div class="form-field" style="margin-bottom:0.9375rem;"><label>إجمالي السعر</label><input type="text" id="calcTotal" class="num" placeholder="0" style="font-size:1.125rem; color:var(--primary); font-weight:bold;"></div>
+                <div class="form-field" style="margin-bottom:15px;"><label>إجمالي السعر</label><input type="text" id="calcTotal" class="num" placeholder="0" style="font-size:18px; color:var(--primary); font-weight:bold;"></div>
                 <div class="form-grid">
                     <div class="form-field"><label>نسبة الخصم (%)</label><input type="number" id="calcDiscountPct" class="num" placeholder="0"></div>
                     <div class="form-field"><label>نسبة المقدم (%)</label><input type="number" id="calcDownPct" class="num" placeholder="0"></div>
                     <div class="form-field full"><label>عدد السنوات</label><input type="number" id="calcYears" class="num" placeholder="مثال: 7"></div>
                 </div>
                 
-                <div class="section-label" style="font-size:0.75rem; margin: 0.625rem 0;">الدفعات الخاصة (Bullets)</div>
+                <div class="section-label" style="font-size:12px; margin: 10px 0;">الدفعات الخاصة (Bullets)</div>
                 <div id="calcBulletsRows"></div>
-                <button class="btn btn-outline-light btn-pill w-100" style="font-size:0.75rem; margin-bottom:0.9375rem;" onclick="addCalcBulletRow()">+ دفعة خاصة جديدة</button>
+                <button class="btn btn-outline-light btn-pill w-100" style="font-size:12px; margin-bottom:15px;" onclick="addCalcBulletRow()">+ دفعة خاصة جديدة</button>
 
                 <button class="btn btn-primary-style btn-pill w-100" onclick="runUniversalCalculator()">احسب القسط 🧮</button>
                 <div id="calcResult" class="calc-result" style="display:none;"></div>
