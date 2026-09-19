@@ -46,7 +46,7 @@ let currentLang = 'ar';
 window.toggleLanguage = function() { 
     currentLang = currentLang === 'ar' ? 'en' : 'ar'; 
     document.documentElement.lang = currentLang; 
-    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; 
+    document.body.classList.toggle('lang-en', currentLang === 'en');
     document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); 
 };
 
@@ -665,7 +665,7 @@ window.renderGrid = function(){
       
       let groups = {};
       list.forEach(c => {
-          let key = `${String(c.projectName\vert{}\vert{}'').trim().toLowerCase()}\vert{}${String(c.companyName||'').trim().toLowerCase()}`;
+          let key = `${String(c.projectName||'').trim().toLowerCase()}||${String(c.companyName||'').trim().toLowerCase()}`;
           if(!groups[key]) groups[key] = [];
           groups[key].push(c);
       });
@@ -1009,7 +1009,7 @@ window.renderDetailModalContent = function() {
       const locLinkHtml = c.locationLink ? `<br><a href="${window.escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:0.75rem; font-weight:bold; background:var(--item-bg); padding:0.375rem 0.75rem; border-radius:0.25rem; border:1px solid var(--primary); display:inline-block; margin-top:0.3125rem;">📍 الخريطة</a>` : '';
       let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
     
-      let detailsGridHtml = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${window.escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${window.escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${window.escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${window.escapeHtml(window.findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${window.deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>أسعار المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? window.escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${window.escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+      let detailsGridHtml = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${window.escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${window.escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${window.escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${window.escapeHtml(window.findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${window.deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? window.escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${window.escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
     
       const grouped = {}; 
       const rawTypesModal = Array.isArray(c.unitTypes) ? c.unitTypes : [];
@@ -1384,7 +1384,7 @@ window.handleExcelUpload = async function(event) {
                     let gardenArea = parseFloat(row['Garden Area']) || parseFloat(row['Garden']) || parseFloat(row['جاردن']) || 0;
                     let price = parseFloat(row['Price From']) || parseFloat(row['Price To']) || 0; 
                     let bedStr = String(row['No of Bedrooms'] || '').toLowerCase(); let unitTypeStr = String(row['Unit Type'] || '').toLowerCase(); let bType = 'استوديو'; let rm = parseFloat(row['No of Bedrooms'] || '') || ''; if(bedStr.includes('1')) bType = '1 غرفة نوم'; else if(bedStr.includes('2')) bType = '2 غرفة نوم'; else if(bedStr.includes('3')) bType = '3 غرف نوم'; else if(bedStr.includes('4')) bType = '4 غرف نوم'; else if(bedStr.includes('duplex') || unitTypeStr.includes('duplex')) bType = 'دوبلكس'; else if(bedStr.includes('penthouse') || unitTypeStr.includes('penthouse')) bType = 'بنتهاوس'; else if(bedStr.includes('villa') || unitTypeStr.includes('villa')) bType = 'فيلا'; else if(bedStr.includes('chalet') || unitTypeStr.includes('chalet')) bType = 'شاليه';
-                    if (error_check => area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, rooms: rm, area: area, gardenArea: gardenArea, price: price, finishing: compoundsToUpload[compKey].finishingStatus }); }
+                    if (area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, rooms: rm, area: area, gardenArea: gardenArea, price: price, finishing: compoundsToUpload[compKey].finishingStatus }); }
                     let planStr = String(row['Payment Plan'] || '').trim(); if (planStr) { if (!compoundsToUpload[compKey].paymentPlans.some(p => p.notes === planStr)) { compoundsToUpload[compKey].paymentPlans.push({ id: uid(), name: "خطة سداد", notes: planStr, discountPercent: parseFloat(row['Cash Discount']) || 0, downPaymentPercent: 0, years: 0, frequency: '12', customBullets: [] }); } }
                 });
             });
