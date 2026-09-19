@@ -10,6 +10,15 @@ function getRawNum(val) { if(val === null || val === undefined) return null; let
 function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
 function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 
+// دالة توحيد الحروف العربي لضمان دقة البحث 100%
+function normalizeArabic(text) {
+    if (!text) return '';
+    return text.replace(/[أإآ]/g, 'ا')
+               .replace(/ة/g, 'ه')
+               .replace(/[يى]/g, 'ي')
+               .toLowerCase();
+}
+
 // --- Theme & Setup ---
 function setNavForApp(isAppView) { const links = document.getElementById('siteBarLinks'), loginBtn = document.getElementById('siteBarLoginBtn'); if (links) links.classList.toggle('nav-app-hidden', isAppView); if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); }
 if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPageContainer').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
@@ -42,10 +51,15 @@ window.addEventListener('load', () => {
 
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
+    closeAllDropdowns();
     if (document.getElementById('filterDrawer') && document.getElementById('filterDrawer').classList.contains('open')) closeFilterDrawer();
     if (document.getElementById('paywallModal').style.display === 'flex') closeLoginModal();
     document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay' || ov.id === 'typesOverlay') return; ov.classList.remove('open'); });
 });
+
+function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
+function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
+document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper') && !event.target.closest('.glass-search-container') && !event.target.closest('.filter-drawer')) { closeAllDropdowns(); } });
 
 let selectedBeds = [];
 let selectedDelivery = [];
@@ -474,8 +488,10 @@ function renderGrid(){
               if(activeProjectType !== 'all' && (c.projectType || 'residential') !== activeProjectType) return false;
               
               if(filters.searchText) {
-                  const searchable = [String(c.projectName||''), String(c.companyName||''), String(c.ownerName||''), String(c.consultant||''), findSubLocationName(c.locationId)].filter(Boolean).join(' ').toLowerCase();
-                  if (!searchable.includes(filters.searchText)) return false;
+                  let searchTxt = normalizeArabic(filters.searchText);
+                  let searchableStr = [String(c.projectName||''), String(c.companyName||''), String(c.ownerName||''), String(c.consultant||''), findSubLocationName(c.locationId)].filter(Boolean).join(' ');
+                  let normalizedSearchable = normalizeArabic(searchableStr);
+                  if (!normalizedSearchable.includes(searchTxt)) return false;
               }
               
               if (filters.delivery && filters.delivery.length > 0) {
@@ -544,12 +560,10 @@ function renderGrid(){
               let unitPricesArray = cUnits.map(u => {
                   let p = getRawNum(u.price);
                   if (p > 0) return p;
-                  
                   let effArea = (parseFloat(u.area) || 0) + (parseFloat(u.gardenArea) || 0)/3 + (parseFloat(u.roofArea) || 0)/3;
                   if (effArea <= 0) return 0;
                   
                   let meterPrice = 0;
-                  // 🚨 تصليح الحسبة للمشروعات التجارية عشان متسقطش لو مفيهاش سعر إداري 🚨
                   if (c.projectType === 'commercial') {
                        let cp = c.commercialPrices || {};
                        let aMin = getRawNum(cp.adminMin) || 0, aMax = getRawNum(cp.adminMax) || 0;
@@ -559,15 +573,11 @@ function renderGrid(){
                        
                        let bType = getUnitEnName(u.bedroomType);
                        let min = 0, max = 0;
-                       
                        if (bType === 'Administrative') { min = aMin; max = aMax; }
                        else if (bType === 'Commercial') { min = cMin; max = cMax; }
                        else if (bType === 'Clinic') { min = clMin; max = clMax; }
                        else if (bType === 'Recreational') { min = rMin; max = rMax; }
-                       else {
-                           min = cMin || aMin || clMin || rMin || 0;
-                           max = cMax || aMax || clMax || rMax || 0;
-                       }
+                       else { min = cMin || aMin || clMin || rMin || 0; max = cMax || aMax || clMax || rMax || 0; }
                        meterPrice = (min > 0 && max > 0) ? (min + max)/2 : (min || max || 0); 
                   } else {
                        let pSingle = getRawNum(c.pricePerMeter) || 0;
@@ -578,10 +588,8 @@ function renderGrid(){
                        if (c.isAdvancedPricing) {
                            let pCoreMin = getRawNum(c.priceCoreMin) || 0, pCoreMax = getRawNum(c.priceCoreMax) || 0;
                            let pCoreAvg = (pCoreMin > 0 && pCoreMax > 0) ? (pCoreMin + pCoreMax)/2 : (pCoreMin || pCoreMax || getRawNum(c.priceCore) || 0);
-          
                            let pSemiMin = getRawNum(c.priceSemiMin) || 0, pSemiMax = getRawNum(c.priceSemiMax) || 0;
                            let pSemiAvg = (pSemiMin > 0 && pSemiMax > 0) ? (pSemiMin + pSemiMax)/2 : (pSemiMin || pSemiMax || getRawNum(c.priceSemi) || 0);
-          
                            let pFullMin = getRawNum(c.priceFullMin) || 0, pFullMax = getRawNum(c.priceFullMax) || 0;
                            let pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax)/2 : (pFullMin || pFullMax || getRawNum(c.priceFull) || 0);
           
@@ -624,13 +632,10 @@ function renderGrid(){
                       for(let j = 0; j < plans.length; j++) {
                           let p = plans[j];
                           let planBasePrice = baseUnitP;
-                          if (p.pricePerMeter > 0 && effArea > 0) {
-                              planBasePrice = Math.round(effArea * p.pricePerMeter);
-                          }
+                          if (p.pricePerMeter > 0 && effArea > 0) { planBasePrice = Math.round(effArea * p.pricePerMeter); }
           
                           const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
                           
-                          // 🚨 تصليح فلتر الأقساط عشان ميوقعش المشروعات اللي فيها دفعات 🚨
                           let dpVal = Math.max(0, r.downPayment);
                           let instVal = Math.max(0, r.monthlyEquivalent);
 
@@ -645,9 +650,7 @@ function renderGrid(){
               } 
               
               return true;
-          } catch(e) {
-              return false; 
-          }
+          } catch(e) { return false; }
       });
       
       if(filters.sortOrder && filters.sortOrder !== 'default') {
@@ -667,7 +670,6 @@ function renderGrid(){
       } else if (activeLocationIds.length > 1) {
           pageTitleText = `تصفية متعددة (${activeLocationIds.length} مناطق)`;
       }
-      
       document.getElementById('pageTitle').textContent = pageTitleText;
       
       if(!list.length) {
@@ -693,13 +695,8 @@ function renderGrid(){
               else { htmlString += generateMasterDossierHTML(group); }
           } catch(err) { console.error("Dossier Error", err); }
       });
-      
       grid.innerHTML = htmlString;
-  } catch (error) {
-      console.log("Grid Render Error:", error);
-      const grid = document.getElementById('compoundGrid');
-      if(grid) grid.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--danger);">حدث خطأ أثناء عرض المشاريع. جاري المحاولة...</div>`;
-  }
+  } catch (error) { console.log("Grid Render Error:", error); }
 }
 
 function openCompoundForm(existing){
@@ -1147,7 +1144,7 @@ function renderPlanRows(){
                         <input type="number" placeholder="%" class="num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
                         <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
                     </div>
-                    ${b.type==='annual'?`<div class="years-pills" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+                    ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
                 `).join('')}
                 <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:10px;" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
             </div>
@@ -1182,6 +1179,60 @@ function renderDecreeRows(){
     if(!dRows) return;
     dRows.innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); 
 }
+
+// دالة محمية لفتح تفاصيل المشروع
+function openDetail(id){
+  try {
+      const c = compounds.find(x=>x.id===id); if(!c) return; 
+      viewingCompoundId = id;
+      const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => getUnitEnName(u.bedroomType))));
+      availTypes.sort((a,b) => (UNIT_ORDER[a]||99) - (UNIT_ORDER[b]||99));
+      
+      activeDetailCategory = availTypes.length ? availTypes[0] : null; 
+      if (activeDetailCategory) {
+          let filtered = (c.unitTypes||[]).filter(u => getUnitEnName(u.bedroomType) === activeDetailCategory);
+          filtered.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
+          activeDetailUnitId = filtered.length > 0 ? filtered[0].id : null;
+      } else {
+          activeDetailUnitId = null;
+      }
+      
+      renderDetailModalContent(); 
+      const ov = document.getElementById('detailOverlay');
+      if(ov) ov.classList.add('open');
+  } catch(e) {
+      console.error("Detail Error:", e);
+      alert("حدث خطأ أثناء فتح المشروع. تأكد من اكتمال بيانات المشروع.");
+  }
+}
+
+// دالة محمية لتعديل المشروع
+function editCurrentCompound(){ 
+    try {
+        const c = compounds.find(x=>x.id===viewingCompoundId); 
+        if(!c) return; 
+        closeModal('detailOverlay'); 
+        openCompoundForm(c); 
+    } catch(e) {
+        console.error("Edit Button Error:", e);
+        alert("حدث خطأ أثناء محاولة تعديل المشروع.");
+    }
+}
+
+function setDetailCategory(catKey) { 
+    try {
+        activeDetailCategory = catKey; 
+        const c = compounds.find(x => x.id === viewingCompoundId); 
+        if (c && c.unitTypes) { 
+            const matched = c.unitTypes.filter(u => getUnitEnName(u.bedroomType) === catKey); 
+            matched.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
+            if (matched.length > 0) activeDetailUnitId = matched[0].id; 
+        } 
+        renderDetailModalContent(); 
+    } catch(e) { console.error(e); }
+}
+
+function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
 
 function renderDetailModalContent() {
   try {
@@ -1309,9 +1360,9 @@ function renderDetailModalContent() {
               let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
               if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
               
-              let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
-              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
-
+              let unitPriceCol = `<b class="num">${formatNum(planBasePrice)} ج</b>`;
+              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:11px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+    
               html += `<tr>
                   <td>${planNameCol}</td>
                   <td>${unitPriceCol}</td>
