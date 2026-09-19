@@ -46,16 +46,14 @@ let currentLang = 'ar';
 window.toggleLanguage = function() { 
     currentLang = currentLang === 'ar' ? 'en' : 'ar'; 
     document.documentElement.lang = currentLang; 
-    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; 
+    document.body.classList.toggle('lang-en', currentLang === 'en');
     document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); 
 };
 
 // 🚨 دوال الدخول والتسجيل شغالين 100% 🚨
 window.openSystemLogin = function() { 
     const modal = document.getElementById('paywallModal');
-    if(modal) {
-        modal.style.display = 'flex'; 
-    }
+    if(modal) modal.style.display = 'flex'; 
 };
 
 window.closeLoginModal = function() { 
@@ -213,103 +211,100 @@ const FINISHING_TYPES = { core_shell: 'طوب أحمر', semi: 'نصف تشطي�
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'} ];
 
-window.submitLogin = async function() { 
-    try {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value.trim(); 
-        const btn = document.getElementById('loginSubmitBtn');
-        
-        if(!email || !password) { 
-            alert("من فضلك أدخل الإيميل والباسورد"); 
-            return; 
-        } 
-        
-        if (btn) btn.innerHTML = 'جاري الدخول... ⏳';
-        
-        const rem = document.getElementById('rememberMe');
-        if (rem && rem.checked) {
-            localStorage.setItem('savedEmail', email);
-            localStorage.setItem('savedPassword', password);
-        } else {
-            localStorage.removeItem('savedEmail');
-            localStorage.removeItem('savedPassword');
-        }
-        
-        sessionStorage.setItem('isSystemOpen', 'true'); 
-        
-        await auth.signInWithEmailAndPassword(email, password);
-    } catch (err) {
+window.submitLogin = function() { 
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim(); 
+    const btn = document.getElementById('loginSubmitBtn');
+    if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; } 
+    
+    if (btn) btn.innerHTML = 'جاري الدخول... ⏳';
+    
+    const rem = document.getElementById('rememberMe');
+    if (rem && rem.checked) {
+        localStorage.setItem('savedEmail', email);
+        localStorage.setItem('savedPassword', password);
+    } else {
+        localStorage.removeItem('savedEmail');
+        localStorage.removeItem('savedPassword');
+    }
+    
+    sessionStorage.setItem('isSystemOpen', 'true'); 
+    
+    auth.signInWithEmailAndPassword(email, password).catch(err => { 
         sessionStorage.removeItem('isSystemOpen'); 
-        const btn = document.getElementById('loginSubmitBtn');
         if (btn) btn.innerHTML = 'دخول';
         alert("بيانات الدخول غير صحيحة."); 
-        console.error("Login Error:", err);
+    }); 
+};
+
+window.findSubLocationName = function(subId){
+    if(!subId || !Array.isArray(mainLocations)) return '-';
+    for (const m of mainLocations) {
+        if (m.id === subId) return m.name || '-';
+        const sub = (m.subLocations || []).find(s => s.id === subId);
+        if (sub) return sub.name || '-';
     }
+    return '-';
+};
+
+window.syncCloudData = async function(){
+    try {
+        const locDoc = await db.collection('system').doc('locations').get();
+        mainLocations = (locDoc.exists && Array.isArray(locDoc.data().mainLocations)) ? locDoc.data().mainLocations : [];
+    } catch(e) { console.error('Locations Sync Error:', e); mainLocations = Array.isArray(mainLocations) ? mainLocations : []; }
+
+    try {
+        const settingsDoc = await db.collection('system').doc('settings').get();
+        if (settingsDoc.exists) {
+            const d = settingsDoc.data() || {};
+            if (Array.isArray(d.resTypes) && d.resTypes.length) appSettings.resTypes = d.resTypes;
+            if (Array.isArray(d.commTypes) && d.commTypes.length) appSettings.commTypes = d.commTypes;
+        }
+    } catch(e) { console.error('Settings Sync Error:', e); }
+
+    try {
+        const snap = await db.collection('compounds').get();
+        compounds = snap.docs.map(doc => Object.assign({ id: doc.id }, doc.data()));
+    } catch(e) { console.error('Compounds Sync Error:', e); compounds = Array.isArray(compounds) ? compounds : []; }
+
+    if (typeof window.renderLocationSidebar === 'function') { try { window.renderLocationSidebar(); } catch(e) { console.error(e); } }
+    if (typeof window.renderAdminStats === 'function') { try { window.renderAdminStats(); } catch(e) { console.error(e); } }
+    if (typeof window.renderGrid === 'function') { try { window.renderGrid(); } catch(e) { console.error(e); } }
 };
 
 auth.onAuthStateChanged(async (user) => {
-    try {
-        if (user) {
-            if (sessionStorage.getItem('isSystemOpen') !== 'true') { auth.signOut(); return; }
-            let userDoc; 
-            try { userDoc = await db.collection('users').doc(user.email.toLowerCase()).get(); } catch(e) {}
-            
-            let role = 'viewer', expiryDate = '2024-01-01'; 
-            if (userDoc && userDoc.exists) { 
-                role = userDoc.data().role || 'viewer'; 
-                expiryDate = userDoc.data().expiryDate || '2024-01-01'; 
-            } else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') { 
-                role = 'admin'; 
-                expiryDate = '2099-12-31'; 
-                await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' }); 
-            } else { 
-                auth.signOut(); 
-                alert("هذا الحساب غير مسجل."); 
-                return; 
-            }
-            
-            if (new Date() > new Date(expiryDate)) { 
-                auth.signOut(); 
-                alert("لقد انتهت فترة اشتراكك."); 
-                return; 
-            }
-            
-            currentUser = user; 
-            isAdmin = (role === 'admin'); 
-            isEditor = (role === 'admin' || role === 'editor');
-            
-            let uLabel = document.getElementById('userEmailLabel');
-            if(uLabel) uLabel.textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
-            
-            let suAct = document.getElementById('superAdminActions'); if(suAct) suAct.style.display = isAdmin ? 'flex' : 'none'; 
-            let addLoc = document.getElementById('addMainLocWrap'); if(addLoc) addLoc.style.display = isEditor ? 'flex' : 'none'; 
-            let adAct = document.getElementById('adminActions'); if(adAct) adAct.style.display = isEditor ? 'flex' : 'none';
-            
-            let btnLog = document.getElementById('loginSubmitBtn');
-            if(btnLog) btnLog.innerHTML = 'دخول';
-            
-            if (typeof window.syncCloudData === 'function') {
-                await window.syncCloudData(); 
-            }
-            
-            const pw = document.getElementById('paywallModal');
-            const land = document.getElementById('landingPageContainer');
-            const sys = document.getElementById('systemApp');
-            if(pw) pw.style.display = 'none'; 
-            if(land) land.style.display = 'none'; 
-            if(sys) sys.style.display = 'flex'; 
-            window.setNavForApp(true);
-        } else { 
-            currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); 
-            let uLabel = document.getElementById('userEmailLabel');
-            if(uLabel) uLabel.textContent = 'يرجى تسجيل الدخول'; 
-            window.backToLanding();
-        }
-    } catch (error) {
-        console.error("Critical Auth Error:", error);
-        const btnLog = document.getElementById('loginSubmitBtn');
-        if(btnLog) btnLog.innerHTML = 'دخول';
-    }
+  if (user) {
+    if (sessionStorage.getItem('isSystemOpen') !== 'true') { auth.signOut(); return; }
+    let userDoc; try { userDoc = await db.collection('users').doc(user.email.toLowerCase()).get(); } catch(e) {}
+    let role = 'viewer', expiryDate = '2024-01-01'; 
+    if (userDoc && userDoc.exists) { role = userDoc.data().role || 'viewer'; expiryDate = userDoc.data().expiryDate || '2024-01-01'; } else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') { role = 'admin'; expiryDate = '2099-12-31'; await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' }); } else { auth.signOut(); alert("هذا الحساب غير مسجل."); return; }
+    if (new Date() > new Date(expiryDate)) { auth.signOut(); alert("لقد انتهت فترة اشتراكك."); return; }
+    currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
+    
+    let uLabel = document.getElementById('userEmailLabel');
+    if(uLabel) uLabel.textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
+    
+    let suAct = document.getElementById('superAdminActions'); if(suAct) suAct.style.display = isAdmin ? 'flex' : 'none'; 
+    let addLoc = document.getElementById('addMainLocWrap'); if(addLoc) addLoc.style.display = isEditor ? 'flex' : 'none'; 
+    let adAct = document.getElementById('adminActions'); if(adAct) adAct.style.display = isEditor ? 'flex' : 'none';
+    
+    let btnLog = document.getElementById('loginSubmitBtn');
+    if(btnLog) btnLog.innerHTML = 'دخول';
+    
+    await window.syncCloudData(); 
+    const pw = document.getElementById('paywallModal');
+    const land = document.getElementById('landingPageContainer');
+    const sys = document.getElementById('systemApp');
+    if(pw) pw.style.display = 'none'; 
+    if(land) land.style.display = 'none'; 
+    if(sys) sys.style.display = 'flex'; 
+    window.setNavForApp(true);
+  } else { 
+      currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); 
+      let uLabel = document.getElementById('userEmailLabel');
+      if(uLabel) uLabel.textContent = 'يرجى تسجيل الدخول'; 
+      window.backToLanding();
+  }
 });
 
 window.openUsersManager = function() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); };
@@ -1049,7 +1044,7 @@ window.renderDetailModalContent = function() {
       const locLinkHtml = c.locationLink ? `<br><a href="${window.escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:0.75rem; font-weight:bold; background:var(--item-bg); padding:0.375rem 0.75rem; border-radius:0.25rem; border:1px solid var(--primary); display:inline-block; margin-top:0.3125rem;">📍 الخريطة</a>` : '';
       let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
     
-      let detailsGridHtml = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${window.escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${window.escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${window.escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${window.escapeHtml(window.findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${window.deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>أسعار المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? window.escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${window.escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+      let detailsGridHtml = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${window.escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${window.escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${window.escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${window.escapeHtml(window.findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${window.deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? window.escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${window.escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
     
       const grouped = {}; 
       const rawTypesModal = Array.isArray(c.unitTypes) ? c.unitTypes : [];
@@ -1320,6 +1315,415 @@ window.calcInstallmentWithDiscount = function(originalTotal, discountPct, downPc
     return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
 };
 
+// === الدوال المُعاد بناؤها (كانت مفقودة من الملف الأصلي) ===
+
+// --- شريط المناطق الجانبي ---
+window.renderLocationSidebar = function(){
+    const wraps = [document.getElementById('locationTree'), document.getElementById('locWrapperMobile')].filter(Boolean);
+    if(!wraps.length) return;
+    let html = `<div class="loc-group-header-row"><span class="loc-main-clickable ${activeLocationIds.length===0?'active':''}" onclick="window.clearLocationFilter()" style="flex:1;">🌍 كل المناطق</span></div>`;
+    (mainLocations || []).forEach(m => {
+        const isActiveMain = activeLocationIds.includes(m.id);
+        html += `<div class="loc-group-header-row">
+            <span class="loc-main-clickable ${isActiveMain?'active':''}" onclick="window.toggleLocationFilter('${m.id}')">${window.escapeHtml(m.name)}</span>
+            ${isEditor ? `<button class="loc-del-btn" onclick="window.deleteMainLocation('${m.id}')">🗑️</button>` : ''}
+        </div>`;
+        (m.subLocations || []).forEach(s => {
+            html += `<div class="sub-loc-tab ${activeLocationIds.includes(s.id)?'active':''}" style="margin-right:0.9375rem;">
+                <span onclick="window.toggleLocationFilter('${s.id}')" style="flex:1;">${window.escapeHtml(s.name)}</span>
+                ${isEditor ? `<button class="loc-del-btn" onclick="window.deleteSubLocation('${m.id}','${s.id}')">✕</button>` : ''}
+            </div>`;
+        });
+        if (isEditor) {
+            html += `<div class="add-sub-loc-box" style="margin-right:0.9375rem;">
+                <input type="text" id="newSubLocInput_${m.id}" placeholder="+ فرع جديد" onkeydown="if(event.key==='Enter') window.addSubLocation('${m.id}')">
+                <button class="btn btn-primary-style btn-pill" style="padding:0 0.75rem;" onclick="window.addSubLocation('${m.id}')">+</button>
+            </div>`;
+        }
+    });
+    wraps.forEach(w => w.innerHTML = html);
+};
+
+window.clearLocationFilter = function(){ activeLocationIds = []; window.renderLocationSidebar(); window.renderGrid(); };
+
+window.toggleLocationFilter = function(id){
+    const idx = activeLocationIds.indexOf(id);
+    if (idx > -1) activeLocationIds.splice(idx,1); else activeLocationIds.push(id);
+    window.renderLocationSidebar();
+    window.renderGrid();
+};
+
+window.toggleMobileLoc = function(){
+    const wrap = document.getElementById('locWrapperMobile');
+    const btn = document.getElementById('mobileLocToggleBtn');
+    if (wrap) wrap.classList.toggle('show');
+    if (btn) btn.classList.toggle('active');
+};
+
+window.addMainLocation = async function(){
+    if(!isEditor) return;
+    const input = document.getElementById('newMainLocInput');
+    const name = input ? input.value.trim() : '';
+    if (!name) return;
+    mainLocations.push({ id: window.uid(), name, subLocations: [] });
+    if (input) input.value = '';
+    window.renderLocationSidebar();
+    try { await db.collection('system').doc('locations').set({ mainLocations }); window.showToast('تم إضافة المنطقة 📍'); }
+    catch(e) { alert('حدث خطأ أثناء الحفظ.'); }
+};
+
+window.addSubLocation = async function(mainId){
+    if(!isEditor) return;
+    const input = document.getElementById('newSubLocInput_' + mainId);
+    const name = input ? input.value.trim() : '';
+    if (!name) return;
+    const m = mainLocations.find(x => x.id === mainId);
+    if (!m) return;
+    if (!Array.isArray(m.subLocations)) m.subLocations = [];
+    m.subLocations.push({ id: window.uid(), name });
+    window.renderLocationSidebar();
+    try { await db.collection('system').doc('locations').set({ mainLocations }); window.showToast('تم إضافة الفرع 📍'); }
+    catch(e) { alert('حدث خطأ أثناء الحفظ.'); }
+};
+
+window.deleteMainLocation = async function(id){
+    if(!isEditor) return;
+    if (!confirm('هل أنت متأكد من حذف هذه المنطقة وكل فروعها؟')) return;
+    mainLocations = mainLocations.filter(m => m.id !== id);
+    activeLocationIds = activeLocationIds.filter(x => x !== id);
+    window.renderLocationSidebar(); window.renderGrid();
+    try { await db.collection('system').doc('locations').set({ mainLocations }); } catch(e) {}
+};
+
+window.deleteSubLocation = async function(mainId, subId){
+    if(!isEditor) return;
+    if (!confirm('هل أنت متأكد من حذف هذا الفرع؟')) return;
+    const m = mainLocations.find(x => x.id === mainId);
+    if (m) m.subLocations = (m.subLocations || []).filter(s => s.id !== subId);
+    activeLocationIds = activeLocationIds.filter(x => x !== subId);
+    window.renderLocationSidebar(); window.renderGrid();
+    try { await db.collection('system').doc('locations').set({ mainLocations }); } catch(e) {}
+};
+
+// --- الفلاتر وأزرار البحث ---
+window.applyFilters = function(){
+    filters.searchText = window.getSafeVal('fSearchText').trim();
+    filters.propertyTypes = Array.from(document.querySelectorAll('.prop-type-cb:checked')).map(cb => cb.value);
+    filters.bedrooms = selectedBeds.slice();
+    filters.delivery = selectedDelivery.slice();
+    filters.finishing = selectedFinishing.slice();
+    filters.minPrice = window.getRawNum(window.getSafeVal('fMinPrice'));
+    filters.maxPrice = window.getRawNum(window.getSafeVal('fMaxPrice'));
+    filters.downPaymentTarget = window.getRawNum(window.getSafeVal('fDownPayment'));
+    filters.maxMonthlyInstallment = window.getRawNum(window.getSafeVal('fMonthlyInstallment'));
+    filters.sortOrder = window.getSafeVal('fSortOrder');
+    window.renderGrid();
+};
+
+let searchDebounceTimer = null;
+window.handleSearchInput = function(){
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => { window.applyFilters(); }, 300);
+};
+
+window.resetFilters = function(){
+    filters = {};
+    selectedBeds = []; selectedDelivery = []; selectedFinishing = [];
+    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false);
+    document.querySelectorAll('#filterDrawer .pill').forEach(p => p.classList.remove('active'));
+    ['fSearchText','fMinPrice','fMaxPrice','fDownPayment','fMonthlyInstallment'].forEach(id => window.setSafeVal(id, ''));
+    const sortEl = document.getElementById('fSortOrder'); if (sortEl) sortEl.selectedIndex = 0;
+    window.renderGrid();
+};
+
+window.selectProjectType = function(type, el){
+    activeProjectType = type;
+    document.querySelectorAll('.glass-tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    window.renderGrid();
+};
+
+window.setCompletionFilter = function(val, el){
+    completionFilter = val;
+    document.querySelectorAll('.stat-card').forEach(s => s.classList.remove('active'));
+    if (el) el.classList.add('active');
+    window.renderGrid();
+};
+
+// --- كروت عرض المشاريع (Dossiers) ---
+window.getStartingPrice = function(c){
+    try {
+        if (c.projectType === 'commercial') {
+            const cp = c.commercialPrices || {};
+            const mins = [cp.adminMin, cp.commMin, cp.clinicMin, cp.recMin].map(x => window.getRawNum(x)).filter(x => x > 0);
+            return mins.length ? `${window.formatNum(Math.min(...mins))} ج.م` : '-';
+        }
+        if (window.getRawNum(c.pricePerMeterMin) > 0) return `${window.formatNum(c.pricePerMeterMin)} ج.م / م²`;
+        if (window.getRawNum(c.pricePerMeter) > 0) return `${window.formatNum(c.pricePerMeter)} ج.م / م²`;
+        const units = Array.isArray(c.unitTypes) ? c.unitTypes : [];
+        const prices = units.map(u => window.getRawNum(u.price)).filter(p => p > 0);
+        if (prices.length) return `${window.formatNum(Math.min(...prices))} ج.م`;
+        return '-';
+    } catch(e) { return '-'; }
+};
+
+window.generateDossierHTML = function(c){
+    try {
+        const units = Array.isArray(c.unitTypes) ? c.unitTypes : [];
+        const areas = units.map(u => parseFloat(u.area)).filter(a => a > 0);
+        const areaText = areas.length ? (Math.min(...areas) === Math.max(...areas) ? `${window.formatNum(Math.min(...areas))} م²` : `${window.formatNum(Math.min(...areas))} - ${window.formatNum(Math.max(...areas))} م²`) : '-';
+        const finishText = FINISHING_TYPES[c.finishingStatus] || (c.projectType === 'commercial' ? 'متنوع' : '-');
+        const delivery = window.deliveryLabel(c.deliveryDate);
+        const phaseTag = c.phaseName ? `<span class="phase-tag">${window.escapeHtml(c.phaseName)}</span>` : '';
+        const searchTerm = (filters && filters.searchText) || '';
+        return `<div class="dossier" onclick="window.openDetail('${c.id}')">
+            ${delivery && delivery !== '-' ? `<div class="stamp">${window.escapeHtml(delivery)}</div>` : ''}
+            <div class="dossier-company">${window.escapeHtml(c.companyName || '-')}</div>
+            <div class="dossier-title">${window.highlightText(c.projectName || 'بدون اسم', searchTerm)} ${phaseTag}</div>
+            <div class="dossier-badge">📍 ${window.escapeHtml(window.findSubLocationName(c.locationId))}</div>
+            <div class="dossier-row"><b>يبدأ من</b><span class="num">${window.getStartingPrice(c)}</span></div>
+            <div class="dossier-meta">
+                <div class="meta-chip"><span>التشطيب</span><div>${window.escapeHtml(finishText)}</div></div>
+                <div class="meta-chip"><span>المساحة</span><div class="num">${areaText}</div></div>
+            </div>
+        </div>`;
+    } catch(e) { console.error('Dossier render error', e); return ''; }
+};
+
+window.generateMasterDossierHTML = function(group){
+    try {
+        const c0 = group[0];
+        const prices = group.map(g => window.getRawNum((window.getStartingPrice(g).match(/[\d,]+/) || [])[0]));
+        const validPrices = prices.filter(p => p > 0);
+        const priceText = validPrices.length ? `${window.formatNum(Math.min(...validPrices))} ج.م` : '-';
+        const groupJson = window.escapeHtml(JSON.stringify(group.map(g => g.id))).replace(/'/g, '&#39;');
+        return `<div class="dossier master-dossier" onclick='window.openPhasesModal(${JSON.stringify(group.map(g=>g.id))})'>
+            <div class="master-badge">${group.length} مراحل</div>
+            <div class="dossier-company">${window.escapeHtml(c0.companyName || '-')}</div>
+            <div class="dossier-title">${window.escapeHtml(c0.projectName || 'بدون اسم')}</div>
+            <div class="dossier-badge">📍 ${window.escapeHtml(window.findSubLocationName(c0.locationId))}</div>
+            <div class="dossier-row"><b>يبدأ من</b><span class="num">${priceText}</span></div>
+            <div class="dossier-meta">
+                <div class="meta-chip"><span>عدد المراحل</span><div class="num">${group.length}</div></div>
+                <div class="meta-chip"><span>النوع</span><div>${PROJECT_TYPES[c0.projectType || 'residential']}</div></div>
+            </div>
+        </div>`;
+    } catch(e) { console.error('Master dossier render error', e); return ''; }
+};
+
+window.openPhasesModal = function(ids){
+    const title = document.getElementById('phasesTitle');
+    const body = document.getElementById('phasesBody');
+    if (!body) return;
+    const items = ids.map(id => compounds.find(c => c.id === id)).filter(Boolean);
+    if (title && items.length) title.textContent = `مراحل ${items[0].projectName || ''}`;
+    body.innerHTML = items.map(c => `
+        <div class="repeat-row" style="cursor:pointer;" onclick="window.closeModal('phasesOverlay'); window.openDetail('${c.id}');">
+            <div style="flex:1;"><b>${window.escapeHtml(c.phaseName || c.projectName || 'مرحلة')}</b></div>
+            <div class="num" style="color:var(--primary); font-weight:800;">${window.getStartingPrice(c)}</div>
+        </div>
+    `).join('') || `<div style="text-align:center; color:var(--text-muted); padding:1.25rem;">لا توجد مراحل.</div>`;
+    document.getElementById('phasesOverlay').classList.add('open');
+};
+
+// --- نموذج إضافة/تعديل المشروع: الوحدات وخطط السداد والقرارات الوزارية ---
+window.onProjectTypeChange = function(){
+    const pt = window.getSafeVal('fldProjectType');
+    const isComm = pt === 'commercial';
+    document.querySelectorAll('.res-field').forEach(el => { el.style.display = isComm ? 'none' : ''; });
+    const commWrap = document.getElementById('commercialPriceWrap');
+    if (commWrap) commWrap.style.display = isComm ? 'block' : 'none';
+    if (typeof window.renderUnitRows === 'function') window.renderUnitRows();
+};
+
+window.updatePriceMeterAvg = function(){
+    const min = window.getRawNum(window.getSafeVal('fldPriceMeterMin'));
+    const max = window.getRawNum(window.getSafeVal('fldPriceMeterMax'));
+    if (min > 0 && max > 0) window.setSafeVal('fldPriceMeter', window.formatNum(Math.round((min + max) / 2)));
+    else if (min > 0) window.setSafeVal('fldPriceMeter', window.formatNum(min));
+    else if (max > 0) window.setSafeVal('fldPriceMeter', window.formatNum(max));
+    window.updateAllUnitsPrice();
+};
+
+window.updateFinishingAvgs = function(){
+    ['Core','Semi','Full'].forEach(key => {
+        const min = window.getRawNum(window.getSafeVal('fldPrice' + key + 'Min'));
+        const max = window.getRawNum(window.getSafeVal('fldPrice' + key + 'Max'));
+        if (min > 0 && max > 0) window.setSafeVal('fldPrice' + key + 'Avg', window.formatNum(Math.round((min + max) / 2)));
+        else if (min > 0) window.setSafeVal('fldPrice' + key + 'Avg', window.formatNum(min));
+        else if (max > 0) window.setSafeVal('fldPrice' + key + 'Avg', window.formatNum(max));
+    });
+    window.updateAllUnitsPrice();
+};
+
+window.toggleAdvPricing = function(force){
+    const wrap = document.getElementById('advPricingWrap');
+    if (!wrap) return;
+    const show = (typeof force === 'boolean') ? force : (wrap.style.display === 'none');
+    wrap.style.display = show ? 'block' : 'none';
+};
+
+window.addUnitRow = function(){
+    const projType = window.getSafeVal('fldProjectType');
+    const typeOptions = (projType === 'commercial' ? appSettings.commTypes : appSettings.resTypes);
+    tempUnits.push({ id: window.uid(), bedroomType: typeOptions[0] || '', rooms: '', area: '', gardenArea: '', roofArea: '', price: '', finishing: 'full' });
+    window.renderUnitRows();
+};
+window.removeUnitRow = function(id){ tempUnits = tempUnits.filter(u => u.id !== id); window.renderUnitRows(); };
+
+window.updateUnitData = function(id, field, value){
+    const u = tempUnits.find(x => x.id === id);
+    if (!u) return;
+    if (field !== 'recalc') u[field] = value;
+    if (field === 'finishing' || field === 'bedroomType') { window.renderUnitRows(); return; }
+
+    if (['area', 'gardenArea', 'roofArea', 'recalc'].includes(field)) {
+        const isAdv = document.getElementById('advPricingWrap') && document.getElementById('advPricingWrap').style.display !== 'none';
+        let meterPrice = 0;
+        if (isAdv) {
+            const map = { core_shell: 'fldPriceCoreAvg', semi: 'fldPriceSemiAvg', full: 'fldPriceFullAvg' };
+            meterPrice = window.getRawNum(window.getSafeVal(map[u.finishing] || 'fldPriceCoreAvg')) || 0;
+        } else {
+            meterPrice = window.getRawNum(window.getSafeVal('fldPriceMeter')) || 0;
+        }
+        if (meterPrice > 0) {
+            const area = parseFloat(u.area) || 0;
+            const garden = parseFloat(u.gardenArea) || 0;
+            const roof = parseFloat(u.roofArea) || 0;
+            const effArea = area + (garden / 3) + (roof / 3);
+            if (effArea > 0) {
+                u.price = Math.round(effArea * meterPrice);
+                const priceInput = document.getElementById('unitPriceInput_' + id);
+                if (priceInput) priceInput.value = window.formatNum(u.price);
+            }
+        }
+    }
+};
+
+window.renderUnitRows = function(){
+    const wrap = document.getElementById('unitRows');
+    if (!wrap) return;
+    const projType = window.getSafeVal('fldProjectType');
+    const typeOptions = (projType === 'commercial' ? appSettings.commTypes : appSettings.resTypes);
+    wrap.innerHTML = tempUnits.map(u => `
+        <div class="repeat-row">
+            <select onchange="window.updateUnitData('${u.id}','bedroomType',this.value)" style="flex:1.2; min-width:7.5rem;">
+                ${typeOptions.map(t => `<option value="${window.escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${window.escapeHtml(t)}</option>`).join('')}
+            </select>
+            <input type="text" class="num" placeholder="المساحة م²" value="${u.area || ''}" style="flex:1; min-width:6.25rem;" oninput="window.updateUnitData('${u.id}','area',window.getRawNum(this.value))">
+            <input type="text" class="num" placeholder="حديقة م²" value="${u.gardenArea || ''}" style="flex:1; min-width:5.5rem;" oninput="window.updateUnitData('${u.id}','gardenArea',window.getRawNum(this.value))">
+            <input type="text" class="num" placeholder="روف م²" value="${u.roofArea || ''}" style="flex:1; min-width:5.5rem;" oninput="window.updateUnitData('${u.id}','roofArea',window.getRawNum(this.value))">
+            <select onchange="window.updateUnitData('${u.id}','finishing',this.value)" style="flex:1; min-width:7.5rem;">
+                <option value="core_shell" ${u.finishing === 'core_shell' ? 'selected' : ''}>طوب أحمر</option>
+                <option value="semi" ${u.finishing === 'semi' ? 'selected' : ''}>نصف تشطيب</option>
+                <option value="full" ${u.finishing === 'full' ? 'selected' : ''}>تشطيب كامل</option>
+            </select>
+            <input type="text" id="unitPriceInput_${u.id}" class="num" placeholder="السعر" value="${u.price ? window.formatNum(u.price) : ''}" style="flex:1.2; min-width:7.5rem;" oninput="formatInput(this); window.updateUnitData('${u.id}','price',window.getRawNum(this.value))">
+            <button type="button" class="row-del" onclick="window.removeUnitRow('${u.id}')">✕</button>
+        </div>
+    `).join('') || `<div style="text-align:center; color:var(--text-muted); padding:0.9375rem; font-size:0.8125rem;">لا توجد وحدات مضافة بعد.</div>`;
+};
+
+window.addPlanRow = function(){
+    tempPlans.push({ id: window.uid(), name: 'خطة سداد جديدة', discountPercent: '', downPaymentPercent: '', years: '', pricePerMeter: '', customBullets: [] });
+    window.renderPlanRows();
+};
+window.removePlanRow = function(id){ tempPlans = tempPlans.filter(p => p.id !== id); window.renderPlanRows(); };
+window.updatePlanField = function(id, field, value){
+    const p = tempPlans.find(x => x.id === id);
+    if (!p) return;
+    p[field] = (field === 'name') ? value : (window.getRawNum(value) || '');
+};
+window.addPlanBulletRow = function(planId){
+    const p = tempPlans.find(x => x.id === planId);
+    if (!p) return;
+    if (!Array.isArray(p.customBullets)) p.customBullets = [];
+    p.customBullets.push({ id: window.uid(), type: 'annual', percent: '', selectedYears: [] });
+    window.renderPlanRows();
+};
+window.removePlanBulletRow = function(planId, bulletId){
+    const p = tempPlans.find(x => x.id === planId);
+    if (!p) return;
+    p.customBullets = (p.customBullets || []).filter(b => b.id !== bulletId);
+    window.renderPlanRows();
+};
+window.updatePlanBullet = function(planId, bulletId, field, value){
+    const p = tempPlans.find(x => x.id === planId);
+    if (!p) return;
+    const b = (p.customBullets || []).find(x => x.id === bulletId);
+    if (!b) return;
+    b[field] = field === 'type' ? value : (parseFloat(value) || 0);
+    if (field === 'type') window.renderPlanRows();
+};
+window.togglePlanBulletYear = function(planId, bulletId, year){
+    const p = tempPlans.find(x => x.id === planId);
+    if (!p) return;
+    const b = (p.customBullets || []).find(x => x.id === bulletId);
+    if (!b) return;
+    if (!b.selectedYears) b.selectedYears = [];
+    const i = b.selectedYears.indexOf(year);
+    i > -1 ? b.selectedYears.splice(i, 1) : b.selectedYears.push(year);
+    window.renderPlanRows();
+};
+
+window.renderPlanRows = function(){
+    const wrap = document.getElementById('planRows');
+    if (!wrap) return;
+    wrap.innerHTML = tempPlans.map(p => `
+        <div class="plan-card">
+            <div class="plan-card-header">
+                <input type="text" placeholder="اسم الخطة" value="${window.escapeHtml(p.name || '')}" style="flex:1.5; min-width:8.75rem;" onchange="window.updatePlanField('${p.id}','name',this.value)">
+                <input type="text" class="num" placeholder="خصم %" value="${p.discountPercent || ''}" style="flex:1; min-width:5rem;" oninput="window.updatePlanField('${p.id}','discountPercent',this.value)">
+                <input type="text" class="num" placeholder="مقدم %" value="${p.downPaymentPercent || ''}" style="flex:1; min-width:5rem;" oninput="window.updatePlanField('${p.id}','downPaymentPercent',this.value)">
+                <input type="text" class="num" placeholder="سنوات التقسيط" value="${p.years || ''}" style="flex:1; min-width:6.25rem;" oninput="window.updatePlanField('${p.id}','years',this.value)">
+                <input type="text" class="num" placeholder="سعر متر مخصص (اختياري)" value="${p.pricePerMeter || ''}" style="flex:1.2; min-width:8rem;" oninput="formatInput(this); window.updatePlanField('${p.id}','pricePerMeter',this.value)">
+                <button type="button" class="row-del" onclick="window.removePlanRow('${p.id}')">✕</button>
+            </div>
+            <div class="bullets-container">
+                ${(p.customBullets || []).map(b => `
+                    <div class="bullet-row">
+                        <div class="bullet-top">
+                            <select style="flex:1; min-width:6.25rem;" onchange="window.updatePlanBullet('${p.id}','${b.id}','type',this.value)">
+                                <option value="annual" ${b.type === 'annual' ? 'selected' : ''}>دفعة سنوية</option>
+                                <option value="delivery" ${b.type === 'delivery' ? 'selected' : ''}>عند الاستلام</option>
+                                <option value="after_3m" ${b.type === 'after_3m' ? 'selected' : ''}>بعد 3 شهور</option>
+                                <option value="after_6m" ${b.type === 'after_6m' ? 'selected' : ''}>بعد 6 شهور</option>
+                                <option value="after_9m" ${b.type === 'after_9m' ? 'selected' : ''}>بعد 9 شهور</option>
+                            </select>
+                            <input type="number" placeholder="نسبة %" value="${b.percent || ''}" style="flex:1; min-width:5rem;" oninput="window.updatePlanBullet('${p.id}','${b.id}','percent',this.value)">
+                            <button type="button" class="row-del" onclick="window.removePlanBulletRow('${p.id}','${b.id}')">✕</button>
+                        </div>
+                        ${b.type === 'annual' ? `<div class="years-pills" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem;">${[1,2,3,4,5,6,7].map(yr => `<div class="year-pill ${(b.selectedYears || []).includes(yr) ? 'selected' : ''}" onclick="window.togglePlanBulletYear('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>` : ''}
+                    </div>
+                `).join('')}
+                <button type="button" class="btn-reset-text" style="width:100%; border:1px dashed var(--border-color); background:var(--card-bg); color:var(--text-muted); padding:0.5rem; border-radius:0.5rem; margin-top:0.375rem;" onclick="window.addPlanBulletRow('${p.id}')">+ دفعة إضافية</button>
+            </div>
+        </div>
+    `).join('') || `<div style="text-align:center; color:var(--text-muted); padding:0.9375rem; font-size:0.8125rem;">لا توجد خطط سداد مضافة بعد.</div>`;
+};
+
+window.addDecreeRow = function(){
+    tempDecrees.push({ id: window.uid(), decreeNumber: '', description: '', date: '' });
+    window.renderDecreeRows();
+};
+window.removeDecreeRow = function(id){ tempDecrees = tempDecrees.filter(d => d.id !== id); window.renderDecreeRows(); };
+window.updateDecreeData = function(id, field, value){
+    const d = tempDecrees.find(x => x.id === id);
+    if (d) d[field] = value;
+};
+window.renderDecreeRows = function(){
+    const wrap = document.getElementById('decreeRows');
+    if (!wrap) return;
+    wrap.innerHTML = tempDecrees.map(d => `
+        <div class="repeat-row">
+            <input type="text" placeholder="رقم القرار" value="${window.escapeHtml(d.decreeNumber || '')}" style="flex:1; min-width:6.25rem;" onchange="window.updateDecreeData('${d.id}','decreeNumber',this.value)">
+            <input type="text" placeholder="الوصف" value="${window.escapeHtml(d.description || '')}" style="flex:2; min-width:9.375rem;" onchange="window.updateDecreeData('${d.id}','description',this.value)">
+            <input type="text" placeholder="التاريخ" value="${window.escapeHtml(d.date || '')}" style="flex:1; min-width:6.25rem;" onchange="window.updateDecreeData('${d.id}','date',this.value)">
+            <button type="button" class="row-del" onclick="window.removeDecreeRow('${d.id}')">✕</button>
+        </div>
+    `).join('') || `<div style="text-align:center; color:var(--text-muted); padding:0.9375rem; font-size:0.8125rem;">لا توجد قرارات وزارية مضافة.</div>`;
+};
+
 window.openCalculator = function(){ calcCustomBullets=[]; ['calcTotal','calcDiscountPct','calcDownPct','calcYears'].forEach(id=>window.setSafeVal(id, '')); document.getElementById('calcResult').style.display='none'; window.renderCalcBulletsRows(); document.getElementById('calcOverlay').classList.add('open'); };
 window.addCalcBulletRow = function(){ calcCustomBullets.push({id:window.uid(), type:'annual', percent:'', selectedYears:[]}); window.renderCalcBulletsRows(); };
 window.removeCalcBulletRow = function(id){ calcCustomBullets=calcCustomBullets.filter(b=>b.id!==id); window.renderCalcBulletsRows(); };
@@ -1439,267 +1843,3 @@ window.handleExcelUpload = async function(event) {
         } catch (error) { alert("حدث خطأ."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; }
     }; reader.readAsArrayBuffer(file);
 };
-
-// ==============================================================
-// 🔥 الـ Functions اللي كانت ممسوحة والمسئولة عن جلب الداتا والفلترة 🔥
-// ==============================================================
-
-window.syncCloudData = async function() {
-    try {
-        // 1. جلب الإعدادات (أنواع الوحدات)
-        const settingsDoc = await db.collection('system').doc('settings').get();
-        if(settingsDoc.exists) {
-            const s = settingsDoc.data();
-            if(s.resTypes) appSettings.resTypes = s.resTypes;
-            if(s.commTypes) appSettings.commTypes = s.commTypes;
-        }
-
-        // 2. جلب المناطق (Locations)
-        const locDoc = await db.collection('system').doc('locations').get();
-        if(locDoc.exists) {
-            mainLocations = locDoc.data().mainLocations || [];
-        } else {
-            mainLocations = [];
-        }
-        if(typeof window.renderLocationTree === 'function') window.renderLocationTree();
-
-        // 3. المزامنة اللحظية للمشاريع (Compounds)
-        db.collection('compounds').onSnapshot(snapshot => {
-            compounds = [];
-            snapshot.forEach(doc => {
-                let data = doc.data();
-                data.id = doc.id;
-                compounds.push(data);
-            });
-            
-            // إخفاء رسالة "جاري تحميل الداتا"
-            const ps = document.getElementById('pageSub');
-            if(ps) ps.textContent = `${compounds.length} مشروع مسجل بالسحابة`;
-
-            window.renderAdminStats();
-            window.renderGrid();
-        }, error => {
-            console.error("Error fetching compounds: ", error);
-        });
-
-    } catch (error) {
-        console.error("Sync Error:", error);
-        const ps = document.getElementById('pageSub');
-        if(ps) ps.textContent = "حدث خطأ في جلب البيانات.";
-    }
-};
-
-window.handleSearchInput = function() {
-    if(window.searchTimeout) clearTimeout(window.searchTimeout);
-    window.searchTimeout = setTimeout(() => {
-        window.applyFilters();
-    }, 500);
-};
-
-window.applyFilters = function() {
-    filters.searchText = document.getElementById('fSearchText') ? document.getElementById('fSearchText').value.trim() : '';
-    filters.minPrice = window.getRawNum(window.getSafeVal('fMinPrice'));
-    filters.maxPrice = window.getRawNum(window.getSafeVal('fMaxPrice'));
-    filters.downPaymentTarget = window.getRawNum(window.getSafeVal('fDownPayment'));
-    filters.maxMonthlyInstallment = window.getRawNum(window.getSafeVal('fMonthlyInstallment'));
-    
-    filters.bedrooms = [...selectedBeds];
-    filters.delivery = [...selectedDelivery];
-    filters.finishing = [...selectedFinishing];
-    
-    let checkedTypes = [];
-    document.querySelectorAll('.prop-type-cb:checked').forEach(cb => checkedTypes.push(cb.value));
-    filters.propertyTypes = checkedTypes.length > 0 ? checkedTypes : null;
-    
-    const sortEl = document.getElementById('fSortOrder');
-    filters.sortOrder = sortEl ? sortEl.value : 'default';
-    
-    window.renderGrid();
-};
-
-window.resetFilters = function() {
-    ['fSearchText', 'fMinPrice', 'fMaxPrice', 'fDownPayment', 'fMonthlyInstallment'].forEach(id => window.setSafeVal(id, ''));
-    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false);
-    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    
-    const sortEl = document.getElementById('fSortOrder');
-    if(sortEl) sortEl.value = 'default';
-    
-    selectedBeds = [];
-    selectedDelivery = [];
-    selectedFinishing = [];
-    filters = {};
-    
-    window.renderGrid();
-};
-
-window.setCompletionFilter = function(val, el) {
-    completionFilter = val;
-    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
-    if(el) el.classList.add('active');
-    window.renderGrid();
-};
-
-window.selectProjectType = function(val, el) {
-    activeProjectType = val;
-    document.querySelectorAll('.glass-tab').forEach(t => t.classList.remove('active'));
-    if(el) el.classList.add('active');
-    window.renderGrid();
-};
-
-// --- دوال المناطق والشريط الجانبي ---
-window.renderLocationTree = function() {
-    const tree = document.getElementById('locationTree');
-    if(!tree) return;
-    let html = '';
-    mainLocations.forEach(m => {
-        let isOpen = openMainLocIds[m.id] ? 'open' : '';
-        let subListShow = openMainLocIds[m.id] ? 'show' : '';
-        let isMainActive = (activeLocationIds.length === 1 && activeLocationIds[0] === m.id) ? 'active' : '';
-        
-        html += `<div class="loc-group">
-            <div class="loc-group-header-row">
-                <div class="loc-main-clickable ${isMainActive}" onclick="toggleMainLocFilter('${m.id}', event)">
-                    <span>${escapeHtml(m.name)}</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:0.25rem;">
-                    ${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${m.id}', event)">✕</button>` : ''}
-                    <div class="arrow-toggle ${isOpen}" onclick="toggleLocSublist('${m.id}', event)">▶</div>
-                </div>
-            </div>
-            <div class="sub-loc-list ${subListShow}" id="sublist-${m.id}">`;
-        
-        if (m.subLocations && m.subLocations.length > 0) {
-            m.subLocations.forEach(s => {
-                let isSubActive = activeLocationIds.includes(s.id) ? 'active' : '';
-                html += `<div class="sub-loc-tab ${isSubActive}" onclick="toggleSubLocFilter('${s.id}')">
-                    <span>${escapeHtml(s.name)}</span>
-                    ${isEditor ? `<button class="loc-del-btn" style="width:1.25rem; height:1.25rem; font-size:0.625rem;" onclick="deleteSubLocation('${m.id}', '${s.id}', event)">✕</button>` : ''}
-                </div>`;
-            });
-        }
-        if (isEditor) {
-            html += `<div class="add-sub-loc-box">
-                <input type="text" id="newSubLocInput-${m.id}" placeholder="+ مدينة/حي جديد" onkeydown="if(event.key==='Enter') addSubLocation('${m.id}')">
-                <button class="btn btn-primary-style btn-pill" style="padding:0 0.5rem; font-size:0.6875rem;" onclick="addSubLocation('${m.id}')">إضافة</button>
-            </div>`;
-        }
-        html += `</div></div>`;
-    });
-    tree.innerHTML = html;
-    const mobTree = document.getElementById('locWrapperMobile');
-    if(mobTree) mobTree.innerHTML = html;
-};
-
-window.findSubLocationName = function(id) {
-    if(!id) return '-';
-    for(let m of mainLocations) {
-        if(m.id === id) return m.name;
-        if(m.subLocations) {
-            let s = m.subLocations.find(x => x.id === id);
-            if(s) return s.name;
-        }
-    }
-    return '-';
-};
-
-window.toggleLocSublist = function(id, e) {
-    if(e) e.stopPropagation();
-    openMainLocIds[id] = !openMainLocIds[id];
-    window.renderLocationTree();
-};
-
-window.toggleMainLocFilter = function(id, e) {
-    if(e) e.stopPropagation();
-    if (activeLocationIds.length === 1 && activeLocationIds[0] === id) {
-        activeLocationIds = [];
-    } else {
-        activeLocationIds = [id];
-    }
-    window.renderLocationTree();
-    window.renderGrid();
-};
-
-window.toggleSubLocFilter = function(id) {
-    if (activeLocationIds.includes(id)) {
-        activeLocationIds = activeLocationIds.filter(x => x !== id);
-    } else {
-        activeLocationIds.push(id);
-    }
-    window.renderLocationTree();
-    window.renderGrid();
-};
-
-window.toggleMobileLoc = function() {
-    const wrap = document.getElementById('locWrapperMobile');
-    const btn = document.getElementById('mobileLocToggleBtn');
-    if(wrap) {
-        wrap.classList.toggle('show');
-        if(btn) btn.classList.toggle('active');
-    }
-};
-
-window.deleteMainLocation = async function(id, e) {
-    if(e) e.stopPropagation();
-    if(!confirm('هل أنت متأكد من حذف هذه المنطقة؟')) return;
-    mainLocations = mainLocations.filter(m => m.id !== id);
-    await db.collection('system').doc('locations').set({ mainLocations });
-    window.renderLocationTree();
-};
-
-window.deleteSubLocation = async function(mainId, subId, e) {
-    if(e) e.stopPropagation();
-    if(!confirm('هل أنت متأكد من حذف هذا الحي؟')) return;
-    let main = mainLocations.find(m => m.id === mainId);
-    if(main && main.subLocations) {
-        main.subLocations = main.subLocations.filter(s => s.id !== subId);
-        await db.collection('system').doc('locations').set({ mainLocations });
-        window.renderLocationTree();
-    }
-};
-
-window.addMainLocation = async function() {
-    const input = document.getElementById('newMainLocInput');
-    const name = input ? input.value.trim() : '';
-    if(!name) return;
-    mainLocations.push({ id: window.uid(), name: name, subLocations: [] });
-    await db.collection('system').doc('locations').set({ mainLocations });
-    if(input) input.value = '';
-    window.renderLocationTree();
-};
-
-window.addSubLocation = async function(mainId) {
-    const input = document.getElementById(`newSubLocInput-${mainId}`);
-    const name = input ? input.value.trim() : '';
-    if(!name) return;
-    let main = mainLocations.find(m => m.id === mainId);
-    if(main) {
-        if(!main.subLocations) main.subLocations = [];
-        main.subLocations.push({ id: window.uid(), name: name });
-        openMainLocIds[mainId] = true;
-        await db.collection('system').doc('locations').set({ mainLocations });
-        if(input) input.value = '';
-        window.renderLocationTree();
-    }
-};
-
-// 🔥 حماية إضافية للزراير (Fallback) 🔥
-window.addEventListener('DOMContentLoaded', () => {
-    const loginBtn1 = document.getElementById('siteBarLoginBtn');
-    const loginBtn2 = document.getElementById('heroStartBtn');
-    const modal = document.getElementById('paywallModal');
-
-    if(loginBtn1) {
-        loginBtn1.addEventListener('click', function(e) {
-            e.preventDefault();
-            if(modal) modal.style.display = 'flex';
-        });
-    }
-
-    if(loginBtn2) {
-        loginBtn2.addEventListener('click', function(e) {
-            e.preventDefault();
-            if(modal) modal.style.display = 'flex';
-        });
-    }
-});
