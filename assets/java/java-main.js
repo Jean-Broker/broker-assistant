@@ -211,6 +211,11 @@ async function saveCompoundToCloud() {
         ownerName: getSafeVal('fldOwner').trim(),
         consultant: getSafeVal('fldConsultant').trim(),
         
+        // ✨ الخانات الجديدة بتتحفظ هنا ✨
+        whatsapp: getSafeVal('fldWhatsapp').trim(),
+        projectPDF: getSafeVal('fldProjectPDF').trim(),
+        previousWorks: getSafeVal('fldPreviousWorks').trim(),
+        
         projectSize: getRawNum(getSafeVal('fldProjectSize')),
         floors: getSafeVal('fldFloors').trim(),
         compoundLocationDetail: getSafeVal('fldLocationDetail').trim(),
@@ -842,7 +847,7 @@ function openCompoundForm(existing){
       if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => (m.subLocations || []).some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
       if(existing) setSafeVal('fldLocation', existing.locationId || ''); else setSafeVal('fldLocation', defaultLoc);
       
-      ['fldCompany','fldProject','fldPhaseName','fldFloors','fldOwner','fldConsultant',
+      ['fldCompany','fldProject','fldPhaseName','fldWhatsapp','fldProjectPDF','fldPreviousWorks','fldFloors','fldOwner','fldConsultant',
        'fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg',
        'fldPriceCore', 'fldPriceSemi', 'fldPriceFull',
        'fldPriceCoreMin', 'fldPriceCoreMax', 'fldPriceCoreAvg',
@@ -860,6 +865,11 @@ function openCompoundForm(existing){
           setSafeVal('fldCompany', existing.companyName || ''); 
           setSafeVal('fldProject', existing.projectName || ''); 
           setSafeVal('fldPhaseName', existing.phaseName || ''); 
+          
+          setSafeVal('fldWhatsapp', existing.whatsapp || ''); 
+          setSafeVal('fldProjectPDF', existing.projectPDF || ''); 
+          setSafeVal('fldPreviousWorks', existing.previousWorks || ''); 
+
           setSafeVal('fldFloors', existing.floors || ''); 
           setSafeVal('fldOwner', existing.ownerName || ''); 
           setSafeVal('fldConsultant', existing.consultant || ''); 
@@ -1014,308 +1024,15 @@ function processMagicPaste() {
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
 }
 
-window.updatePriceMeterAvg = function() { 
-    try {
-        const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
-        const max = getRawNum(getSafeVal('fldPriceMeterMax')) || 0; 
-        let avg = 0;
-        if(min > 0 && max > 0) avg = (min + max) / 2; 
-        else if(min > 0) avg = min;
-        else if(max > 0) avg = max;
-        
-        if (avg > 0) {
-            setSafeVal('fldPriceMeter', formatNum(Math.round(avg)));
+function extractValueAfterKeyword(line, keywords) {
+    for (let k of keywords) {
+        let idx = line.toLowerCase().indexOf(k.toLowerCase());
+        if (idx !== -1) {
+            let val = line.substring(idx + k.length).replace(/[:\-=>]/g, '').trim();
+            if (val) return val.split(/\s{2,}/)[0]; 
         }
-        if(typeof updateAllUnitsPrice === 'function') updateAllUnitsPrice(); 
-    } catch(e) { console.error(e); }
-}
-
-window.updateFinishingAvgs = function() {
-    try {
-        let fields = [
-            {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
-            {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
-            {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
-        ];
-    
-        fields.forEach(f => {
-            let min = getRawNum(getSafeVal(f.min)) || 0;
-            let max = getRawNum(getSafeVal(f.max)) || 0;
-            let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
-            if (avg > 0) setSafeVal(f.avg, formatNum(Math.round(avg)));
-        });
-    
-        if(typeof updateAllUnitsPrice === 'function') updateAllUnitsPrice();
-    } catch(e){ console.error(e); }
-};
-
-window.toggleAdvPricing = function(forceState) {
-    try {
-        const wrap = document.getElementById('advPricingWrap');
-        const btn = document.getElementById('btnToggleAdvPricing');
-        if (!wrap || !btn) return;
-        
-        let isOpening = forceState !== undefined ? forceState : wrap.style.display === 'none';
-        
-        if (isOpening) {
-            wrap.style.display = 'block';
-            btn.innerHTML = '✕ إخفاء أسعار التشطيب المخصصة';
-            btn.style.color = 'var(--danger)';
-            btn.style.borderColor = 'var(--danger)';
-            btn.style.borderStyle = 'solid';
-        } else {
-            wrap.style.display = 'none';
-            btn.innerHTML = '+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)';
-            btn.style.color = 'var(--text-muted)';
-            btn.style.borderColor = 'var(--border-color)';
-            btn.style.borderStyle = 'dashed';
-        }
-        updateAllUnitsPrice();
-    } catch(e) { console.error(e); }
-};
-
-function onProjectTypeChange() { 
-    try {
-        const pTypeEl = document.getElementById('fldProjectType');
-        if (!pTypeEl) return;
-        const isComm = pTypeEl.value === 'commercial'; 
-        document.querySelectorAll('.res-field').forEach(el => el.style.display = isComm ? 'none' : 'block'); 
-        
-        const cpWrap = document.getElementById('commercialPriceWrap');
-        if(cpWrap) cpWrap.style.display = isComm ? 'block' : 'none'; 
-        
-        const advWrap = document.getElementById('advPricingWrap');
-        const btnAdv = document.getElementById('btnToggleAdvPricing');
-        if(isComm) {
-            if(advWrap) advWrap.style.display = 'none';
-            if(btnAdv) btnAdv.style.display = 'none';
-        } else {
-            if(btnAdv) btnAdv.style.display = 'flex';
-            if(btnAdv && btnAdv.innerHTML.includes('إخفاء')) {
-                if(advWrap) advWrap.style.display = 'block';
-            }
-        }
-        renderUnitRows(); 
-    } catch(e) { console.error(e); }
-}
-
-function getAverageCommercialPrice(bType) { 
-    let min = 0, max = 0; 
-    if (bType === 'admin' || bType === 'Administrative') { 
-        min = getRawNum(getSafeVal('fldAdminMin')); max = getRawNum(getSafeVal('fldAdminMax')); 
-    } else if (bType === 'commercial' || bType === 'Commercial') { 
-        min = getRawNum(getSafeVal('fldCommMin')); max = getRawNum(getSafeVal('fldCommMax')); 
-    } else if (bType === 'clinic' || bType === 'Clinic') { 
-        min = getRawNum(getSafeVal('fldClinicMin')); max = getRawNum(getSafeVal('fldClinicMax')); 
-    } else if (bType === 'recreational' || bType === 'Recreational') { 
-        min = getRawNum(getSafeVal('fldRecMin')); max = getRawNum(getSafeVal('fldRecMax')); 
-    } 
-    if (min > 0 && max > 0) return (min + max) / 2; 
-    return min || max || 0; 
-}
-
-function addUnitRow(){ const pType = getSafeVal('fldProjectType') || 'residential'; tempUnits.push({id:uid(), bedroomType: '', rooms: '', area:'', gardenArea:'', roofArea:'', price:'', finishing:'core_shell'}); renderUnitRows(); }
-function removeUnitRow(id){ tempUnits = tempUnits.filter(u=>u.id!==id); renderUnitRows(); }
-
-function updateUnitData(id, field, val) {
-    const u = tempUnits.find(x => x.id === id);
-    if (!u) return;
-    
-    if (field === 'bedroomType') { 
-        if (val === '__manage__') { openTypesManager(); renderUnitRows(); return; }
-        u.bedroomType = val; 
-        renderUnitRows(); 
-    } 
-    else if (field === 'rooms') { u.rooms = val; return; }
-    else if (field === 'price') { 
-        let raw = getRawNum(val);
-        if(raw === null) { u.price = ''; u.lockedPrice = false; } 
-        else if (isNaN(raw)) { u.price = val; u.lockedPrice = true; } 
-        else { u.price = raw; u.lockedPrice = true; }
-        return; 
-    } 
-    else if (field === 'finishing') { 
-        u.finishing = val; 
     }
-    else if (field === 'area' || field === 'gardenArea' || field === 'roofArea') { u[field] = parseFloat(val) || 0; }
-
-    if (u.lockedPrice) return;
-
-    const pType = getSafeVal('fldProjectType') || 'residential';
-    let meterPrice = 0;
-
-    if (pType === 'commercial') {
-        meterPrice = getAverageCommercialPrice(u.bedroomType);
-    } else {
-        let pSingle = getRawNum(getSafeVal('fldPriceMeter')) || 0;
-        let pMin = getRawNum(getSafeVal('fldPriceMeterMin')) || 0;
-        let pMax = getRawNum(getSafeVal('fldPriceMeterMax')) || 0;
-        let pAvg = (pMin > 0 && pMax > 0) ? (pMin + pMax) / 2 : (pMin || pMax || 0);
-
-        let advWrap = document.getElementById('advPricingWrap');
-        let isAdvOpen = advWrap && advWrap.style.display !== 'none';
-        
-        let pCoreAvg = 0, pSemiAvg = 0, pFullAvg = 0;
-        if (isAdvOpen) {
-            let pCoreMin = getRawNum(getSafeVal('fldPriceCoreMin')) || 0;
-            let pCoreMax = getRawNum(getSafeVal('fldPriceCoreMax')) || 0;
-            pCoreAvg = (pCoreMin > 0 && pCoreMax > 0) ? (pCoreMin + pCoreMax) / 2 : (pCoreMin || pCoreMax || getRawNum(document.getElementById('fldPriceCore').value) || 0);
-
-            let pSemiMin = getRawNum(getSafeVal('fldPriceSemiMin')) || 0;
-            let pSemiMax = getRawNum(getSafeVal('fldPriceSemiMax')) || 0;
-            pSemiAvg = (pSemiMin > 0 && pSemiMax > 0) ? (pSemiMin + pSemiMax) / 2 : (pSemiMin || pSemiMax || getRawNum(document.getElementById('fldPriceSemi').value) || 0);
-
-            let pFullMin = getRawNum(getSafeVal('fldPriceFullMin')) || 0;
-            let pFullMax = getRawNum(getSafeVal('fldPriceFullMax')) || 0;
-            pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax) / 2 : (pFullMin || pFullMax || getRawNum(document.getElementById('fldPriceFull').value) || 0);
-        }
-
-        if (isAdvOpen && u.finishing === 'core_shell' && pCoreAvg > 0) meterPrice = pCoreAvg;
-        else if (isAdvOpen && u.finishing === 'semi' && pSemiAvg > 0) meterPrice = pSemiAvg;
-        else if (isAdvOpen && u.finishing === 'full' && pFullAvg > 0) meterPrice = pFullAvg;
-        else if (pAvg > 0) meterPrice = pAvg;
-        else meterPrice = pSingle;
-    }
-    
-    if (meterPrice > 0) {
-        let mainPrice = (u.area || 0) * meterPrice; 
-        let gardenPrice = (u.gardenArea || 0) * (meterPrice / 3); 
-        let roofPrice = (u.roofArea || 0) * (meterPrice / 3);
-        
-        if (mainPrice > 0 || gardenPrice > 0 || roofPrice > 0) {
-            u.price = Math.round(mainPrice + gardenPrice + roofPrice); 
-            let pInput = document.getElementById(`price-input-${u.id}`);
-            if(pInput) pInput.value = formatNum(u.price);
-        }
-    } else {
-        u.price = '';
-        let pInput = document.getElementById(`price-input-${u.id}`);
-        if(pInput) pInput.value = '';
-    }
-}
-
-function renderUnitRows(){ 
-    try {
-        const pType = getSafeVal('fldProjectType') || 'residential'; 
-        let typeOptions = pType === 'commercial' ? appSettings.commTypes : appSettings.resTypes;
-        
-        tempUnits.sort((a, b) => {
-            let orderA = UNIT_ORDER[a.bedroomType] || 99;
-            let orderB = UNIT_ORDER[b.bedroomType] || 99;
-            if (orderA !== orderB) return orderA - orderB;
-            return (parseFloat(a.area) || 0) - (parseFloat(b.area) || 0);
-        });
-        
-        const uRows = document.getElementById('unitRows');
-        if(!uRows) return;
-        
-        uRows.innerHTML = tempUnits.map(u=> { 
-            let selectOptions = `<option value="" disabled ${!u.bedroomType ? 'selected' : ''}>اختر النوع...</option>`;
-            if (u.bedroomType && !typeOptions.includes(u.bedroomType) && u.bedroomType !== '__manage__') {
-                 selectOptions += `<option value="${escapeHtml(u.bedroomType)}" selected>${escapeHtml(u.bedroomType)}</option>`;
-            }
-            selectOptions += typeOptions.map(t => `<option value="${escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
-            selectOptions += `<option value="__manage__" style="color:var(--danger); font-weight:bold;">+ إضافة/حذف نوع ⚙️</option>`;
-    
-            return `<div class="repeat-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                        <select style="flex:1.2; min-width:90px;" onchange="updateUnitData('${u.id}','bedroomType',this.value)">${selectOptions}</select>
-                        <input type="number" placeholder="غرف" class="num" style="flex:0.6; min-width:55px;" value="${u.rooms||''}" oninput="updateUnitData('${u.id}', 'rooms', this.value)">
-                        <input type="number" placeholder="مباني(م²)" class="num" style="flex:1; min-width:60px;" value="${u.area||''}" oninput="updateUnitData('${u.id}', 'area', this.value)">
-                        <input type="number" placeholder="جاردن(م²)" class="num" style="flex:1; min-width:60px;" value="${u.gardenArea||''}" oninput="updateUnitData('${u.id}', 'gardenArea', this.value)">
-                        <input type="number" placeholder="روف(م²)" class="num" style="flex:1; min-width:60px;" value="${u.roofArea||''}" oninput="updateUnitData('${u.id}', 'roofArea', this.value)">
-                        <select style="flex:1; min-width:85px; font-size:11px;" onchange="updateUnitData('${u.id}','finishing',this.value)">
-                            <option value="" disabled ${!u.finishing ? 'selected' : ''}>اختر التشطيب</option>
-                            <option value="core_shell" ${u.finishing==='core_shell'?'selected':''}>طوب أحمر</option>
-                            <option value="semi" ${u.finishing==='semi'?'selected':''}>نصف تشطيب</option>
-                            <option value="full" ${u.finishing==='full'?'selected':''}>تشطيب كامل</option>
-                        </select>
-                        <input type="text" id="price-input-${u.id}" class="num" placeholder="إجمالي السعر" style="flex:1.5; min-width:90px; color:var(--primary); font-weight:bold;" value="${u.price ? formatNum(u.price) : ''}" oninput="formatInput(this); updateUnitData('${u.id}','price',this.value)" autocomplete="off">
-                        <button class="row-del" style="flex-shrink:0;" onclick="removeUnitRow('${u.id}')">✕</button>
-                    </div>` 
-        }).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">مفيش وحدات مسجلة!</div>'; 
-    } catch(e){ console.error(e); }
-}
-
-function addPlanRow(){ tempPlans.push({id:uid(), name:'', discountPercent:'', downPaymentPercent:'', years:'', frequency:'12', pricePerMeter:'', notes:'', customBullets:[]}); renderPlanRows(); }
-function removePlanRow(id){ tempPlans = tempPlans.filter(p=>p.id!==id); renderPlanRows(); }
-function addBulletRow(pId){ tempPlans.find(p=>p.id===pId)?.customBullets.push({id:uid(), type:'annual', percent:'', selectedYears:[]}); renderPlanRows(); }
-function removeBulletRow(pId, bId){ const p=tempPlans.find(x=>x.id===pId); if(p && p.customBullets) p.customBullets=p.customBullets.filter(b=>b.id!==bId); renderPlanRows(); }
-
-function toggleYearSelection(pId, bId, y){ 
-    const p = tempPlans.find(x=>x.id===pId); 
-    if(p && p.customBullets){ 
-        const b = p.customBullets.find(x=>x.id===bId);
-        if(b) {
-            if(!b.selectedYears) b.selectedYears = []; 
-            const i = b.selectedYears.indexOf(y); 
-            i > -1 ? b.selectedYears.splice(i,1) : b.selectedYears.push(y); 
-            renderPlanRows(); 
-        }
-    } 
-}
-
-function renderPlanRows(){ 
-    try {
-        const pRows = document.getElementById('planRows');
-        if(!pRows) return;
-        pRows.innerHTML = tempPlans.map(p=>`<div class="plan-card">
-            <div class="plan-card-header">
-                <input placeholder="اسم الخطة" style="flex:2; min-width:120px;" value="${escapeHtml(p.name)}" oninput="updatePlan('${p.id}','name',this.value)" autocomplete="off">
-                <input type="number" placeholder="% خصم" class="num" style="width:70px; flex-shrink:0;" value="${p.discountPercent||''}" oninput="updatePlan('${p.id}','discountPercent',this.value)">
-                <input type="number" placeholder="% مقدم" class="num" style="width:70px; flex-shrink:0;" value="${p.downPaymentPercent}" oninput="updatePlan('${p.id}','downPaymentPercent',this.value)">
-                <input type="number" placeholder="سنوات" class="num" style="width:70px; flex-shrink:0;" value="${p.years}" oninput="updatePlan('${p.id}','years',this.value)">
-                <select style="min-width:100px; flex-shrink:0;" onchange="updatePlan('${p.id}','frequency',this.value)">${Object.entries(FREQ_LABEL).map(([k,v])=>`<option value="${k}" ${p.frequency==k?'selected':''}>${v}</option>`).join('')}</select>
-                <input type="text" placeholder="سعر متر الخطة (اختياري)" class="num" style="width:140px; flex-shrink:0;" value="${p.pricePerMeter ? formatNum(p.pricePerMeter) : ''}" oninput="formatInput(this); updatePlan('${p.id}','pricePerMeter',this.value)" autocomplete="off">
-                <button class="row-del" style="flex-shrink:0;" onclick="removePlanRow('${p.id}')">✕</button>
-            </div>
-            <input placeholder="ملاحظات اضافية" style="width:100%; margin-top:10px;" value="${escapeHtml(p.notes||'')}" oninput="updatePlan('${p.id}','notes',this.value)" autocomplete="off">
-            <div class="bullets-container">
-                ${(p.customBullets || []).map(b=>`<div class="bullet-row" style="display:flex; gap:10px; align-items:center;">
-                        <select style="flex:1; min-width:100px;" onchange="updateBullet('${p.id}','${b.id}','type',this.value)">
-                            <option value="annual" ${b.type==='annual'?'selected':''}>دفعة سنوية</option>
-                            <option value="deferred" ${b.type==='deferred'?'selected':''}>مؤجلة</option>
-                            <option value="delivery" ${b.type==='delivery'?'selected':''}>استلام</option>
-                            <option value="after_3m" ${b.type==='after_3m'?'selected':''}>بعد 3 شهور</option>
-                            <option value="after_6m" ${b.type==='after_6m'?'selected':''}>بعد 6 شهور</option>
-                            <option value="after_9m" ${b.type==='after_9m'?'selected':''}>بعد 9 شهور</option>
-                        </select>
-                        <input type="number" placeholder="%" class="num" style="width:80px; flex-shrink:0;" value="${b.percent}" oninput="updateBullet('${p.id}','${b.id}','percent',this.value)">
-                        <button class="row-del" style="flex-shrink:0;" onclick="removeBulletRow('${p.id}','${b.id}')">✕</button>
-                    </div>
-                    ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${p.id}','${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
-                `).join('')}
-                <button class="btn btn-outline-light w-100 btn-pill" style="margin-top:10px;" onclick="addBulletRow('${p.id}')">+ دفعة خاصة</button>
-            </div>
-        </div>`).join('') || '<div style="color:var(--text-muted); text-align:center; padding:10px;">مفيش خطط سداد!</div>'; 
-    } catch(e){ console.error(e); }
-}
-
-function updatePlan(id, field, val){ 
-    const p = tempPlans.find(x=>x.id===id); 
-    if(p) {
-        if (field === 'name' || field === 'notes' || field === 'frequency') { p[field] = val; } 
-        else if (field === 'pricePerMeter') { p[field] = getRawNum(val); } 
-        else { p[field] = parseFloat(val)||0; }
-    } 
-}
-
-function updateBullet(pId, bId, field, val){ 
-    const p = tempPlans.find(x=>x.id===pId); 
-    if(p && p.customBullets){ 
-        const b = p.customBullets.find(x=>x.id===bId); 
-        if(b){ 
-            b[field] = field==='type'?val:(parseFloat(val)||0); 
-            if(field==='type') renderPlanRows();
-        } 
-    } 
-}
-
-function addDecreeRow(){ tempDecrees.push({id:uid(), decreeNumber:'', description:'', date:''}); renderDecreeRows(); }
-function removeDecreeRow(id){ tempDecrees = tempDecrees.filter(d=>d.id!==id); renderDecreeRows(); }
-function renderDecreeRows(){ 
-    const dRows = document.getElementById('decreeRows');
-    if(!dRows) return;
-    dRows.innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); 
+    return null;
 }
 
 // 🚨 دالة الفتح محمية تماماً وبتفتح فوراً بمجرد الضغط 🚨
@@ -1352,7 +1069,6 @@ function openDetail(id){
     }
 }
 
-// 🚨 دالة التعديل محمية 🚨
 function editCurrentCompound(){ 
     try {
         const c = compounds.find(x=>x.id===viewingCompoundId); 
@@ -1381,6 +1097,7 @@ function setDetailCategory(catKey) {
 
 function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
 
+// 🚨 تصميم المودال الجديد اللي مالي الشاشة وفيه الواتساب والـ PDF وسابقة الأعمال 🚨
 function renderDetailModalContent() {
   try {
       const c = compounds.find(x => x.id === viewingCompoundId); if (!c) return;
@@ -1389,11 +1106,7 @@ function renderDetailModalContent() {
       if(c.phaseName) modalTitle += ` - ${c.phaseName}`;
       document.getElementById('detailTitle').textContent = modalTitle;
       
-      document.getElementById('btnEditCompound').style.display = isEditor ? 'inline-block' : 'none';
-      document.getElementById('btnDeleteCompound').style.display = isEditor ? 'inline-block' : 'none';
-    
       let finishText = FINISHING_TYPES[c.finishingStatus] || '-'; let pText = '';
-      
       let parkingText = '';
       if (c.parkingType === 'included') parkingText = 'شامل السعر';
       else if (c.parkingType === 'optional') parkingText = c.parkingFee ? 'اختياري (' + formatNum(c.parkingFee) + ' ج)' : 'اختياري';
@@ -1402,11 +1115,11 @@ function renderDetailModalContent() {
       if (c.projectType === 'commercial') {
           finishText = 'متنوع (بالأسعار)';
           let cp = c.commercialPrices || {}; let parts = []; const fName = { core_shell: 'طوب', semi: 'نصف', full: 'كامل' };
-          if (cp.adminMin || cp.adminMax) parts.push(`<b>إداري:</b> <span class="num">${formatNum(cp.adminMin)} - ${formatNum(cp.adminMax)}</span> <span style="font-size:10px;">(${fName[cp.adminFinish||'core_shell']})</span>`);
-          if (cp.commMin || cp.commMax) parts.push(`<b>تجاري:</b> <span class="num">${formatNum(cp.commMin)} - ${formatNum(cp.commMax)}</span> <span style="font-size:10px;">(${fName[cp.commFinish||'core_shell']})</span>`);
-          if (cp.clinicMin || cp.clinicMax) parts.push(`<b>طبي:</b> <span class="num">${formatNum(cp.clinicMin)} - ${formatNum(cp.clinicMax)}</span> <span style="font-size:10px;">(${fName[cp.clinicFinish||'core_shell']})</span>`);
-          if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> <span class="num">${formatNum(cp.recMin)} - ${formatNum(cp.recMax)}</span> <span style="font-size:10px;">(${fName[cp.recFinish||'core_shell']})</span>`);
-          pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:14px;">${parts.join('')}</div>` : `<span class="num">${formatNum(c.pricePerMeterMin||0)}</span> ج`;
+          if (cp.adminMin || cp.adminMax) parts.push(`<b>إداري:</b> <span class="num">${formatNum(cp.adminMin)} - ${formatNum(cp.adminMax)}</span> <span style="font-size:0.625rem;">(${fName[cp.adminFinish||'core_shell']})</span>`);
+          if (cp.commMin || cp.commMax) parts.push(`<b>تجاري:</b> <span class="num">${formatNum(cp.commMin)} - ${formatNum(cp.commMax)}</span> <span style="font-size:0.625rem;">(${fName[cp.commFinish||'core_shell']})</span>`);
+          if (cp.clinicMin || cp.clinicMax) parts.push(`<b>طبي:</b> <span class="num">${formatNum(cp.clinicMin)} - ${formatNum(cp.clinicMax)}</span> <span style="font-size:0.625rem;">(${fName[cp.clinicFinish||'core_shell']})</span>`);
+          if (cp.recMin || cp.recMax) parts.push(`<b>ترفيهي:</b> <span class="num">${formatNum(cp.recMin)} - ${formatNum(cp.recMax)}</span> <span style="font-size:0.625rem;">(${fName[cp.recFinish||'core_shell']})</span>`);
+          pText = parts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:0.25rem; font-size:0.875rem;">${parts.join('')}</div>` : `<span class="num">${formatNum(c.pricePerMeterMin||0)}</span> ج`;
       } else { 
           let pParts = [];
           if(c.isAdvancedPricing) {
@@ -1416,13 +1129,10 @@ function renderDetailModalContent() {
               } else if (c.pricePerMeter > 0) {
                   pParts.push(`<b>سعر المتر:</b> <span class="num">${formatNum(c.pricePerMeter)}</span> ج`);
               }
-              
               let fPriceCore = (c.priceCoreMin > 0 && c.priceCoreMax > 0 && c.priceCoreMin !== c.priceCoreMax) ? `${formatNum(c.priceCoreMin)} - ${formatNum(c.priceCoreMax)}` : formatNum(c.priceCoreMin || c.priceCoreMax || c.priceCore || 0);
               if (c.priceCoreMin > 0 || c.priceCoreMax > 0 || c.priceCore > 0) pParts.push(`<b>طوب أحمر:</b> <span class="num">${fPriceCore}</span> ج`);
-              
               let fPriceSemi = (c.priceSemiMin > 0 && c.priceSemiMax > 0 && c.priceSemiMin !== c.priceSemiMax) ? `${formatNum(c.priceSemiMin)} - ${formatNum(c.priceSemiMax)}` : formatNum(c.priceSemiMin || c.priceSemiMax || c.priceSemi || 0);
               if (c.priceSemiMin > 0 || c.priceSemiMax > 0 || c.priceSemi > 0) pParts.push(`<b>نصف تشطيب:</b> <span class="num">${fPriceSemi}</span> ج`);
-              
               let fPriceFull = (c.priceFullMin > 0 && c.priceFullMax > 0 && c.priceFullMin !== c.priceFullMax) ? `${formatNum(c.priceFullMin)} - ${formatNum(c.priceFullMax)}` : formatNum(c.priceFullMin || c.priceFullMax || c.priceFull || 0);
               if (c.priceFullMin > 0 || c.priceFullMax > 0 || c.priceFull > 0) pParts.push(`<b>تشطيب كامل:</b> <span class="num">${fPriceFull}</span> ج`);
           } else {
@@ -1432,14 +1142,13 @@ function renderDetailModalContent() {
                   pParts.push(`<b>نطاق السعر:</b> <span class="num">${rng}</span> ج`);
               }
           }
-          pText = pParts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:4px; font-size:14px;">${pParts.join('')}</div>` : `-`;
+          pText = pParts.length > 0 ? `<div style="display:flex; flex-direction:column; gap:0.25rem; font-size:0.875rem;">${pParts.join('')}</div>` : `-`;
       }
       
-      const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:12px; font-weight:bold; background:var(--item-bg); padding:6px 12px; border-radius:4px; border:1px solid var(--primary); display:inline-block; margin-top:5px;">📍 الخريطة</a>` : '';
-      
+      const locLinkHtml = c.locationLink ? `<br><a href="${escapeHtml(c.locationLink)}" target="_blank" style="color:var(--primary); font-size:0.75rem; font-weight:bold; background:var(--item-bg); padding:0.375rem 0.75rem; border-radius:0.25rem; border:1px solid var(--primary); display:inline-block; margin-top:0.3125rem;">📍 الخريطة</a>` : '';
       let maintText = c.maintenanceValue ? (c.maintenanceType === 'per_meter' ? `${c.maintenanceValue} ج/م²` : `${c.maintenanceValue}%`) : '-';
     
-      let html = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>أسعار المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
+      let detailsGridHtml = `<div class="detail-grid"><div class="detail-item"><b>النوع</b><span>${PROJECT_TYPES[c.projectType || 'residential']}</span></div><div class="detail-item"><b>المطور</b><span>${escapeHtml(c.companyName || '-')}</span></div><div class="detail-item"><b>المالك</b><span>${escapeHtml(c.ownerName || '-')}</span></div><div class="detail-item"><b>الاستشاري</b><span>${escapeHtml(c.consultant || '-')}</span></div><div class="detail-item"><b>الفرع</b><span>${escapeHtml(findSubLocationName(c.locationId))}</span></div><div class="detail-item"><b>التسليم والتشطيب</b><span>${deliveryLabel(c.deliveryDate)} | ${finishText}</span></div><div class="detail-item"><b>أسعار المتر</b><span style="color:var(--primary);">${pText}</span></div><div class="detail-item"><b>الصيانة والجراج</b><span>صيانة: <span class="num">${maintText}</span> | جراج: <span class="num">${parkingText}</span></span></div><div class="detail-item"><b>المساحة الإجمالية</b><span><span class="num">${c.projectSize ? c.projectSize : '-'}</span> فدان</span></div><div class="detail-item"><b>ارتفاع العمارات</b><span class="num">${c.floors ? escapeHtml(c.floors) : '-'}</span></div><div class="detail-item full"><b>الموقع التفصيلي</b><span>${escapeHtml(c.compoundLocationDetail || '-')} ${locLinkHtml}</span></div></div>`;
     
       const grouped = {}; 
       const rawTypesModal = Array.isArray(c.unitTypes) ? c.unitTypes : [];
@@ -1449,6 +1158,7 @@ function renderDetailModalContent() {
       }); 
       const cats = Object.keys(grouped).sort((a,b) => (UNIT_ORDER[a]||99) - (UNIT_ORDER[b]||99));
       
+      let unitsSection = '';
       if(cats.length){
         if(!activeDetailCategory || !grouped[activeDetailCategory]) activeDetailCategory = cats[0]; 
         if(!activeDetailUnitId && grouped[activeDetailCategory] && grouped[activeDetailCategory].length > 0) {
@@ -1456,16 +1166,16 @@ function renderDetailModalContent() {
             activeDetailUnitId = grouped[activeDetailCategory][0].id;
         }
         
-        html += `<div class="section-label">الأسعار والكاش</div><div class="unit-cat-tabs">` + cats.map(k => {
+        unitsSection += `<div class="section-label">الأسعار والكاش</div><div class="unit-cat-tabs">` + cats.map(k => {
             return `<button class="unit-cat-btn ${k === activeDetailCategory ? 'active' : ''}" onclick="setDetailCategory('${k}')">${escapeHtml(k)}</button>`;
         }).join('') + `</div>`;
         
         const fNamesAr = { 'core_shell': 'طوب أحمر', 'semi': 'نصف تشطيب', 'full': 'تشطيب كامل' };
         
-        html += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0)).map(u => {
+        unitsSection += `<div class="size-picker-container">` + (grouped[activeDetailCategory] || []).sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0)).map(u => {
             let rmText = u.rooms ? ` | <span class="num">${u.rooms}</span> غرف` : '';
-            let gText = u.gardenArea ? ` <span style="color:var(--success); font-size:11px; font-weight:bold;">+ ${u.gardenArea}m² Garden</span>` : '';
-            let rText = u.roofArea ? ` <span style="color:var(--danger); font-size:11px; font-weight:bold;">+ ${u.roofArea}m² Roof</span>` : '';
+            let gText = u.gardenArea ? ` <span style="color:var(--success); font-size:0.6875rem; font-weight:bold;">+ ${u.gardenArea}m² Garden</span>` : '';
+            let rText = u.roofArea ? ` <span style="color:var(--danger); font-size:0.6875rem; font-weight:bold;">+ ${u.roofArea}m² Roof</span>` : '';
             let fText = u.finishing ? ` | ${fNamesAr[u.finishing] || u.finishing || ''}` : '';
             let pText = u.price ? formatNum(u.price) + ' ج' : 'حسب المتر';
             return `<div class="size-chip ${u.id === activeDetailUnitId ? 'active' : ''}" onclick="setDetailUnit('${u.id}')"><span class="num">${u.area}</span>m²${rmText}${gText}${rText}${fText} | <span class="num">${pText}</span></div>`
@@ -1484,7 +1194,7 @@ function renderDetailModalContent() {
         if (sUnit && !isTextPrice && cashDiscount > 0 && sUnitNumericPrice > 0) {
             let discountAmount = sUnitNumericPrice * (cashDiscount / 100);
             let finalCashPrice = sUnitNumericPrice - discountAmount;
-            html += `<div class="cash-discount-box">
+            unitsSection += `<div class="cash-discount-box">
                         <div class="cash-row"><span>السعر الأساسي</span><b class="num">${formatNum(sUnitNumericPrice)} ج</b></div>
                         <div class="cash-row highlight"><span>قيمة خصم الكاش (${cashDiscount}%)</span><b class="num">- ${formatNum(Math.round(discountAmount))} ج</b></div>
                         <div class="cash-row final"><span>النهائي (كاش)</span><b class="num">${formatNum(Math.round(finalCashPrice))} ج</b></div>
@@ -1493,7 +1203,7 @@ function renderDetailModalContent() {
     
         const safePlans = Array.isArray(c.paymentPlans) ? c.paymentPlans : [];
         if(sUnit && safePlans.length > 0 && !isTextPrice && sUnitNumericPrice > 0){
-          html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
+          unitsSection += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
           safePlans.forEach(p => { 
               let planBasePrice = sUnitNumericPrice;
               let planMeterText = '';
@@ -1501,43 +1211,85 @@ function renderDetailModalContent() {
               if (p.pricePerMeter > 0) {
                   let effArea = (sUnit.area || 0) + (sUnit.gardenArea || 0)/3 + (sUnit.roofArea || 0)/3;
                   planBasePrice = Math.round(effArea * p.pricePerMeter);
-                  planMeterText = `<br><span style="color:var(--primary); font-size:10px; background:var(--item-bg); padding:2px 6px; border-radius:4px; border:1px dashed var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
+                  planMeterText = `<br><span style="color:var(--primary); font-size:0.625rem; background:var(--item-bg); padding:0.125rem 0.375rem; border-radius:0.25rem; border:1px dashed var(--primary); display:inline-block; margin-top:0.25rem;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
               }
               
               const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
               
               let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
-              if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
+              if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:0.25rem;">خصم ${p.discountPercent}%</small>`;
               
-              let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
-              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+              let unitPriceCol = `<b class="num" style="font-size:1.125rem;">${formatNum(planBasePrice)} ج</b>`;
+              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:0.75rem;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
-              html += `<tr>
+              unitsSection += `<tr>
                   <td>${planNameCol}</td>
                   <td>${unitPriceCol}</td>
-                  <td><span class="num" style="font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
+                  <td><span class="num" style="font-size:1.125rem;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
                   <td class="num">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
                   <td style="color:var(--primary);" class="num"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
                   <td class="num"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
               </tr>`; 
           }); 
-          html += `</table></div>`;
+          unitsSection += `</table></div>`;
         }
       } 
       
-      html += `<div class="section-label" style="margin-top:40px; color:var(--success); border-color:var(--success);">🧮 الحاسبة السريعة للمشروع</div>
-               <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">اكتب المساحة عشان تحسبلها الأقساط على كل خطط السداد الخاصة بالمشروع ده فوراً.</p>
-               <div style="display:flex; gap:10px; background:var(--item-bg); padding:15px; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:20px; align-items:center; flex-wrap:wrap;">
-                   <input type="number" id="miniCalcArea" placeholder="مباني (م²)" class="num" style="flex:1; min-width:120px; padding:10px; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
-                   <input type="number" id="miniCalcGarden" placeholder="جاردن (م²)" class="num" style="flex:1; min-width:100px; padding:10px; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
-                   <input type="number" id="miniCalcRoof" placeholder="روف (م²)" class="num" style="flex:1; min-width:100px; padding:10px; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
+      unitsSection += `<div class="section-label" style="margin-top:2.5rem; color:var(--success); border-color:var(--success);">🧮 الحاسبة السريعة للمشروع</div>
+               <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.9375rem;">اكتب المساحة عشان تحسبلها الأقساط على كل خطط السداد الخاصة بالمشروع ده فوراً.</p>
+               <div style="display:flex; gap:0.625rem; background:var(--item-bg); padding:0.9375rem; border-radius:var(--radius-card); border:1px solid var(--border-color); margin-bottom:1.25rem; align-items:center; flex-wrap:wrap;">
+                   <input type="number" id="miniCalcArea" placeholder="مباني (م²)" class="num" style="flex:1; min-width:7.5rem; padding:0.625rem; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
+                   <input type="number" id="miniCalcGarden" placeholder="جاردن (م²)" class="num" style="flex:1; min-width:6.25rem; padding:0.625rem; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
+                   <input type="number" id="miniCalcRoof" placeholder="روف (م²)" class="num" style="flex:1; min-width:6.25rem; padding:0.625rem; border-radius:var(--radius-input); background:var(--card-bg); border:1px solid var(--border-color); color:var(--text-main); outline:none;" oninput="runProjectMiniCalc('${c.id}')">
                </div>
                <div id="miniCalcResult"></div>`;
+               
+      // ✨ أزرار الصفحة الجانبية زي عقار ماب ✨
+      let whatsappNum = c.whatsapp ? String(c.whatsapp).replace(/[^0-9]/g, '') : '';
+      let whatsappBtn = whatsappNum ? `<a href="https://wa.me/${whatsappNum}" target="_blank" class="btn w-100 btn-pill" style="margin-bottom:0.625rem; background:#25D366; color:#fff; font-size:1rem; text-decoration:none;"><b style="font-family:Cairo;">تواصل واتساب | WhatsApp</b></a>` : '';
+      let pdfBtn = c.projectPDF ? `<a href="${escapeHtml(c.projectPDF)}" target="_blank" class="btn btn-outline-light w-100 btn-pill" style="margin-bottom:0.625rem; font-size:0.85rem; text-decoration:none;"><b>بروشور المشروع | PDF Brochure</b></a>` : '';
+      let worksBtn = c.previousWorks ? `<a href="${escapeHtml(c.previousWorks)}" target="_blank" class="btn btn-outline-light w-100 btn-pill" style="margin-bottom:0.625rem; font-size:0.85rem; text-decoration:none;"><b>سابقة الأعمال | Previous Works</b></a>` : '';
+
+      let sideActions = `
+          <div class="action-card" style="background:var(--item-bg); padding:1.5rem; border-radius:1rem; border:1px solid var(--border-color); position:sticky; top:0; z-index:10;">
+              <h4 style="margin-bottom:1rem; color:var(--text-main); font-weight:800; font-size:1.1rem; text-align:center;">تواصل للحجز والتفاصيل<br><span style="color:var(--text-muted); font-size:0.8rem;">Contact & Reserve</span></h4>
+              ${whatsappBtn}
+              ${pdfBtn}
+              ${worksBtn}
+              ${(!whatsappNum && !c.projectPDF && !c.previousWorks) ? `<p style="text-align:center; color:var(--text-muted); font-size:0.8rem;">لا توجد روابط تواصل مسجلة.</p>` : ''}
+              <hr style="border-color:var(--border-color); margin:1.5rem 0;">
+              <button class="btn btn-outline-light btn-pill w-100" id="btnEditCompound" onclick="editCurrentCompound()" style="display:${isEditor ? 'inline-flex' : 'none'}; margin-bottom:0.625rem;">تعديل المشروع ⚙️</button>
+              <button class="btn w-100 btn-pill" id="btnDeleteCompound" onclick="deleteCurrentCompoundFromCloud()" style="display:${isEditor ? 'inline-flex' : 'none'}; background:var(--danger); color:#fff; border:none;">حذف المشروع 🗑️</button>
+          </div>
+      `;
+
+      let mainLayout = `
+      <div class="detail-page-layout" style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+          <div class="detail-main-col" style="flex:1; min-width:18.75rem;">
+               <div style="margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border-color);">
+                   <h1 style="font-size:2rem; font-weight:800; color:var(--text-main); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.625rem; flex-wrap:wrap;">
+                      ${highlightText(c.projectName||'بدون اسم', filters.searchText)} 
+                      ${c.phaseName ? `<span style="font-size:0.9rem; background:var(--primary); color:#fff; padding:0.2rem 0.8rem; border-radius:2rem;">${escapeHtml(c.phaseName)}</span>` : ''}
+                   </h1>
+                   <p style="color:var(--text-muted); font-size:1rem; margin-bottom:1rem;">📍 ${escapeHtml(findSubLocationName(c.locationId))} - ${escapeHtml(c.companyName)}</p>
+                   <div>
+                       <span style="color:var(--text-muted); font-size:0.8rem; display:block; font-weight:bold;">Starting from | يبدأ من</span>
+                       <h2 style="color:var(--primary); font-size:1.8rem; font-weight:800; margin:0;" class="num">${pText}</h2>
+                   </div>
+               </div>
+               ${detailsGridHtml}
+               ${unitsSection}
+          </div>
+          <div class="detail-side-col" style="width:20rem; flex-shrink:0;">
+               ${sideActions}
+          </div>
+      </div>
+      `;
     
-      document.getElementById('detailBody').innerHTML = html;
+      document.getElementById('detailBody').innerHTML = mainLayout;
   } catch (err) {
       console.error("Detail HTML Render Error:", err);
-      document.getElementById('detailBody').innerHTML = `<div style="text-align:center; color:var(--danger); padding:30px;"><b>حدث خطأ أثناء رسم شاشة المشروع.</b><br><br>${err.message}</div>`;
+      document.getElementById('detailBody').innerHTML = `<div style="text-align:center; color:var(--danger); padding:1.875rem;"><b>حدث خطأ أثناء رسم شاشة المشروع.</b><br><br>${err.message}</div>`;
   }
 }
 
@@ -1563,7 +1315,7 @@ window.runProjectMiniCalc = function(cId) {
             }
         }
 
-        if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:10px; border:1px dashed var(--danger); text-align:center; background:rgba(220,38,38,0.05); border-radius:8px;">لا يوجد متوسط سعر متر مسجل لهذا المشروع.</div>'; return; }
+        if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:0.625rem; border:1px dashed var(--danger); text-align:center; background:rgba(220,38,38,0.05); border-radius:0.5rem;">لا يوجد متوسط سعر متر مسجل لهذا المشروع.</div>'; return; }
 
         let effArea = area + (garden/3) + (roof/3);
         let basePrice = Math.round(effArea * avgPrice);
@@ -1573,10 +1325,10 @@ window.runProjectMiniCalc = function(cId) {
         if (cashDiscount > 0) {
             let discountAmount = basePrice * (cashDiscount / 100);
             let finalCashPrice = basePrice - discountAmount;
-            html += `<div style="border:2px dashed var(--success); padding:15px; background:rgba(16,185,129,0.05); border-radius:8px; display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
-                        <div style="text-align:center;"><span>السعر الأساسي</span><br><b class="num" style="font-size:22px;">${formatNum(basePrice)} ج</b></div>
-                        <div style="text-align:center; color:var(--danger);"><span>خصم الكاش (${cashDiscount}%)</span><br><b class="num" style="font-size:22px;">- ${formatNum(Math.round(discountAmount))} ج</b></div>
-                        <div style="text-align:center; color:var(--success);"><span>النهائي (كاش)</span><br><b class="num" style="font-size:26px;">${formatNum(Math.round(finalCashPrice))} ج</b></div>
+            html += `<div style="border:2px dashed var(--success); padding:0.9375rem; background:rgba(16,185,129,0.05); border-radius:0.5rem; display:flex; justify-content:space-around; align-items:center; margin-bottom:1.25rem;">
+                        <div style="text-align:center;"><span>السعر الأساسي</span><br><b class="num" style="font-size:1.375rem;">${formatNum(basePrice)} ج</b></div>
+                        <div style="text-align:center; color:var(--danger);"><span>خصم الكاش (${cashDiscount}%)</span><br><b class="num" style="font-size:1.375rem;">- ${formatNum(Math.round(discountAmount))} ج</b></div>
+                        <div style="text-align:center; color:var(--success);"><span>النهائي (كاش)</span><br><b class="num" style="font-size:1.625rem;">${formatNum(Math.round(finalCashPrice))} ج</b></div>
                      </div>`;
         }
 
@@ -1589,21 +1341,21 @@ window.runProjectMiniCalc = function(cId) {
               
               if (p.pricePerMeter > 0) {
                   planBasePrice = Math.round(effArea * p.pricePerMeter);
-                  planMeterText = `<br><span style="color:var(--primary); font-size:10px; font-weight:800; background:var(--item-bg); padding:2px 6px; border-radius:4px; border:1px dashed var(--primary); display:inline-block; margin-top:4px;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
+                  planMeterText = `<br><span style="color:var(--primary); font-size:0.625rem; font-weight:800; background:var(--item-bg); padding:0.125rem 0.375rem; border-radius:0.25rem; border:1px dashed var(--primary); display:inline-block; margin-top:0.25rem;">سعر المتر: ${formatNum(p.pricePerMeter)} ج</span>`;
               }
               
               const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
               
               let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
-              if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
+              if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:0.25rem;">خصم ${p.discountPercent}%</small>`;
               
-              let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
-              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+              let unitPriceCol = `<b class="num" style="font-size:1.125rem;">${formatNum(planBasePrice)} ج</b>`;
+              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:0.75rem;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
               html += `<tr>
                   <td>${planNameCol}</td>
                   <td>${unitPriceCol}</td>
-                  <td><span class="num" style="font-size:18px;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
+                  <td><span class="num" style="font-size:1.125rem;">${formatNum(Math.round(r.downPayment))} ج</span><br><small>(%${p.downPaymentPercent || 0})</small></td>
                   <td class="num">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
                   <td style="color:var(--primary);" class="num"><b>${formatNum(Math.round(r.monthlyEquivalent))} ج</b></td>
                   <td class="num"><b>${formatNum(Math.round(r.quarterlyEquivalent))} ج</b></td>
@@ -1611,12 +1363,12 @@ window.runProjectMiniCalc = function(cId) {
           }); 
           html += `</table></div>`;
         } else {
-            html += `<div style="text-align:center; padding:20px; color:var(--text-muted);">مفيش خطط سداد مسجلة.</div>`;
+            html += `<div style="text-align:center; padding:1.25rem; color:var(--text-muted);">مفيش خطط سداد مسجلة.</div>`;
         }
 
         resultDiv.innerHTML = html;
     } catch(e) {
-        document.getElementById('miniCalcResult').innerHTML = `<div style="color:red; text-align:center; padding:10px;">حدث خطأ في الحاسبة.</div>`;
+        document.getElementById('miniCalcResult').innerHTML = `<div style="color:red; text-align:center; padding:0.625rem;">حدث خطأ في الحاسبة.</div>`;
     }
 };
 
@@ -1684,8 +1436,8 @@ function updateCalcBullet(id, f, v){
 function renderCalcBulletsRows(){ 
     const cbRows = document.getElementById('calcBulletsRows');
     if(!cbRows) return;
-    cbRows.innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row" style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-            <select style="flex:1; min-width:100px; padding:8px; border-radius:4px; background:var(--item-bg); border:1px solid var(--border-color); color:var(--text-main);" onchange="updateCalcBullet('${b.id}','type',this.value)">
+    cbRows.innerHTML = calcCustomBullets.map(b=>`<div class="bullet-row" style="display:flex; gap:0.625rem; align-items:center; margin-bottom:0.625rem;">
+            <select style="flex:1; min-width:6.25rem; padding:0.5rem; border-radius:0.25rem; background:var(--item-bg); border:1px solid var(--border-color); color:var(--text-main);" onchange="updateCalcBullet('${b.id}','type',this.value)">
                 <option value="annual" ${b.type=='annual'?'selected':''}>سنوية</option>
                 <option value="deferred" ${b.type=='deferred'?'selected':''}>مؤجلة</option>
                 <option value="delivery" ${b.type=='delivery'?'selected':''}>استلام</option>
@@ -1693,10 +1445,10 @@ function renderCalcBulletsRows(){
                 <option value="after_6m" ${b.type=='after_6m'?'selected':''}>بعد 6 شهور</option>
                 <option value="after_9m" ${b.type=='after_9m'?'selected':''}>بعد 9 شهور</option>
             </select>
-            <input type="number" placeholder="%" class="num" style="width:80px; flex-shrink:0; padding:8px; border-radius:4px; background:var(--item-bg); border:1px solid var(--border-color); color:var(--text-main);" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
-            <button class="btn btn-danger-style" style="flex-shrink:0; padding:8px;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
+            <input type="number" placeholder="%" class="num" style="width:5rem; flex-shrink:0; padding:0.5rem; border-radius:0.25rem; background:var(--item-bg); border:1px solid var(--border-color); color:var(--text-main);" value="${b.percent}" oninput="updateCalcBullet('${b.id}','percent',this.value)">
+            <button class="btn btn-danger-style" style="flex-shrink:0; padding:0.5rem;" onclick="removeCalcBulletRow('${b.id}')">✕</button>
         </div>
-        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:15px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:0.9375rem; display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="toggleYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     `).join(''); 
 }
 
@@ -1712,8 +1464,8 @@ function runUniversalCalculator(){
     
     let bulletsHtml = r.bulletsSummary.length > 0 
         ? `<div class="calc-item" style="grid-column: 1 / -1; border: 2px dashed var(--primary); text-align:right;">
-            <span style="display:block; margin-bottom:6px; color:var(--primary); font-weight:800;">الدفعات الخاصة:</span>
-            <div class="num" style="font-size:16px;">${r.bulletsSummary.map(b => `<div style="margin-bottom:4px;">• ${b.label}</div>`).join('')}</div>
+            <span style="display:block; margin-bottom:0.375rem; color:var(--primary); font-weight:800;">الدفعات الخاصة:</span>
+            <div class="num" style="font-size:1rem;">${r.bulletsSummary.map(b => `<div style="margin-bottom:0.25rem;">• ${b.label}</div>`).join('')}</div>
            </div>` 
         : '';
 
