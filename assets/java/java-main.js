@@ -705,7 +705,6 @@ window.renderGrid = function(){
       
       let groups = {};
       list.forEach(c => {
-          // 🔥 تم إصلاح الغلطة القاتلة هنا كانت vert vert بدل || 🔥
           let key = `${String(c.projectName||'').trim().toLowerCase()}||${String(c.companyName||'').trim().toLowerCase()}`;
           if(!groups[key]) groups[key] = [];
           groups[key].push(c);
@@ -1425,7 +1424,6 @@ window.handleExcelUpload = async function(event) {
                     let gardenArea = parseFloat(row['Garden Area']) || parseFloat(row['Garden']) || parseFloat(row['جاردن']) || 0;
                     let price = parseFloat(row['Price From']) || parseFloat(row['Price To']) || 0; 
                     let bedStr = String(row['No of Bedrooms'] || '').toLowerCase(); let unitTypeStr = String(row['Unit Type'] || '').toLowerCase(); let bType = 'استوديو'; let rm = parseFloat(row['No of Bedrooms'] || '') || ''; if(bedStr.includes('1')) bType = '1 غرفة نوم'; else if(bedStr.includes('2')) bType = '2 غرفة نوم'; else if(bedStr.includes('3')) bType = '3 غرف نوم'; else if(bedStr.includes('4')) bType = '4 غرف نوم'; else if(bedStr.includes('duplex') || unitTypeStr.includes('duplex')) bType = 'دوبلكس'; else if(bedStr.includes('penthouse') || unitTypeStr.includes('penthouse')) bType = 'بنتهاوس'; else if(bedStr.includes('villa') || unitTypeStr.includes('villa')) bType = 'فيلا'; else if(bedStr.includes('chalet') || unitTypeStr.includes('chalet')) bType = 'شاليه';
-                    // 🔥 تم إصلاح الغلطة هنا كمان 🔥
                     if (area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, rooms: rm, area: area, gardenArea: gardenArea, price: price, finishing: compoundsToUpload[compKey].finishingStatus }); }
                     let planStr = String(row['Payment Plan'] || '').trim(); if (planStr) { if (!compoundsToUpload[compKey].paymentPlans.some(p => p.notes === planStr)) { compoundsToUpload[compKey].paymentPlans.push({ id: uid(), name: "خطة سداد", notes: planStr, discountPercent: parseFloat(row['Cash Discount']) || 0, downPaymentPercent: 0, years: 0, frequency: '12', customBullets: [] }); } }
                 });
@@ -1440,6 +1438,249 @@ window.handleExcelUpload = async function(event) {
             window.showToast(`✅ تم استيراد ${totalUploaded} مشروع!`); event.target.value = ''; setTimeout(() => { location.reload(); }, 2000);
         } catch (error) { alert("حدث خطأ."); document.getElementById('loadingOverlay').style.display = 'none'; event.target.value = ''; }
     }; reader.readAsArrayBuffer(file);
+};
+
+// ==============================================================
+// 🔥 الـ Functions اللي كانت ممسوحة والمسئولة عن جلب الداتا والفلترة 🔥
+// ==============================================================
+
+window.syncCloudData = async function() {
+    try {
+        // 1. جلب الإعدادات (أنواع الوحدات)
+        const settingsDoc = await db.collection('system').doc('settings').get();
+        if(settingsDoc.exists) {
+            const s = settingsDoc.data();
+            if(s.resTypes) appSettings.resTypes = s.resTypes;
+            if(s.commTypes) appSettings.commTypes = s.commTypes;
+        }
+
+        // 2. جلب المناطق (Locations)
+        const locDoc = await db.collection('system').doc('locations').get();
+        if(locDoc.exists) {
+            mainLocations = locDoc.data().mainLocations || [];
+        } else {
+            mainLocations = [];
+        }
+        if(typeof window.renderLocationTree === 'function') window.renderLocationTree();
+
+        // 3. المزامنة اللحظية للمشاريع (Compounds)
+        db.collection('compounds').onSnapshot(snapshot => {
+            compounds = [];
+            snapshot.forEach(doc => {
+                let data = doc.data();
+                data.id = doc.id;
+                compounds.push(data);
+            });
+            
+            // إخفاء رسالة "جاري تحميل الداتا"
+            const ps = document.getElementById('pageSub');
+            if(ps) ps.textContent = `${compounds.length} مشروع مسجل بالسحابة`;
+
+            window.renderAdminStats();
+            window.renderGrid();
+        }, error => {
+            console.error("Error fetching compounds: ", error);
+        });
+
+    } catch (error) {
+        console.error("Sync Error:", error);
+        const ps = document.getElementById('pageSub');
+        if(ps) ps.textContent = "حدث خطأ في جلب البيانات.";
+    }
+};
+
+window.handleSearchInput = function() {
+    if(window.searchTimeout) clearTimeout(window.searchTimeout);
+    window.searchTimeout = setTimeout(() => {
+        window.applyFilters();
+    }, 500);
+};
+
+window.applyFilters = function() {
+    filters.searchText = document.getElementById('fSearchText') ? document.getElementById('fSearchText').value.trim() : '';
+    filters.minPrice = window.getRawNum(window.getSafeVal('fMinPrice'));
+    filters.maxPrice = window.getRawNum(window.getSafeVal('fMaxPrice'));
+    filters.downPaymentTarget = window.getRawNum(window.getSafeVal('fDownPayment'));
+    filters.maxMonthlyInstallment = window.getRawNum(window.getSafeVal('fMonthlyInstallment'));
+    
+    filters.bedrooms = [...selectedBeds];
+    filters.delivery = [...selectedDelivery];
+    filters.finishing = [...selectedFinishing];
+    
+    let checkedTypes = [];
+    document.querySelectorAll('.prop-type-cb:checked').forEach(cb => checkedTypes.push(cb.value));
+    filters.propertyTypes = checkedTypes.length > 0 ? checkedTypes : null;
+    
+    const sortEl = document.getElementById('fSortOrder');
+    filters.sortOrder = sortEl ? sortEl.value : 'default';
+    
+    window.renderGrid();
+};
+
+window.resetFilters = function() {
+    ['fSearchText', 'fMinPrice', 'fMaxPrice', 'fDownPayment', 'fMonthlyInstallment'].forEach(id => window.setSafeVal(id, ''));
+    document.querySelectorAll('.prop-type-cb').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    
+    const sortEl = document.getElementById('fSortOrder');
+    if(sortEl) sortEl.value = 'default';
+    
+    selectedBeds = [];
+    selectedDelivery = [];
+    selectedFinishing = [];
+    filters = {};
+    
+    window.renderGrid();
+};
+
+window.setCompletionFilter = function(val, el) {
+    completionFilter = val;
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+    if(el) el.classList.add('active');
+    window.renderGrid();
+};
+
+window.selectProjectType = function(val, el) {
+    activeProjectType = val;
+    document.querySelectorAll('.glass-tab').forEach(t => t.classList.remove('active'));
+    if(el) el.classList.add('active');
+    window.renderGrid();
+};
+
+// --- دوال المناطق والشريط الجانبي ---
+window.renderLocationTree = function() {
+    const tree = document.getElementById('locationTree');
+    if(!tree) return;
+    let html = '';
+    mainLocations.forEach(m => {
+        let isOpen = openMainLocIds[m.id] ? 'open' : '';
+        let subListShow = openMainLocIds[m.id] ? 'show' : '';
+        let isMainActive = (activeLocationIds.length === 1 && activeLocationIds[0] === m.id) ? 'active' : '';
+        
+        html += `<div class="loc-group">
+            <div class="loc-group-header-row">
+                <div class="loc-main-clickable ${isMainActive}" onclick="toggleMainLocFilter('${m.id}', event)">
+                    <span>${escapeHtml(m.name)}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    ${isEditor ? `<button class="loc-del-btn" onclick="deleteMainLocation('${m.id}', event)">✕</button>` : ''}
+                    <div class="arrow-toggle ${isOpen}" onclick="toggleLocSublist('${m.id}', event)">▶</div>
+                </div>
+            </div>
+            <div class="sub-loc-list ${subListShow}" id="sublist-${m.id}">`;
+        
+        if (m.subLocations && m.subLocations.length > 0) {
+            m.subLocations.forEach(s => {
+                let isSubActive = activeLocationIds.includes(s.id) ? 'active' : '';
+                html += `<div class="sub-loc-tab ${isSubActive}" onclick="toggleSubLocFilter('${s.id}')">
+                    <span>${escapeHtml(s.name)}</span>
+                    ${isEditor ? `<button class="loc-del-btn" style="width:1.25rem; height:1.25rem; font-size:0.625rem;" onclick="deleteSubLocation('${m.id}', '${s.id}', event)">✕</button>` : ''}
+                </div>`;
+            });
+        }
+        if (isEditor) {
+            html += `<div class="add-sub-loc-box">
+                <input type="text" id="newSubLocInput-${m.id}" placeholder="+ مدينة/حي جديد" onkeydown="if(event.key==='Enter') addSubLocation('${m.id}')">
+                <button class="btn btn-primary-style btn-pill" style="padding:0 0.5rem; font-size:0.6875rem;" onclick="addSubLocation('${m.id}')">إضافة</button>
+            </div>`;
+        }
+        html += `</div></div>`;
+    });
+    tree.innerHTML = html;
+    const mobTree = document.getElementById('locWrapperMobile');
+    if(mobTree) mobTree.innerHTML = html;
+};
+
+window.findSubLocationName = function(id) {
+    if(!id) return '-';
+    for(let m of mainLocations) {
+        if(m.id === id) return m.name;
+        if(m.subLocations) {
+            let s = m.subLocations.find(x => x.id === id);
+            if(s) return s.name;
+        }
+    }
+    return '-';
+};
+
+window.toggleLocSublist = function(id, e) {
+    if(e) e.stopPropagation();
+    openMainLocIds[id] = !openMainLocIds[id];
+    window.renderLocationTree();
+};
+
+window.toggleMainLocFilter = function(id, e) {
+    if(e) e.stopPropagation();
+    if (activeLocationIds.length === 1 && activeLocationIds[0] === id) {
+        activeLocationIds = [];
+    } else {
+        activeLocationIds = [id];
+    }
+    window.renderLocationTree();
+    window.renderGrid();
+};
+
+window.toggleSubLocFilter = function(id) {
+    if (activeLocationIds.includes(id)) {
+        activeLocationIds = activeLocationIds.filter(x => x !== id);
+    } else {
+        activeLocationIds.push(id);
+    }
+    window.renderLocationTree();
+    window.renderGrid();
+};
+
+window.toggleMobileLoc = function() {
+    const wrap = document.getElementById('locWrapperMobile');
+    const btn = document.getElementById('mobileLocToggleBtn');
+    if(wrap) {
+        wrap.classList.toggle('show');
+        if(btn) btn.classList.toggle('active');
+    }
+};
+
+window.deleteMainLocation = async function(id, e) {
+    if(e) e.stopPropagation();
+    if(!confirm('هل أنت متأكد من حذف هذه المنطقة؟')) return;
+    mainLocations = mainLocations.filter(m => m.id !== id);
+    await db.collection('system').doc('locations').set({ mainLocations });
+    window.renderLocationTree();
+};
+
+window.deleteSubLocation = async function(mainId, subId, e) {
+    if(e) e.stopPropagation();
+    if(!confirm('هل أنت متأكد من حذف هذا الحي؟')) return;
+    let main = mainLocations.find(m => m.id === mainId);
+    if(main && main.subLocations) {
+        main.subLocations = main.subLocations.filter(s => s.id !== subId);
+        await db.collection('system').doc('locations').set({ mainLocations });
+        window.renderLocationTree();
+    }
+};
+
+window.addMainLocation = async function() {
+    const input = document.getElementById('newMainLocInput');
+    const name = input ? input.value.trim() : '';
+    if(!name) return;
+    mainLocations.push({ id: window.uid(), name: name, subLocations: [] });
+    await db.collection('system').doc('locations').set({ mainLocations });
+    if(input) input.value = '';
+    window.renderLocationTree();
+};
+
+window.addSubLocation = async function(mainId) {
+    const input = document.getElementById(`newSubLocInput-${mainId}`);
+    const name = input ? input.value.trim() : '';
+    if(!name) return;
+    let main = mainLocations.find(m => m.id === mainId);
+    if(main) {
+        if(!main.subLocations) main.subLocations = [];
+        main.subLocations.push({ id: window.uid(), name: name });
+        openMainLocIds[mainId] = true;
+        await db.collection('system').doc('locations').set({ mainLocations });
+        if(input) input.value = '';
+        window.renderLocationTree();
+    }
 };
 
 // 🔥 حماية إضافية للزراير (Fallback) 🔥
