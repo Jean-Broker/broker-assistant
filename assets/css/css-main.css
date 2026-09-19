@@ -313,7 +313,7 @@ body.light-mode .overlay { background: rgba(255, 255, 255, 0.8); }
 
 .curved-modal { background: var(--card-bg); width: 95%; max-width: 46.875rem; max-height: 85vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); transform: scale(0.95) translateY(1.25rem); transition: var(--transition); border: 1px solid var(--border-color); border-radius: var(--radius-card); overflow: hidden;}
 
-/* 🚨 شاشة المشروع العريضة (عقار ماب ستايل) 🚨 */
+/* 🚨 شاشة المشروع العريضة 🚨 */
 #detailOverlay .detail-modal-wrapper {
     max-width: 90vw !important;
     height: 90vh !important;
@@ -501,7 +501,7 @@ body.light-mode .filter-drawer { box-shadow: -0.625rem 0 2.5rem rgba(0,0,0,0.1);
 
 .drawer-footer { padding: 1.5rem; border-top: 1px solid var(--border-color); background: var(--item-bg); }
 
-/* 🚨 تضبيط أوردر الموبايل والمودال 🚨 */
+/* 🚨 تضبيط أوردر الموبايل 🚨 */
 @media (max-width: 900px) {
     .app { flex-direction: column; overflow-y: auto; height: auto; gap: 0.9375rem;}
     .form-grid, .comm-prices-grid, .detail-grid, .calc-result { grid-template-columns: 1fr; }
@@ -516,19 +516,19 @@ body.light-mode .filter-drawer { box-shadow: -0.625rem 0 2.5rem rgba(0,0,0,0.1);
     .admin-stats-board { order: 2; flex-direction: row; flex-wrap: wrap; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; margin: 0; }
     .glass-search-container { order: 3; padding: 0.75rem; border-radius: var(--radius-card); background: var(--card-bg); border: 1px solid var(--border-color); width: 100%; margin: 0; }
     
-    .btn-loc-toggle-mobile { order: 4; display: flex; width: 100%; justify-content: center; align-items: center; gap: 0.5rem; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.75rem; border-radius: var(--radius-pill); font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 10px; margin-bottom: 0;}
+    .btn-loc-toggle-mobile { order: 4; display: flex; width: 100%; justify-content: center; align-items: center; gap: 0.5rem; background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-main); padding: 0.75rem; border-radius: var(--radius-pill); font-size: 0.875rem; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 0.625rem; margin-bottom: 0;}
     .btn-loc-toggle-mobile.active { background: var(--primary); color: var(--btn-text); border-color: var(--primary); box-shadow: var(--glow); }
     
     .loc-wrapper-mobile { order: 5; display: none; margin-top: 0.9375rem; }
     .loc-wrapper-mobile.show { display: block; }
     
-    .sort-small-box { order: 6; margin-top: 10px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; }
+    .sort-small-box { order: 6; margin-top: 0.625rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; }
     
-    .grid { order: 7; background: transparent; border: none; padding: 0; margin-top: 0.625rem; min-height: 150px;}
+    .grid { order: 7; background: transparent; border: none; padding: 0; margin-top: 0.625rem; min-height: 9.375rem;}
     
-    .brand { order: 8; margin-bottom: 1.25rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; margin-top: 15px;}
+    .brand { order: 8; margin-bottom: 1.25rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; margin-top: 0.9375rem;}
     .auth-badge { order: 9; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; }
-    .side-actions { order: 10; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; margin-top: 10px; }
+    .side-actions { order: 10; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-card); padding: 0.9375rem; width: 100%; margin-top: 0.625rem; }
     
     .desktop-only { display: none !important; }
     .site-bar-links { display: none; }
