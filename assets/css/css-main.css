@@ -393,7 +393,7 @@ body.light-mode .paywall-overlay { background: rgba(255,255,255,0.85); }
 .toast { position: fixed; bottom: -6.25rem; left: 50%; transform: translateX(-50%); background: var(--primary); color: var(--btn-text); padding: 0.75rem 1.875rem; border-radius: var(--radius-pill); font-weight: 800; box-shadow: var(--glow); transition: bottom 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 9999; font-size: 0.8125rem;}
 .toast.show { bottom: 1.875rem; }
 
-/* 🚨 شاشة التحميل متأمنة عشان متظهرش وتخفي الموقع 🚨 */
+/* 🚨 7l moshklt el Loading el soda 🚨 */
 #loadingOverlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; flex-direction:column; justify-content:center; align-items:center; }
 .loader { border: 3px solid rgba(220, 38, 38, 0.2); border-top: 3px solid var(--primary); border-radius: 50%; width: 2.5rem; height: 2.5rem; animation: spin 1s linear infinite; margin-bottom:0.9375rem; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -451,9 +451,48 @@ body.light-mode .filter-drawer { box-shadow: -10px 0 40px rgba(0,0,0,0.1); }
 .drawer-close:hover { color: #fff; background: var(--danger); border-color: var(--danger); transform: rotate(90deg); }
 .drawer-body { padding: 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1.8rem; }
 .filter-section h4 { font-size: 0.95rem; color: var(--text-main); margin-bottom: 1rem; font-weight: 800; border-right: 3px solid var(--primary); padding-right: 8px;}
-.filter-cb-label { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.1rem; border: 1px solid var(--border-color); border-radius: 3rem; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: 0.3s; background: var(--item-bg); user-select: none;}
-.filter-cb-label:has(input:checked) { border-color: var(--primary); color: #fff; background: var(--primary); box-shadow: var(--glow);}
-.filter-cb-label input { display: none; }
+
+/* ✨ Tnsiqat el Pills 3shan yb2o gnb b3d w shklhom sheek ✨ */
+.pill-group { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 0.5rem; 
+    width: 100%;
+}
+
+.filter-cb-label, .pill { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center;
+    padding: 0.45rem 1rem; 
+    border: 1px solid var(--border-color); 
+    border-radius: 3rem; 
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    color: var(--text-muted); 
+    cursor: pointer; 
+    transition: all 0.25s ease; 
+    background: transparent; 
+    user-select: none;
+    flex: 0 1 auto; 
+}
+
+.filter-cb-label:hover, .pill:hover {
+    border-color: var(--primary);
+    color: var(--text-main);
+}
+
+.filter-cb-label:has(input:checked), .pill.active { 
+    background: rgba(220, 38, 38, 0.12); 
+    border-color: var(--primary); 
+    color: var(--primary); 
+    box-shadow: none; 
+}
+
+.filter-cb-label input { 
+    display: none; 
+}
+
 .drawer-footer { padding: 1.5rem; border-top: 1px solid var(--border-color); background: var(--item-bg); }
 
 @media (max-width: 900px) {
