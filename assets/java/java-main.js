@@ -1,3 +1,15 @@
+// --- الدوال الأساسية ---
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function showToast(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
+function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
+function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
+function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
+function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
+function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+
 // --- Theme & Setup ---
 function setNavForApp(isAppView) { const links = document.getElementById('siteBarLinks'), loginBtn = document.getElementById('siteBarLoginBtn'); if (links) links.classList.toggle('nav-app-hidden', isAppView); if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); }
 if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPageContainer').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
@@ -30,15 +42,10 @@ window.addEventListener('load', () => {
 
 document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    closeAllDropdowns();
     if (document.getElementById('filterDrawer') && document.getElementById('filterDrawer').classList.contains('open')) closeFilterDrawer();
     if (document.getElementById('paywallModal').style.display === 'flex') closeLoginModal();
     document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay' || ov.id === 'typesOverlay') return; ov.classList.remove('open'); });
 });
-
-function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
-function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
-document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper') && !event.target.closest('.glass-search-container') && !event.target.closest('.filter-drawer')) { closeAllDropdowns(); } });
 
 let selectedBeds = [];
 let selectedDelivery = [];
@@ -95,19 +102,6 @@ const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إد�
 const FINISHING_TYPES = { core_shell: 'طوب أحمر', semi: 'نصف تشطيب', full: 'تشطيب كامل', mixed: 'متنوع' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'} ];
-
-function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
-function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
-function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function showToast(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
-
-function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
-function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
-
-function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 
 function submitLogin() { 
     const email = document.getElementById('loginEmail').value.trim();
@@ -243,6 +237,7 @@ async function syncCloudData() {
                 let tempCompounds = [];
                 snapshot.forEach(doc => tempCompounds.push({ id: doc.id, ...doc.data() })); 
                 compounds = tempCompounds;
+                
                 renderAdminStats(); 
                 renderLocationTree(); 
                 applyFilters(); 
@@ -554,11 +549,26 @@ function renderGrid(){
                   if (effArea <= 0) return 0;
                   
                   let meterPrice = 0;
+                  // 🚨 تصليح الحسبة للمشروعات التجارية عشان متسقطش لو مفيهاش سعر إداري 🚨
                   if (c.projectType === 'commercial') {
                        let cp = c.commercialPrices || {};
-                       let aMin = getRawNum(cp.adminMin) || 0;
-                       let aMax = getRawNum(cp.adminMax) || 0;
-                       meterPrice = (aMin > 0 && aMax > 0) ? (aMin + aMax)/2 : (aMin || aMax || 0); 
+                       let aMin = getRawNum(cp.adminMin) || 0, aMax = getRawNum(cp.adminMax) || 0;
+                       let cMin = getRawNum(cp.commMin) || 0, cMax = getRawNum(cp.commMax) || 0;
+                       let clMin = getRawNum(cp.clinicMin) || 0, clMax = getRawNum(cp.clinicMax) || 0;
+                       let rMin = getRawNum(cp.recMin) || 0, rMax = getRawNum(cp.recMax) || 0;
+                       
+                       let bType = getUnitEnName(u.bedroomType);
+                       let min = 0, max = 0;
+                       
+                       if (bType === 'Administrative') { min = aMin; max = aMax; }
+                       else if (bType === 'Commercial') { min = cMin; max = cMax; }
+                       else if (bType === 'Clinic') { min = clMin; max = clMax; }
+                       else if (bType === 'Recreational') { min = rMin; max = rMax; }
+                       else {
+                           min = cMin || aMin || clMin || rMin || 0;
+                           max = cMax || aMax || clMax || rMax || 0;
+                       }
+                       meterPrice = (min > 0 && max > 0) ? (min + max)/2 : (min || max || 0); 
                   } else {
                        let pSingle = getRawNum(c.pricePerMeter) || 0;
                        let pMin = getRawNum(c.pricePerMeterMin) || 0;
@@ -620,8 +630,12 @@ function renderGrid(){
           
                           const r = calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
                           
-                          let okDP = filters.downPaymentTarget != null ? (r.downPayment >= 0 && r.downPayment <= filters.downPaymentTarget) : true;
-                          let okInst = filters.maxMonthlyInstallment != null ? (r.monthlyEquivalent >= 0 && r.monthlyEquivalent <= filters.maxMonthlyInstallment) : true;
+                          // 🚨 تصليح فلتر الأقساط عشان ميوقعش المشروعات اللي فيها دفعات 🚨
+                          let dpVal = Math.max(0, r.downPayment);
+                          let instVal = Math.max(0, r.monthlyEquivalent);
+
+                          let okDP = filters.downPaymentTarget != null ? (dpVal <= filters.downPaymentTarget) : true;
+                          let okInst = filters.maxMonthlyInstallment != null ? (instVal <= filters.maxMonthlyInstallment) : true;
                           
                           if (okDP && okInst) { pass = true; break; } 
                       }
@@ -801,6 +815,128 @@ function openCompoundForm(existing){
   } catch (error) {
       console.log("Form Open Error:", error);
   }
+}
+
+function processMagicPaste() {
+    const text = document.getElementById('magicPasteInput').value;
+    if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
+    let cleanText = text.replace(/[\u200B-\u200D\uFEFF\u2060\u200E\u200F\u00A0]/g, ' ');
+    const lines = cleanText.split('\n');
+    let currentType = appSettings.resTypes[0] || 'Studio'; 
+    let unitsAdded = 0, plansAdded = 0, fieldsFilled = 0;
+    
+    let defaultFinishing = 'core_shell';
+
+    let firstLine = lines.find(l => l.replace(/[*🚨\-\s📢🏡]/g, '').length > 0);
+    if (firstLine && !document.getElementById('fldProject').value) { document.getElementById('fldProject').value = firstLine.replace(/[*🚨\-By📢🏡]/ig, '').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F]/g, '').trim(); fieldsFilled++; }
+    let foundBy = false;
+    for (let i = 0; i < lines.length; i++) {
+        let l = lines[i].trim().replace(/[*]/g, '');
+        if (l.toLowerCase().endsWith('by')) { foundBy = true; continue; }
+        if (foundBy && l) { if (!document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = l; fieldsFilled++; } foundBy = false; }
+    }
+    lines.forEach(line => {
+        const cleanLine = line.replace(/[*`~•▫️▶️➡️📍🔧🏢🚨🏡📢]/g, '').trim(); const lowerLine = cleanLine.toLowerCase(); if (!cleanLine) return; 
+        let developer = extractValueAfterKeyword(cleanLine, ['Developer', 'المطور', 'شركة', 'Development']); if (developer && !document.getElementById('fldCompany').value) { document.getElementById('fldCompany').value = developer; fieldsFilled++; }
+        let owner = extractValueAfterKeyword(cleanLine, ['Owner', 'المالك']); if (owner && !document.getElementById('fldOwner').value) { document.getElementById('fldOwner').value = owner; fieldsFilled++; }
+        let consultant = extractValueAfterKeyword(cleanLine, ['Consultant', 'استشاري', 'الاستشاري']); if (consultant && !document.getElementById('fldConsultant').value) { document.getElementById('fldConsultant').value = consultant; fieldsFilled++; }
+        let delivery = extractValueAfterKeyword(cleanLine, ['Delivery Date', 'Delivery', 'التسليم', 'استلام']);
+        if (delivery) { let dSelect = document.getElementById('fldDeliveryDate'); if (lowerLine.includes('immediate') || lowerLine.includes('فوري')) dSelect.value = 'immediate'; else if (lowerLine.includes('1') || lowerLine.includes('one')) dSelect.value = '1y'; else if (lowerLine.includes('2') || lowerLine.includes('two')) dSelect.value = '2y'; else if (lowerLine.includes('3') || lowerLine.includes('three')) dSelect.value = '3y'; else if (lowerLine.includes('4') || lowerLine.includes('four')) dSelect.value = '4y'; }
+        
+        let finishingMatch = extractValueAfterKeyword(cleanLine, ['Finishing', 'التشطيب', 'تشطيب']);
+        if (finishingMatch) { 
+            if (lowerLine.includes('core') || lowerLine.includes('shell') || lowerLine.includes('بدون')) defaultFinishing = 'core_shell'; 
+            else if (lowerLine.includes('semi') || lowerLine.includes('نصف')) defaultFinishing = 'semi'; 
+            else if (lowerLine.includes('fully') || lowerLine.includes('كامل')) defaultFinishing = 'full'; 
+        }
+        
+        let maintenance = extractValueAfterKeyword(cleanLine, ['Maintenance', 'صيانة', 'الصيانة']);
+        if (maintenance) { let mVal = maintenance.replace(/[^0-9.]/g, ''); if (mVal && !document.getElementById('fldMaintenanceValue').value) { document.getElementById('fldMaintenanceValue').value = mVal; if (maintenance.includes('%')) { document.getElementById('fldMaintenanceType').value = 'percent'; } else { document.getElementById('fldMaintenanceType').value = 'per_meter'; } fieldsFilled++; } }
+        if (lowerLine.includes('cash discount') || lowerLine.includes('خصم كاش')) { let cdMatch = cleanLine.match(/(\d+(?:\.\d+)?)%/); if (cdMatch && !document.getElementById('fldCashDiscount').value) { document.getElementById('fldCashDiscount').value = cdMatch[1]; fieldsFilled++; } }
+        if (lowerLine.includes('parking') || lowerLine.includes('جراج') || lowerLine.includes('بارك')) {
+            let pSelect = document.getElementById('fldParkingType');
+            if(lowerLine.includes('free') || lowerLine.includes('شامل') || lowerLine.includes('مجان')) { pSelect.value = 'included'; document.getElementById('fldParkingFee').style.display = 'none'; } 
+            else if (lowerLine.includes('optional') || lowerLine.includes('اختيار')) { pSelect.value = 'optional'; document.getElementById('fldParkingFee').style.display = 'block'; } 
+            else { pSelect.value = 'extra'; document.getElementById('fldParkingFee').style.display = 'block'; let pMatch = cleanLine.match(/([\d,]+(?:\.\d+)?)\s*(k|egp|ج|جنيه|الف)?/i); if (pMatch && !document.getElementById('fldParkingFee').value) { let pVal = parseFloat(pMatch[1].replace(/,/g, '')); let mult = pMatch[2] ? pMatch[2].toLowerCase() : ''; if (mult === 'k' || mult === 'الف') pVal *= 1000; document.getElementById('fldParkingFee').value = formatNum(pVal); fieldsFilled++; } }
+        }
+        const sizeMatch = cleanLine.match(/(\d+(?:\.\d+)?)\s*(acres?|فدان)/i); if (sizeMatch && !document.getElementById('fldProjectSize').value) { document.getElementById('fldProjectSize').value = sizeMatch[1]; fieldsFilled++; }
+        const linkMatch = cleanLine.match(/https?:\/\/[^\s]+/); if (linkMatch && !document.getElementById('fldLocationLink').value) { document.getElementById('fldLocationLink').value = linkMatch[0]; fieldsFilled++; }
+        const floorMatch = cleanLine.match(/G\s*\+\s*(\d+)/i); if (floorMatch && !document.getElementById('fldFloors').value) { document.getElementById('fldFloors').value = floorMatch[1]; fieldsFilled++; }
+        
+        let processingLine = cleanLine.replace(/\b\d+\s*(?:bedrooms?|beds?|br|غرف(?:ة|تين)?)\b/ig, '');
+        const unitMatch = processingLine.match(/(?:(?:\d+\s*up\s*to\s*)|\b|\()(\d+)\s*(?:[mM]2?|m²|م|متر)?(?:\s*(?:\+|\/)\s*(?:garden|roof|جاردن|روف)?\s*(\d+)\s*(?:[mM]2?|m²|م|متر)?)?.*?[\s:=→>/\-_—–]+\s*([\d,]{4,}(?:\.\d+)?|[A-Za-z\u0600-\u06FF]+)/i); 
+        if (unitMatch) {
+            const area = parseFloat(unitMatch[1]); const extraArea = unitMatch[2] ? parseFloat(unitMatch[2]) : '';
+            let garden = ''; let roof = '';
+            if (extraArea) { if (processingLine.match(/roof|روف|بنتهاوس|penthouse/i)) { roof = extraArea; } else { garden = extraArea; } }
+            if (area > 10) { tempUnits.push({ id: uid(), bedroomType: currentType, rooms: '', area: area, gardenArea: garden, roofArea: roof, price: '', finishing: defaultFinishing }); unitsAdded++; }
+        }
+        if (!lowerLine.includes('delivery') && !lowerLine.includes('تسليم') && !lowerLine.includes('استلام')) {
+            const planMatch = cleanLine.match(/(?:(\d+)%\s*(?:discount|خصم).*?)?(?:(\d+)%\s*(?:DP|Down Payment|d\.p|مقدم).*?)?(?:discount\s*(\d+)%)?.*?(\d+)\s*(?:years?|سن)/i);
+            if (planMatch && !cleanLine.includes('?')) {
+                const discount = planMatch[1] ? parseFloat(planMatch[1]) : (planMatch[3] ? parseFloat(planMatch[3]) : ''); let dpText = cleanLine.match(/(\d+)%\s*(?:dp|d\.p|down|مقدم)/i); const dp = dpText ? parseFloat(dpText[1]) : 0; const years = parseFloat(planMatch[4]);
+                if (!tempPlans.some(p => p.notes === cleanLine.replace(/^[▫️\-\s]+/,''))) { tempPlans.push({ id: uid(), name: `خطة ${years} سنوات`, discountPercent: discount, downPaymentPercent: dp, years: years, frequency: '12', pricePerMeter: '', notes: cleanLine.replace(/^[▫️\-\s]+/,''), customBullets: [] }); plansAdded++; }
+            }
+        }
+    });
+    renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
+}
+
+window.updateFinishingAvgs = function() {
+    try {
+        let fields = [
+            {min: 'fldPriceCoreMin', max: 'fldPriceCoreMax', avg: 'fldPriceCoreAvg'},
+            {min: 'fldPriceSemiMin', max: 'fldPriceSemiMax', avg: 'fldPriceSemiAvg'},
+            {min: 'fldPriceFullMin', max: 'fldPriceFullMax', avg: 'fldPriceFullAvg'}
+        ];
+    
+        fields.forEach(f => {
+            let min = getRawNum(getSafeVal(f.min)) || 0;
+            let max = getRawNum(getSafeVal(f.max)) || 0;
+            let avg = (min > 0 && max > 0) ? (min + max) / 2 : (min || max || 0);
+            setSafeVal(f.avg, avg > 0 ? formatNum(Math.round(avg)) : '');
+        });
+    
+        updateAllUnitsPrice();
+    } catch(e){ console.error(e); }
+};
+
+window.toggleAdvPricing = function(forceState) {
+    try {
+        const wrap = document.getElementById('advPricingWrap');
+        const btn = document.getElementById('btnToggleAdvPricing');
+        if (!wrap || !btn) return;
+        
+        let isOpening = forceState !== undefined ? forceState : wrap.style.display === 'none';
+        
+        if (isOpening) {
+            wrap.style.display = 'block';
+            btn.innerHTML = '✕ إخفاء أسعار التشطيب المخصصة';
+            btn.style.color = 'var(--danger)';
+            btn.style.borderColor = 'var(--danger)';
+            btn.style.borderStyle = 'solid';
+        } else {
+            wrap.style.display = 'none';
+            btn.innerHTML = '+ تخصيص أسعار متر لكل تشطيب على حدة (اختياري)';
+            btn.style.color = 'var(--text-muted)';
+            btn.style.borderColor = 'var(--border-color)';
+            btn.style.borderStyle = 'dashed';
+        }
+        updateAllUnitsPrice();
+    } catch(e) { console.error(e); }
+};
+
+window.updatePriceMeterAvg = function() { 
+    try {
+        const min = getRawNum(getSafeVal('fldPriceMeterMin')) || 0; 
+        const max = getRawNum(getSafeVal('fldPriceMeterMax')) || 0; 
+        let avg = 0;
+        if(min > 0 && max > 0) avg = (min + max) / 2; 
+        else avg = min || max || 0; 
+        
+        setSafeVal('fldPriceMeterAvg', avg > 0 ? formatNum(Math.round(avg)) : '');
+        updateAllUnitsPrice(); 
+    } catch(e) { console.error(e); }
 }
 
 function onProjectTypeChange() { 
@@ -1047,45 +1183,6 @@ function renderDecreeRows(){
     dRows.innerHTML = tempDecrees.map(d=>`<div class="repeat-row" style="display:flex; gap:10px;"><input placeholder="الرقم" class="num" style="width:100px;" value="${escapeHtml(d.decreeNumber)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').decreeNumber=this.value" autocomplete="off"><input placeholder="الوصف" style="flex:1;" value="${escapeHtml(d.description)}" oninput="tempDecrees.find(x=>x.id==='${d.id}').description=this.value" autocomplete="off"><input type="date" value="${d.date}" oninput="tempDecrees.find(x=>x.id==='${d.id}').date=this.value"><button class="row-del" onclick="removeDecreeRow('${d.id}')">✕</button></div>`).join(''); 
 }
 
-function openDetail(id){
-  try {
-      const c = compounds.find(x=>x.id===id); if(!c) return; viewingCompoundId = id;
-      const availTypes = Array.from(new Set((c.unitTypes||[]).map(u => getUnitEnName(u.bedroomType))));
-      availTypes.sort((a,b) => (UNIT_ORDER[a]||99) - (UNIT_ORDER[b]||99));
-      
-      activeDetailCategory = availTypes.length ? availTypes[0] : null; 
-      if (activeDetailCategory) {
-          let filtered = (c.unitTypes||[]).filter(u => getUnitEnName(u.bedroomType) === activeDetailCategory);
-          filtered.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
-          activeDetailUnitId = filtered.length > 0 ? filtered[0].id : null;
-      } else {
-          activeDetailUnitId = null;
-      }
-      
-      renderDetailModalContent(); 
-      const ov = document.getElementById('detailOverlay');
-      if(ov) ov.classList.add('open');
-  } catch(e) {
-      console.log("Detail Error:", e);
-  }
-}
-
-function setDetailCategory(catKey) { 
-    try {
-        activeDetailCategory = catKey; 
-        const c = compounds.find(x => x.id === viewingCompoundId); 
-        if (c && c.unitTypes) { 
-            const matched = c.unitTypes.filter(u => getUnitEnName(u.bedroomType) === catKey); 
-            matched.sort((a,b) => (parseFloat(a.area)||0) - (parseFloat(b.area)||0));
-            if (matched.length > 0) activeDetailUnitId = matched[0].id; 
-        } 
-        renderDetailModalContent(); 
-    } catch(e) { console.error(e); }
-}
-
-function setDetailUnit(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); }
-function editCurrentCompound(){ const c = compounds.find(x=>x.id===viewingCompoundId); if(!c) return; closeModal('detailOverlay'); openCompoundForm(c); }
-
 function renderDetailModalContent() {
   try {
       const c = compounds.find(x => x.id === viewingCompoundId); if (!c) return;
@@ -1212,9 +1309,9 @@ function renderDetailModalContent() {
               let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
               if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:4px;">خصم ${p.discountPercent}%</small>`;
               
-              let unitPriceCol = `<b class="num">${formatNum(planBasePrice)} ج</b>`;
-              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:11px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
-    
+              let unitPriceCol = `<b class="num" style="font-size:18px;">${formatNum(planBasePrice)} ج</b>`;
+              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:12px;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
+
               html += `<tr>
                   <td>${planNameCol}</td>
                   <td>${unitPriceCol}</td>
@@ -1317,7 +1414,6 @@ window.runProjectMiniCalc = function(cId) {
     resultDiv.innerHTML = html;
 };
 
-// دالة الأقساط المحمية 100%
 function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, customBullets, years, freq){ 
     const discountVal = (originalTotal || 0) * ((discountPct||0)/100);
     const netTotal = (originalTotal || 0) - discountVal;
@@ -1353,7 +1449,7 @@ function calcInstallmentWithDiscount(originalTotal, discountPct, downPct, custom
         } 
     }); 
     
-    const remaining = netTotal - (downPayment + extraPaymentsTotal);
+    const remaining = Math.max(0, netTotal - (downPayment + extraPaymentsTotal));
     let yrs = parseFloat(years) || 1;
     if (yrs <= 0) yrs = 1;
     const monthlyEquivalent = remaining / (yrs * 12); 
