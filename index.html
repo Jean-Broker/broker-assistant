@@ -124,7 +124,6 @@
                 <div class="stat-card stat-warning" onclick="setCompletionFilter('incomplete', this)"><h4 data-ar="نواقص في الداتا ⏳" data-en="Incomplete ⏳">نواقص في الداتا ⏳</h4><b id="statIncomplete" class="num">0</b></div>
             </div>
 
-            <!-- شريط البحث الزجاجي -->
             <div class="glass-search-container">
                 <div class="glass-search-tabs">
                     <button class="glass-tab active" onclick="selectProjectType('all', this)">الكل</button>
@@ -155,7 +154,7 @@
         </main>
     </div>
 
-    <!-- القائمة الجانبية للفلاتر المتقدمة -->
+    <!-- القائمة الجانبية للفلاتر -->
     <div id="filterDrawerOverlay" class="drawer-overlay" onclick="closeFilterDrawer()"></div>
     <div id="filterDrawer" class="filter-drawer">
         <div class="drawer-header">
@@ -227,7 +226,7 @@
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- 🚨 مودال الدخول اللي كان مختفي وتم تأمينه 🚨 -->
     <div id="paywallModal" class="paywall-overlay">
         <div class="paywall-card">
             <button class="login-close-btn" onclick="closeLoginModal()">✕</button>
@@ -360,7 +359,7 @@
         </div>
     </div>
 
-    <!-- 🚨 المودال الجديد لشاشة التفاصيل (بدون فوتر عشان الزراير بقت جوه) 🚨 -->
+    <!-- Detail Modal -->
     <div id="detailOverlay" class="overlay">
         <div class="curved-modal detail-modal-wrapper">
             <div class="modal-header">
@@ -369,7 +368,6 @@
                 <button class="modal-close" onclick="closeModal('detailOverlay')">✕</button>
             </div>
             <div class="modal-body" id="detailBody" style="padding: 2rem;"></div>
-            <!-- الفوتر القديم اتشال من هنا خالص -->
         </div>
     </div>
 
