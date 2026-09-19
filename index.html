@@ -29,7 +29,8 @@
             <div class="site-bar-actions">
                 <button class="theme-switcher" onclick="window.toggleTheme()" title="تغيير المظهر">🌓</button>
                 <button class="lang-switcher" onclick="window.toggleLanguage()" title="Language">🌐 AR/EN</button>
-                <button class="btn btn-primary-style btn-pill site-bar-login" id="siteBarLoginBtn" onclick="window.handleAuthAction()" data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</button>
+                <!-- الزرار هنا واخد أمر إجباري لفتح الشاشة -->
+                <button class="btn btn-primary-style btn-pill site-bar-login" id="siteBarLoginBtn" onclick="if(window.handleAuthAction){window.handleAuthAction();}else{document.getElementById('paywallModal').style.display='flex';}" data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</button>
             </div>
         </header>
 
@@ -42,7 +43,8 @@
                     <p data-ar="نظام سحابي متكامل لإدارة المشروعات العقارية، خطط السداد، الحاسبات الذكية، واستخراج الملفات بضغطة زر. صُمم خصيصاً للوسطاء العقاريين المحترفين." data-en="A comprehensive cloud system for managing real estate projects, payment plans, smart calculators, and extracting dossiers with one click. Designed for professional brokers.">
                         نظام سحابي متكامل لإدارة المشروعات العقارية، خطط السداد، الحاسبات الذكية، واستخراج الملفات بضغطة زر. صُمم خصيصاً للوسطاء العقاريين المحترفين.
                     </p>
-                    <button id="heroStartBtn" class="btn btn-primary-style btn-pill btn-large" onclick="window.openSystemLogin()" data-ar="ابدأ الآن" data-en="Start Now">ابدأ الآن</button>
+                    <!-- الزرار هنا واخد أمر إجباري لفتح الشاشة -->
+                    <button id="heroStartBtn" class="btn btn-primary-style btn-pill btn-large" onclick="document.getElementById('paywallModal').style.display='flex';" data-ar="ابدأ الآن" data-en="Start Now">ابدأ الآن</button>
                 </div>
             </div>
         </section>
@@ -249,7 +251,8 @@
     <!-- مودال تسجيل الدخول -->
     <div id="paywallModal" class="paywall-overlay">
         <div class="paywall-card">
-            <button class="login-close-btn" onclick="window.closeLoginModal()">✕</button>
+            <!-- زر الإغلاق المباشر -->
+            <button class="login-close-btn" onclick="document.getElementById('paywallModal').style.display='none';">✕</button>
             <div class="j-logo" style="width:7.5rem; height:2.5rem; margin: 0 auto 1.25rem;"><div class="j-top" style="font-size:3.125rem;">J</div><div class="j-text" style="font-size:0.625rem;">BROKER-ASSISTANT</div><div class="j-bot" style="font-size:3.125rem;">J</div></div>
             <h2 data-ar="تسجيل الدخول" data-en="Sign In">تسجيل الدخول</h2>
             <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" required>
@@ -257,7 +260,7 @@
             <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-bottom:1.25rem; font-size:0.8125rem; color:var(--text-muted);">
                 <input type="checkbox" id="rememberMe"> <label for="rememberMe">تذكرني</label>
             </div>
-            <button id="loginSubmitBtn" class="btn btn-primary-style btn-pill w-100" onclick="window.submitLogin()" style="font-size:1rem;">دخول</button>
+            <button id="loginSubmitBtn" class="btn btn-primary-style btn-pill w-100" onclick="if(window.submitLogin) window.submitLogin();" style="font-size:1rem;">دخول</button>
         </div>
     </div>
 
