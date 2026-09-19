@@ -1,3 +1,55 @@
+// 🚨 دوال فتح شاشة الدخول (في أول الملف عشان تحمل فورا) 🚨
+window.openSystemLogin = function() { 
+    const modal = document.getElementById('paywallModal');
+    if(modal) { modal.style.display = 'flex'; }
+};
+window.closeLoginModal = function() { 
+    const modal = document.getElementById('paywallModal');
+    if(modal) modal.style.display = 'none'; 
+};
+window.handleAuthAction = function() { 
+    if (typeof currentUser !== 'undefined' && currentUser) { 
+        if(typeof auth !== 'undefined' && auth) auth.signOut(); 
+        sessionStorage.removeItem('isSystemOpen'); 
+        window.backToLanding(); 
+    } else { 
+        window.openSystemLogin(); 
+    } 
+};
+window.backToLanding = function() { 
+    const sys = document.getElementById('systemApp');
+    const land = document.getElementById('landingPageContainer');
+    if(sys) sys.style.display = 'none'; 
+    if(land) land.style.display = 'block'; 
+    window.setNavForApp(false); 
+};
+window.closeModal = function(id){ 
+    if (id === 'formOverlay') { if(!confirm('هل أنت متأكد من إغلاق النافذة؟ لن يتم حفظ التعديلات الأخيرة.')) return; }
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('open'); 
+};
+
+// 🔥 حماية إضافية للزراير بتجبر الشاشة تفتح 🔥
+window.addEventListener('DOMContentLoaded', () => {
+    const loginBtn1 = document.getElementById('siteBarLoginBtn');
+    const loginBtn2 = document.getElementById('heroStartBtn');
+    const modal = document.getElementById('paywallModal');
+
+    if(loginBtn1) {
+        loginBtn1.addEventListener('click', function(e) {
+            e.preventDefault();
+            if(modal) modal.style.display = 'flex';
+        });
+    }
+
+    if(loginBtn2) {
+        loginBtn2.addEventListener('click', function(e) {
+            e.preventDefault();
+            if(modal) modal.style.display = 'flex';
+        });
+    }
+});
+
 // --- الدوال الأساسية للسيستم ---
 window.uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); };
 window.showToast = function(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); };
@@ -27,6 +79,20 @@ window.setNavForApp = function(isAppView) {
     if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); 
 };
 
+if (sessionStorage.getItem('isSystemOpen') === 'true') { 
+    const land = document.getElementById('landingPageContainer');
+    const sys = document.getElementById('systemApp');
+    if(land) land.style.display = 'none'; 
+    if(sys) sys.style.display = 'flex'; 
+    window.setNavForApp(true); 
+} else { 
+    const land = document.getElementById('landingPageContainer');
+    const sys = document.getElementById('systemApp');
+    if(land) land.style.display = 'block'; 
+    if(sys) sys.style.display = 'none'; 
+    window.setNavForApp(false); 
+}
+
 let currentLang = 'ar';
 window.toggleLanguage = function() { 
     currentLang = currentLang === 'ar' ? 'en' : 'ar'; 
@@ -41,45 +107,16 @@ window.toggleTheme = function() {
 };
 if (localStorage.getItem('appTheme') === 'light') { document.body.classList.add('light-mode'); }
 
-// --- دوال فتح وإغلاق الشاشات والتسجيل ---
-window.openSystemLogin = function() { 
-    const modal = document.getElementById('paywallModal');
-    if(modal) modal.style.display = 'flex'; 
-};
-window.closeLoginModal = function() { 
-    const modal = document.getElementById('paywallModal');
-    if(modal) modal.style.display = 'none'; 
-};
-window.backToLanding = function() { 
-    const sys = document.getElementById('systemApp');
-    const land = document.getElementById('landingPageContainer');
-    if(sys) sys.style.display = 'none'; 
-    if(land) land.style.display = 'block'; 
-    window.setNavForApp(false); 
-};
-window.handleAuthAction = function() { 
-    if (typeof currentUser !== 'undefined' && currentUser) { 
-        if(typeof auth !== 'undefined') auth.signOut(); 
-        sessionStorage.removeItem('isSystemOpen'); 
-        window.backToLanding(); 
-    } else { 
-        window.openSystemLogin(); 
-    } 
-};
-window.closeModal = function(id){ 
-    if (id === 'formOverlay') { if(!confirm('هل أنت متأكد من إغلاق النافذة؟ لن يتم حفظ التعديلات الأخيرة.')) return; }
-    const el = document.getElementById(id);
-    if(el) el.classList.remove('open'); 
-};
-
 // --- Firebase Init ---
-const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", authDomain: "broker-assistant-63277.firebaseapp.com", projectId: "broker-assistant-63277", storageBucket: "broker-assistant-63277.firebasestorage.app", messagingSenderId: "434808917289", appId: "1:434808917289:web:1012be2fa30cf80cfefb38" };
-if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-const db = firebase.firestore();
-const auth = firebase.auth();
-let secondaryApp;
-if (!firebase.apps.some(app => app.name === "SecondaryApp")) { secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp"); } 
-else { secondaryApp = firebase.app("SecondaryApp"); }
+let db, auth, secondaryApp;
+try {
+    const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", authDomain: "broker-assistant-63277.firebaseapp.com", projectId: "broker-assistant-63277", storageBucket: "broker-assistant-63277.firebasestorage.app", messagingSenderId: "434808917289", appId: "1:434808917289:web:1012be2fa30cf80cfefb38" };
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    db = firebase.firestore();
+    auth = firebase.auth();
+    if (!firebase.apps.some(app => app.name === "SecondaryApp")) { secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp"); } 
+    else { secondaryApp = firebase.app("SecondaryApp"); }
+} catch (e) { console.error("Firebase init error:", e); }
 
 // --- Globals ---
 let currentUser = null, isAdmin = false, isEditor = false;
@@ -104,6 +141,7 @@ const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m',
 // --- Authentication ---
 window.submitLogin = async function() { 
     try {
+        if(!auth) throw new Error("Firebase not initialized");
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value.trim(); 
         const btn = document.getElementById('loginSubmitBtn');
@@ -127,42 +165,44 @@ window.submitLogin = async function() {
     }
 };
 
-auth.onAuthStateChanged(async (user) => {
-    try {
-        if (user) {
-            if (sessionStorage.getItem('isSystemOpen') !== 'true') { auth.signOut(); return; }
-            let userDoc; try { userDoc = await db.collection('users').doc(user.email.toLowerCase()).get(); } catch(e) {}
-            let role = 'viewer', expiryDate = '2024-01-01'; 
-            if (userDoc && userDoc.exists) { role = userDoc.data().role || 'viewer'; expiryDate = userDoc.data().expiryDate || '2024-01-01'; } 
-            else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') { role = 'admin'; expiryDate = '2099-12-31'; await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' }); } 
-            else { auth.signOut(); alert("هذا الحساب غير مسجل."); return; }
-            if (new Date() > new Date(expiryDate)) { auth.signOut(); alert("لقد انتهت فترة اشتراكك."); return; }
-            
-            currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
-            let uLabel = document.getElementById('userEmailLabel');
-            if(uLabel) uLabel.textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
-            let suAct = document.getElementById('superAdminActions'); if(suAct) suAct.style.display = isAdmin ? 'flex' : 'none'; 
-            let addLoc = document.getElementById('addMainLocWrap'); if(addLoc) addLoc.style.display = isEditor ? 'flex' : 'none'; 
-            let adAct = document.getElementById('adminActions'); if(adAct) adAct.style.display = isEditor ? 'flex' : 'none';
-            let btnLog = document.getElementById('loginSubmitBtn'); if(btnLog) btnLog.innerHTML = 'دخول';
-            
-            await window.syncCloudData(); 
-            const pw = document.getElementById('paywallModal'), land = document.getElementById('landingPageContainer'), sys = document.getElementById('systemApp');
-            if(pw) pw.style.display = 'none'; 
-            if(land) land.style.display = 'none'; 
-            if(sys) sys.style.display = 'flex'; 
-            window.setNavForApp(true);
-        } else { 
-            currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); 
-            let uLabel = document.getElementById('userEmailLabel'); if(uLabel) uLabel.textContent = 'يرجى تسجيل الدخول'; 
-            window.backToLanding();
+if (auth) {
+    auth.onAuthStateChanged(async (user) => {
+        try {
+            if (user) {
+                if (sessionStorage.getItem('isSystemOpen') !== 'true') { auth.signOut(); return; }
+                let userDoc; try { userDoc = await db.collection('users').doc(user.email.toLowerCase()).get(); } catch(e) {}
+                let role = 'viewer', expiryDate = '2024-01-01'; 
+                if (userDoc && userDoc.exists) { role = userDoc.data().role || 'viewer'; expiryDate = userDoc.data().expiryDate || '2024-01-01'; } 
+                else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') { role = 'admin'; expiryDate = '2099-12-31'; await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' }); } 
+                else { auth.signOut(); alert("هذا الحساب غير مسجل."); return; }
+                if (new Date() > new Date(expiryDate)) { auth.signOut(); alert("لقد انتهت فترة اشتراكك."); return; }
+                
+                currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
+                let uLabel = document.getElementById('userEmailLabel');
+                if(uLabel) uLabel.textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
+                let suAct = document.getElementById('superAdminActions'); if(suAct) suAct.style.display = isAdmin ? 'flex' : 'none'; 
+                let addLoc = document.getElementById('addMainLocWrap'); if(addLoc) addLoc.style.display = isEditor ? 'flex' : 'none'; 
+                let adAct = document.getElementById('adminActions'); if(adAct) adAct.style.display = isEditor ? 'flex' : 'none';
+                let btnLog = document.getElementById('loginSubmitBtn'); if(btnLog) btnLog.innerHTML = 'دخول';
+                
+                await window.syncCloudData(); 
+                const pw = document.getElementById('paywallModal'), land = document.getElementById('landingPageContainer'), sys = document.getElementById('systemApp');
+                if(pw) pw.style.display = 'none'; 
+                if(land) land.style.display = 'none'; 
+                if(sys) sys.style.display = 'flex'; 
+                window.setNavForApp(true);
+            } else { 
+                currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); 
+                let uLabel = document.getElementById('userEmailLabel'); if(uLabel) uLabel.textContent = 'يرجى تسجيل الدخول'; 
+                window.backToLanding();
+            }
+        } catch (err) {
+            console.error("Auth Error:", err);
+            const btnLog = document.getElementById('loginSubmitBtn');
+            if(btnLog) btnLog.innerHTML = 'دخول';
         }
-    } catch (err) {
-        console.error("Auth Error:", err);
-        const btnLog = document.getElementById('loginSubmitBtn');
-        if(btnLog) btnLog.innerHTML = 'دخول';
-    }
-});
+    });
+}
 
 // --- Cloud Sync ---
 window.syncCloudData = async function() {
@@ -186,7 +226,7 @@ window.syncCloudData = async function() {
     } catch (error) { console.error("Sync Error:", error); }
 };
 
-// --- دالة شجرة المناطق الجانبية (بالأسهم والتداخل السليم) ---
+// --- دالة شجرة المناطق الجانبية ---
 window.renderLocationTree = function() {
     const tree = document.getElementById('locationTree');
     if(!tree) return;
@@ -369,7 +409,127 @@ window.setCompletionFilter = function(val, el){
     window.renderGrid();
 };
 
-// --- رسم الكروت والشاشة الرئيسية ---
+window.addEventListener('load', () => {
+    window.populateDeliverySelects();
+    if(localStorage.getItem('savedEmail')) { 
+        const em = document.getElementById('loginEmail');
+        const pw = document.getElementById('loginPassword');
+        const rem = document.getElementById('rememberMe');
+        if(em) em.value = localStorage.getItem('savedEmail'); 
+        if(pw) pw.value = localStorage.getItem('savedPassword'); 
+        if(rem) rem.checked = true; 
+    }
+    const pt = document.getElementById('fldProjectType'); 
+    if (pt) pt.addEventListener('change', window.onProjectTypeChange);
+    const footerYearEl = document.getElementById('footerYear'); 
+    if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    window.closeAllDropdowns();
+    const dr = document.getElementById('filterDrawer');
+    if (dr && dr.classList.contains('open')) window.closeFilterDrawer();
+    const pw = document.getElementById('paywallModal');
+    if (pw && pw.style.display === 'flex') window.closeLoginModal();
+    document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay' || ov.id === 'typesOverlay') return; ov.classList.remove('open'); });
+});
+
+window.toggleDropdown = function(id) { 
+    const el = document.getElementById(id);
+    if(!el) return;
+    const wrapper = el.parentElement; 
+    const isActive = wrapper.classList.contains('active'); 
+    window.closeAllDropdowns(); 
+    if (!isActive) wrapper.classList.add('active'); 
+};
+
+window.closeAllDropdowns = function() { 
+    document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); 
+};
+
+document.addEventListener('click', function(event) { 
+    if (!event.target.closest('.filter-dropdown-wrapper') && !event.target.closest('.glass-search-container') && !event.target.closest('.filter-drawer')) { 
+        window.closeAllDropdowns(); 
+    } 
+});
+
+window.openUsersManager = function() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); };
+window.createNewSubscriber = async function() { const email = document.getElementById('newAccEmail').value.trim().toLowerCase(), duration = parseInt(document.getElementById('newAccDuration').value), role = document.getElementById('newAccRole').value; if(!email) { window.showToast('يرجى كتابة الإيميل!'); return; } const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100), expDate = new Date(); expDate.setDate(expDate.getDate() + duration); try { await secondaryApp.auth().createUserWithEmailAndPassword(email, password); await db.collection('users').doc(email).set({ role: role, expiryDate: expDate.toISOString().split('T')[0] }); await secondaryApp.auth().signOut(); document.getElementById('resEmail').textContent = email; document.getElementById('resPass').textContent = password; document.getElementById('resDate').textContent = expDate.toISOString().split('T')[0]; document.getElementById('newAccResult').style.display = 'block'; window.showToast('تم تسجيل الحساب بنجاح!'); } catch (error) { alert('حدث خطأ: ' + error.message); } };
+window.openTypesManager = function() { document.getElementById('resTypesInput').value = appSettings.resTypes.join(' ، '); document.getElementById('commTypesInput').value = appSettings.commTypes.join(' ، '); document.getElementById('typesOverlay').classList.add('open'); };
+window.saveCustomTypes = async function() { if(!isEditor) return; const r = document.getElementById('resTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); const c = document.getElementById('commTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); appSettings.resTypes = r.length ? r : appSettings.resTypes; appSettings.commTypes = c.length ? c : appSettings.commTypes; try { await db.collection('system').doc('settings').set({ resTypes: appSettings.resTypes, commTypes: appSettings.commTypes }, { merge: true }); window.closeModal('typesOverlay'); window.showToast('تم الحفظ 💾'); if(document.getElementById('formOverlay').classList.contains('open')) window.renderUnitRows(); } catch(e) { alert('خطأ في الحفظ!'); } };
+
+window.saveCompoundToCloud = async function() {
+    if(!isEditor) return;
+    const cName = window.getSafeVal('fldCompany').trim();
+    const pName = window.getSafeVal('fldProject').trim();
+    const locId = window.getSafeVal('fldLocation');
+    if(!cName || !pName || !locId) { return alert('يرجى إدخال اسم الشركة واسم المشروع والفرع كحد أدنى.'); }
+
+    let pCoreMin = window.getRawNum(window.getSafeVal('fldPriceCoreMin')), pCoreMax = window.getRawNum(window.getSafeVal('fldPriceCoreMax'));
+    let pCoreAvg = (pCoreMin > 0 && pCoreMax > 0) ? (pCoreMin + pCoreMax) / 2 : (pCoreMin || pCoreMax || 0);
+    let pSemiMin = window.getRawNum(window.getSafeVal('fldPriceSemiMin')), pSemiMax = window.getRawNum(window.getSafeVal('fldPriceSemiMax'));
+    let pSemiAvg = (pSemiMin > 0 && pSemiMax > 0) ? (pSemiMin + pSemiMax) / 2 : (pSemiMin || pSemiMax || 0);
+    let pFullMin = window.getRawNum(window.getSafeVal('fldPriceFullMin')), pFullMax = window.getRawNum(window.getSafeVal('fldPriceFullMax'));
+    let pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax) / 2 : (pFullMin || pFullMax || 0);
+
+    const compoundData = {
+        locationId: locId, projectType: window.getSafeVal('fldProjectType'), companyName: cName, projectName: pName, phaseName: window.getSafeVal('fldPhaseName').trim(), ownerName: window.getSafeVal('fldOwner').trim(), consultant: window.getSafeVal('fldConsultant').trim(), whatsapp: window.getSafeVal('fldWhatsapp').trim(), projectPDF: window.getSafeVal('fldProjectPDF').trim(), previousWorks: window.getSafeVal('fldPreviousWorks').trim(), projectSize: window.getRawNum(window.getSafeVal('fldProjectSize')), floors: window.getSafeVal('fldFloors').trim(), compoundLocationDetail: window.getSafeVal('fldLocationDetail').trim(), locationLink: window.getSafeVal('fldLocationLink').trim(), pricePerMeterMin: window.getRawNum(window.getSafeVal('fldPriceMeterMin')), pricePerMeterMax: window.getRawNum(window.getSafeVal('fldPriceMeterMax')), pricePerMeter: window.getRawNum(window.getSafeVal('fldPriceMeter')), isAdvancedPricing: (document.getElementById('advPricingWrap') && document.getElementById('advPricingWrap').style.display !== 'none'), priceCoreMin: pCoreMin, priceCoreMax: pCoreMax, priceCore: pCoreAvg, priceSemiMin: pSemiMin, priceSemiMax: pSemiMax, priceSemi: pSemiAvg, priceFullMin: pFullMin, priceFullMax: pFullMax, priceFull: pFullAvg,
+        commercialPrices: { adminMin: window.getRawNum(window.getSafeVal('fldAdminMin')), adminMax: window.getRawNum(window.getSafeVal('fldAdminMax')), adminFinish: window.getSafeVal('fldAdminFinish') || 'core_shell', commMin: window.getRawNum(window.getSafeVal('fldCommMin')), commMax: window.getRawNum(window.getSafeVal('fldCommMax')), commFinish: window.getSafeVal('fldCommFinish') || 'core_shell', clinicMin: window.getRawNum(window.getSafeVal('fldClinicMin')), clinicMax: window.getRawNum(window.getSafeVal('fldClinicMax')), clinicFinish: window.getSafeVal('fldClinicFinish') || 'core_shell', recMin: window.getRawNum(window.getSafeVal('fldRecMin')), recMax: window.getRawNum(window.getSafeVal('fldRecMax')), recFinish: window.getSafeVal('fldRecFinish') || 'core_shell' },
+        deliveryDate: window.getSafeVal('fldDeliveryDate'), finishingStatus: window.getSafeVal('fldFinishingStatus'), maintenanceValue: window.getRawNum(window.getSafeVal('fldMaintenanceValue')), maintenanceType: window.getSafeVal('fldMaintenanceType') || 'percent', parkingType: window.getSafeVal('fldParkingType') || 'extra', parkingFee: window.getRawNum(window.getSafeVal('fldParkingFee')), cashDiscount: window.getRawNum(window.getSafeVal('fldCashDiscount')), unitTypes: tempUnits, paymentPlans: tempPlans, ministerialDecrees: tempDecrees, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+        const loadOv = document.getElementById('loadingOverlay'); if(loadOv) loadOv.style.display = 'flex';
+        if (editingCompoundId) { await db.collection('compounds').doc(editingCompoundId).update(compoundData); window.showToast('تم تحديث المشروع بنجاح!'); } 
+        else { await db.collection('compounds').add(compoundData); window.showToast('تم إضافة المشروع بنجاح!'); }
+        window.closeModal('formOverlay');
+    } catch(e) { console.error("Save Error: ", e); alert("حدث خطأ أثناء الحفظ."); } 
+    finally { const loadOv = document.getElementById('loadingOverlay'); if(loadOv) loadOv.style.display = 'none'; }
+};
+
+window.deleteCurrentCompoundFromCloud = async function() {
+    if(!isEditor || !viewingCompoundId) return;
+    if(!confirm('هل أنت متأكد من حذف هذا المشروع نهائياً؟')) return;
+    try {
+        const loadOv = document.getElementById('loadingOverlay'); if(loadOv) loadOv.style.display = 'flex';
+        await db.collection('compounds').doc(viewingCompoundId).delete();
+        window.closeModal('detailOverlay'); window.showToast('تم حذف المشروع بنجاح.');
+    } catch(e) { alert("حدث خطأ أثناء الحذف."); } 
+    finally { const loadOv = document.getElementById('loadingOverlay'); if(loadOv) loadOv.style.display = 'none'; }
+};
+
+window.isCompoundComplete = function(c) {
+    try {
+        if (!c.companyName || String(c.companyName).trim() === '') return false;
+        if (!c.projectName || String(c.projectName).trim() === '') return false;
+        if (!c.locationId || String(c.locationId).trim() === '') return false;
+        let hasPrice = false;
+        if (c.projectType === 'commercial' && c.commercialPrices) { 
+            if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true; 
+        } else { 
+            if ((c.pricePerMeter && c.pricePerMeter > 0) || (c.pricePerMeterMin && c.pricePerMeterMin > 0) || (c.priceCore && c.priceCore > 0) || (c.priceSemi && c.priceSemi > 0) || (c.priceFull && c.priceFull > 0) || (c.priceCoreMin && c.priceCoreMin > 0) || (c.priceSemiMin && c.priceSemiMin > 0) || (c.priceFullMin && c.priceFullMin > 0)) { hasPrice = true; }
+        }
+        if (!hasPrice) return false;
+        if (!c.unitTypes || !Array.isArray(c.unitTypes) || c.unitTypes.length < 1) return false;
+        if (!c.paymentPlans || !Array.isArray(c.paymentPlans) || c.paymentPlans.length < 1) return false;
+        return true;
+    } catch (e) { return false; }
+};
+
+window.renderAdminStats = function() {
+    try {
+        const board = document.getElementById('adminStatsBoard'); if (!board) return;
+        if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
+        board.style.display = 'flex';
+        let completed = compounds.filter(c => window.isCompoundComplete(c)).length;
+        let stTotal = document.getElementById('statTotal'), stComp = document.getElementById('statCompleted'), stInc = document.getElementById('statIncomplete');
+        if(stTotal) stTotal.textContent = compounds.length;
+        if(stComp) stComp.textContent = completed;
+        if(stInc) stInc.textContent = compounds.length - completed;
+    } catch(e) { console.error("Stats Error:", e); }
+};
+
 window.getStartingPrice = function(c){
     try {
         if (c.projectType === 'commercial') {
@@ -406,7 +566,7 @@ window.generateDossierHTML = function(c){
                 <div class="meta-chip"><span>المساحة</span><div class="num">${areaText}</div></div>
             </div>
         </div>`;
-    } catch(e) { return ''; }
+    } catch(e) { console.error('Dossier render error', e); return ''; }
 };
 
 window.generateMasterDossierHTML = function(group){
@@ -426,11 +586,12 @@ window.generateMasterDossierHTML = function(group){
                 <div class="meta-chip"><span>النوع</span><div>${PROJECT_TYPES[c0.projectType || 'residential']}</div></div>
             </div>
         </div>`;
-    } catch(e) { return ''; }
+    } catch(e) { console.error('Master dossier render error', e); return ''; }
 };
 
 window.openPhasesModal = function(ids){
-    const title = document.getElementById('phasesTitle'), body = document.getElementById('phasesBody');
+    const title = document.getElementById('phasesTitle');
+    const body = document.getElementById('phasesBody');
     if (!body) return;
     const items = ids.map(id => compounds.find(c => c.id === id)).filter(Boolean);
     if (title && items.length) title.textContent = `مراحل ${items[0].projectName || ''}`;
@@ -647,7 +808,7 @@ window.renderGrid = function(){
       
       let groups = {};
       list.forEach(c => {
-          let key = `${String(c.projectName\vert{}\vert{}'').trim().toLowerCase()}\vert{}\vert{}${String(c.companyName||'').trim().toLowerCase()}`;
+          let key = `${String(c.projectName||'').trim().toLowerCase()}||${String(c.companyName||'').trim().toLowerCase()}`;
           if(!groups[key]) groups[key] = [];
           groups[key].push(c);
       });
@@ -663,7 +824,15 @@ window.renderGrid = function(){
   } catch (error) { console.log("Grid Render Error:", error); }
 };
 
-// --- Form & Compound Management ---
+window.onProjectTypeChange = function(){
+    const pt = window.getSafeVal('fldProjectType');
+    const isComm = pt === 'commercial';
+    document.querySelectorAll('.res-field').forEach(el => { el.style.display = isComm ? 'none' : ''; });
+    const commWrap = document.getElementById('commercialPriceWrap');
+    if (commWrap) commWrap.style.display = isComm ? 'block' : 'none';
+    if (typeof window.renderUnitRows === 'function') window.renderUnitRows();
+};
+
 window.openCompoundForm = function(existing){
   try {
       editingCompoundId = existing ? existing.id : null; 
@@ -696,6 +865,7 @@ window.openCompoundForm = function(existing){
           const pkFeeEl = document.getElementById('fldParkingFee'); if(pkFeeEl) pkFeeEl.style.display = 'block';
           window.toggleAdvPricing(false);
       }
+      
       window.onProjectTypeChange(); 
       tempUnits = existing ? JSON.parse(JSON.stringify(existing.unitTypes||[])) : []; 
       if (existing) { tempUnits.forEach(u => { u.bedroomType = window.getUnitEnName(u.bedroomType); }); } 
@@ -704,46 +874,6 @@ window.openCompoundForm = function(existing){
       window.renderUnitRows(); window.renderPlanRows(); window.renderDecreeRows(); 
       const ov = document.getElementById('formOverlay'); if (ov) ov.classList.add('open');
   } catch (error) { console.error("Form Open Error:", error); }
-};
-
-window.isCompoundComplete = function(c) {
-    try {
-        if (!c.companyName || String(c.companyName).trim() === '') return false;
-        if (!c.projectName || String(c.projectName).trim() === '') return false;
-        if (!c.locationId || String(c.locationId).trim() === '') return false;
-        let hasPrice = false;
-        if (c.projectType === 'commercial' && c.commercialPrices) { 
-            if (c.commercialPrices.adminMin > 0 || c.commercialPrices.commMin > 0 || c.commercialPrices.clinicMin > 0 || c.commercialPrices.recMin > 0) hasPrice = true; 
-        } else { 
-            if ((c.pricePerMeter && c.pricePerMeter > 0) || (c.pricePerMeterMin && c.pricePerMeterMin > 0) || (c.priceCore && c.priceCore > 0) || (c.priceSemi && c.priceSemi > 0) || (c.priceFull && c.priceFull > 0) || (c.priceCoreMin && c.priceCoreMin > 0) || (c.priceSemiMin && c.priceSemiMin > 0) || (c.priceFullMin && c.priceFullMin > 0)) { hasPrice = true; }
-        }
-        if (!hasPrice) return false;
-        if (!c.unitTypes || !Array.isArray(c.unitTypes) || c.unitTypes.length < 1) return false;
-        if (!c.paymentPlans || !Array.isArray(c.paymentPlans) || c.paymentPlans.length < 1) return false;
-        return true;
-    } catch (e) { return false; }
-};
-
-window.renderAdminStats = function() {
-    try {
-        const board = document.getElementById('adminStatsBoard'); if (!board) return;
-        if (!isEditor && !isAdmin) { board.style.display = 'none'; return; }
-        board.style.display = 'flex';
-        let completed = compounds.filter(c => window.isCompoundComplete(c)).length;
-        let stTotal = document.getElementById('statTotal'), stComp = document.getElementById('statCompleted'), stInc = document.getElementById('statIncomplete');
-        if(stTotal) stTotal.textContent = compounds.length;
-        if(stComp) stComp.textContent = completed;
-        if(stInc) stInc.textContent = compounds.length - completed;
-    } catch(e) { console.error("Stats Error:", e); }
-};
-
-window.onProjectTypeChange = function(){
-    const pt = window.getSafeVal('fldProjectType');
-    const isComm = pt === 'commercial';
-    document.querySelectorAll('.res-field').forEach(el => { el.style.display = isComm ? 'none' : ''; });
-    const commWrap = document.getElementById('commercialPriceWrap');
-    if (commWrap) commWrap.style.display = isComm ? 'block' : 'none';
-    if (typeof window.renderUnitRows === 'function') window.renderUnitRows();
 };
 
 window.updatePriceMeterAvg = function(){
@@ -801,9 +931,9 @@ window.renderUnitRows = function(){
             <select onchange="window.updateUnitData('${u.id}','bedroomType',this.value)" style="flex:1.2; min-width:7.5rem;">
                 ${typeOptions.map(t => `<option value="${window.escapeHtml(t)}" ${u.bedroomType === t ? 'selected' : ''}>${window.escapeHtml(t)}</option>`).join('')}
             </select>
-            <input type="text" class="num" placeholder="المساحة م²" value="${u.area \vert{}\vert{} ''}" style="flex:1; min-width:6.25rem;" oninput="window.updateUnitData('${u.id}','area',window.getRawNum(this.value))">
-            <input type="text" class="num" placeholder="حديقة م²" value="${u.gardenArea \vert{}\vert{} ''}" style="flex:1; min-width:5.5rem;" oninput="window.updateUnitData('${u.id}','gardenArea',window.getRawNum(this.value))">
-            <input type="text" class="num" placeholder="روف م²" value="${u.roofArea \vert{}\vert{} ''}" style="flex:1; min-width:5.5rem;" oninput="window.updateUnitData('${u.id}','roofArea',window.getRawNum(this.value))">
+            <input type="text" class="num" placeholder="المساحة م²" value="${u.area || ''}" style="flex:1; min-width:6.25rem;" oninput="window.updateUnitData('${u.id}','area',window.getRawNum(this.value))">
+            <input type="text" class="num" placeholder="حديقة م²" value="${u.gardenArea || ''}" style="flex:1; min-width:5.5rem;" oninput="window.updateUnitData('${u.id}','gardenArea',window.getRawNum(this.value))">
+            <input type="text" class="num" placeholder="روف م²" value="${u.roofArea || ''}" style="flex:1; min-width:5.5rem;" oninput="window.updateUnitData('${u.id}','roofArea',window.getRawNum(this.value))">
             <select onchange="window.updateUnitData('${u.id}','finishing',this.value)" style="flex:1; min-width:7.5rem;">
                 <option value="core_shell" ${u.finishing === 'core_shell' ? 'selected' : ''}>طوب أحمر</option>
                 <option value="semi" ${u.finishing === 'semi' ? 'selected' : ''}>نصف تشطيب</option>
@@ -828,11 +958,11 @@ window.renderPlanRows = function(){
     wrap.innerHTML = tempPlans.map(p => `
         <div class="plan-card">
             <div class="plan-card-header">
-                <input type="text" placeholder="اسم الخطة" value="${window.escapeHtml(p.name \vert{}\vert{} '')}" style="flex:1.5; min-width:8.75rem;" onchange="window.updatePlanField('${p.id}','name',this.value)">
-                <input type="text" class="num" placeholder="خصم %" value="${p.discountPercent \vert{}\vert{} ''}" style="flex:1; min-width:5rem;" oninput="window.updatePlanField('${p.id}','discountPercent',this.value)">
-                <input type="text" class="num" placeholder="مقدم %" value="${p.downPaymentPercent \vert{}\vert{} ''}" style="flex:1; min-width:5rem;" oninput="window.updatePlanField('${p.id}','downPaymentPercent',this.value)">
-                <input type="text" class="num" placeholder="سنوات التقسيط" value="${p.years \vert{}\vert{} ''}" style="flex:1; min-width:6.25rem;" oninput="window.updatePlanField('${p.id}','years',this.value)">
-                <input type="text" class="num" placeholder="سعر متر مخصص (اختياري)" value="${p.pricePerMeter \vert{}\vert{} ''}" style="flex:1.2; min-width:8rem;" oninput="window.formatInput(this); window.updatePlanField('${p.id}','pricePerMeter',this.value)">
+                <input type="text" placeholder="اسم الخطة" value="${window.escapeHtml(p.name || '')}" style="flex:1.5; min-width:8.75rem;" onchange="window.updatePlanField('${p.id}','name',this.value)">
+                <input type="text" class="num" placeholder="خصم %" value="${p.discountPercent || ''}" style="flex:1; min-width:5rem;" oninput="window.updatePlanField('${p.id}','discountPercent',this.value)">
+                <input type="text" class="num" placeholder="مقدم %" value="${p.downPaymentPercent || ''}" style="flex:1; min-width:5rem;" oninput="window.updatePlanField('${p.id}','downPaymentPercent',this.value)">
+                <input type="text" class="num" placeholder="سنوات التقسيط" value="${p.years || ''}" style="flex:1; min-width:6.25rem;" oninput="window.updatePlanField('${p.id}','years',this.value)">
+                <input type="text" class="num" placeholder="سعر متر مخصص (اختياري)" value="${p.pricePerMeter || ''}" style="flex:1.2; min-width:8rem;" oninput="window.formatInput(this); window.updatePlanField('${p.id}','pricePerMeter',this.value)">
                 <button type="button" class="row-del" onclick="window.removePlanRow('${p.id}')">✕</button>
             </div>
             <div class="bullets-container">
@@ -912,7 +1042,6 @@ window.runUniversalCalculator = function(){
     `; 
 };
 
-// --- Magic Paste و Excel Upload وباقي الدوال اللي كانت موجودة ومضبوطة ---
 window.processMagicPaste = function() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return window.showToast('برجاء لصق نص المشروع أولاً!');
@@ -1156,9 +1285,7 @@ window.renderDetailModalContent = function() {
               ${pdfBtn}
               ${worksBtn}
               ${(!whatsappNum && !c.projectPDF && !c.previousWorks) ? `<p style="text-align:center; color:var(--text-muted); font-size:0.8rem;">لا توجد روابط تواصل مسجلة.</p>` : ''}
-              
               <hr style="border-color:var(--border-color); margin:1.5rem 0;">
-              
               <div style="display:flex; gap:0.5rem; width:100%;">
                   <button class="btn btn-outline-light btn-pill w-100" onclick="window.editCompoundById('${c.id}')" style="display:${isEditor ? 'flex' : 'none'}; font-size:0.85rem; justify-content:center;">تعديل ⚙️</button>
                   <button class="btn w-100 btn-pill" onclick="window.deleteCurrentCompoundFromCloud()" style="display:${isEditor ? 'flex' : 'none'}; background:var(--danger); color:#fff; border:none; font-size:0.85rem; justify-content:center;">حذف 🗑️</button>
@@ -1192,6 +1319,100 @@ window.renderDetailModalContent = function() {
   } catch (err) { console.error("Detail Error:", err); }
 };
 
+window.runProjectMiniCalc = function(cId) {
+    try {
+        const c = compounds.find(x => x.id === cId);
+        if(!c) return;
+        let area = parseFloat(document.getElementById('miniCalcArea').value) || 0;
+        let garden = parseFloat(document.getElementById('miniCalcGarden').value) || 0;
+        let roof = parseFloat(document.getElementById('miniCalcRoof').value) || 0;
+        let resultDiv = document.getElementById('miniCalcResult');
+        if(area === 0 && garden === 0 && roof === 0) { resultDiv.innerHTML = ''; return; }
+        let avgPrice = 0;
+        if (c.projectType !== 'commercial') {
+            if (c.pricePerMeterMin > 0 || c.pricePerMeterMax > 0) {
+                avgPrice = ((c.pricePerMeterMin || 0) + (c.pricePerMeterMax || 0)) / 2;
+                if (!avgPrice) avgPrice = c.pricePerMeterMin || c.pricePerMeterMax || 0;
+            } else { avgPrice = c.pricePerMeter || 0; }
+        }
+        if(avgPrice === 0) { resultDiv.innerHTML = '<div style="color:var(--danger); padding:0.625rem; border:1px dashed var(--danger); text-align:center; background:rgba(220,38,38,0.05); border-radius:0.5rem;">لا يوجد متوسط سعر متر مسجل لهذا المشروع.</div>'; return; }
+        let effArea = area + (garden/3) + (roof/3);
+        let basePrice = Math.round(effArea * avgPrice);
+        let html = '';
+        let cashDiscount = c.cashDiscount || 0;
+        if (cashDiscount > 0) {
+            let discountAmount = basePrice * (cashDiscount / 100);
+            let finalCashPrice = basePrice - discountAmount;
+            html += `<div style="border:2px dashed var(--success); padding:0.9375rem; background:rgba(16,185,129,0.05); border-radius:0.5rem; display:flex; justify-content:space-around; align-items:center; margin-bottom:1.25rem;">
+                        <div style="text-align:center;"><span>السعر الأساسي</span><br><b class="num" style="font-size:1.125rem;">${window.formatNum(basePrice)} ج</b></div>
+                        <div style="text-align:center; color:var(--danger);"><span>خصم الكاش (${cashDiscount}%)</span><br><b class="num" style="font-size:1.125rem;">- ${window.formatNum(Math.round(discountAmount))} ج</b></div>
+                        <div style="text-align:center; color:var(--success);"><span>النهائي (كاش)</span><br><b class="num" style="font-size:1.2rem;">${window.formatNum(Math.round(finalCashPrice))} ج</b></div>
+                     </div>`;
+        }
+        const safePlans = Array.isArray(c.paymentPlans) ? c.paymentPlans : [];
+        if(safePlans.length > 0){
+          html += `<div class="category-box"><table class="spec-table"><tr><th>الخطة</th><th>سعر الوحدة</th><th>مقدم</th><th>دفعات</th><th>قسط شهري</th><th>قسط ربع سنوي</th></tr>`;
+          safePlans.forEach(p => { 
+              let planBasePrice = basePrice;
+              let planMeterText = '';
+              if (p.pricePerMeter > 0) {
+                  planBasePrice = Math.round(effArea * p.pricePerMeter);
+                  planMeterText = `<br><span style="color:var(--primary); font-size:0.625rem; font-weight:800; background:var(--item-bg); padding:0.125rem 0.375rem; border-radius:0.25rem; border:1px dashed var(--primary); display:inline-block; margin-top:0.25rem;">سعر المتر: ${window.formatNum(p.pricePerMeter)} ج</span>`;
+              }
+              const r = window.calcInstallmentWithDiscount(planBasePrice, p.discountPercent, p.downPaymentPercent, p.customBullets, p.years, 12); 
+              let planNameCol = `<b>${window.escapeHtml(p.name)}</b>${planMeterText}`;
+              if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:0.25rem;">خصم ${p.discountPercent}%</small>`;
+              let unitPriceCol = `<span class="num" style="font-size:0.85rem; font-weight:bold;">${window.formatNum(planBasePrice)} ج</span>`;
+              if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:0.7rem;" class="num">${window.formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold; font-size:0.85rem;" class="num">${window.formatNum(Math.round(r.netTotal))} ج</span>`;
+              html += `<tr>
+                  <td>${planNameCol}</td>
+                  <td>${unitPriceCol}</td>
+                  <td><span class="num" style="font-size:0.85rem; font-weight:bold;">${window.formatNum(Math.round(r.downPayment))} ج</span><br><small style="font-size:0.65rem;">(%${p.downPaymentPercent || 0})</small></td>
+                  <td class="num" style="font-size:0.8rem;">${r.bulletsSummary.map(b => b.label).join('<br>') || '-'}</td>
+                  <td style="color:var(--primary);" class="num"><span style="font-size:0.85rem; font-weight:bold;">${window.formatNum(Math.round(r.monthlyEquivalent))} ج</span></td>
+                  <td class="num"><span style="font-size:0.85rem; font-weight:bold;">${window.formatNum(Math.round(r.quarterlyEquivalent))} ج</span></td>
+              </tr>`; 
+          }); 
+          html += `</table></div>`;
+        } else { html += `<div style="text-align:center; padding:1.25rem; color:var(--text-muted);">مفيش خطط سداد مسجلة.</div>`; }
+        resultDiv.innerHTML = html;
+    } catch(e) {}
+};
+
+window.calcInstallmentWithDiscount = function(originalTotal, discountPct, downPct, customBullets, years, freq){ 
+    const discountVal = (originalTotal || 0) * ((discountPct||0)/100);
+    const netTotal = (originalTotal || 0) - discountVal;
+    const downPayment = netTotal * ((downPct||0)/100);
+    let extraPaymentsTotal = 0; let bulletsSummary = []; 
+    let validBullets = Array.isArray(customBullets) ? customBullets : [];
+    validBullets.forEach(b => { 
+        const pct = parseFloat(b.percent) || 0; 
+        if(pct > 0){ 
+            if(b.type === 'annual'){ 
+                let sYears = Array.isArray(b.selectedYears) ? b.selectedYears : [];
+                if (sYears.length > 0) {
+                    const perYearVal = netTotal * (pct / 100);
+                    const ordinals = {1: 'الأولى', 2: 'الثانية', 3: 'الثالثة', 4: 'الرابعة', 5: 'الخامسة', 6: 'السادسة', 7: 'السابعة', 8: 'الثامنة', 9: 'التاسعة', 10: 'العاشرة'};
+                    [...sYears].sort((a,b)=>a-b).forEach(yr => {
+                        const yName = ordinals[yr] || yr;
+                        bulletsSummary.push({ type: 'annual', label: `سنة ${yName}: %${pct} = ${window.formatNum(Math.round(perYearVal))} ج`, val: perYearVal });
+                        extraPaymentsTotal += perYearVal; 
+                    });
+                }
+            } else { 
+                const val = netTotal * (pct / 100); extraPaymentsTotal += val; 
+                let name = 'مؤجلة';
+                if (b.type === 'delivery') name = 'استلام'; else if (b.type === 'after_3m') name = 'بعد 3 شهور'; else if (b.type === 'after_6m') name = 'بعد 6 شهور'; else if (b.type === 'after_9m') name = 'بعد 9 شهور';
+                bulletsSummary.push({ type: b.type, label: `${name}: %${pct} = ${window.formatNum(Math.round(val))} ج`, val }); 
+            } 
+        } 
+    }); 
+    const remaining = Math.max(0, netTotal - (downPayment + extraPaymentsTotal));
+    let yrs = parseFloat(years) || 1; if (yrs <= 0) yrs = 1;
+    const monthlyEquivalent = remaining / (yrs * 12); 
+    return { originalTotal, discountVal, netTotal, downPayment, extraPaymentsTotal, bulletsSummary, remaining, monthlyEquivalent, quarterlyEquivalent: monthlyEquivalent * 3 }; 
+};
+
 let xlsxLoadPromise = null;
 function ensureXLSXLoaded() {
     if (window.XLSX) return Promise.resolve();
@@ -1213,19 +1434,18 @@ window.handleExcelUpload = async function(event) {
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
-            const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'}); let compoundsToUpload = {}; const mainLocId = uid(); let excelMainLoc = { id: mainLocId, name: "استيراد سكني", subLocations: [] };
+            const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'}); let compoundsToUpload = {}; const mainLocId = window.uid(); let excelMainLoc = { id: mainLocId, name: "استيراد سكني", subLocations: [] };
             workbook.SheetNames.forEach(sheetName => {
-                const worksheet = workbook.Sheets[sheetName]; const rows = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: "" }); if (rows.length === 0) return; const subLocId = uid(); excelMainLoc.subLocations.push({ id: subLocId, name: sheetName });
+                const worksheet = workbook.Sheets[sheetName]; const rows = XLSX.utils.sheet_to_json(worksheet, { range: 1, defval: "" }); if (rows.length === 0) return; const subLocId = window.uid(); excelMainLoc.subLocations.push({ id: subLocId, name: sheetName });
                 rows.forEach(row => {
                     let projName = row['Project'] || row['project'] || ''; let devName = row['Developer'] || row['developer'] || ''; if (!projName && !devName) return; let compKey = `${projName}_${devName}`;
-                    if (!compoundsToUpload[compKey]) { compoundsToUpload[compKey] = { id: uid(), locationId: subLocId, projectType: 'residential', companyName: String(devName).trim(), projectName: String(projName).trim(), ownerName: '', consultant: String(row['Engineering Consult'] || row['Engineering Consultant'] || '').trim(), pricePerMeter: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMin: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMax: parseFloat(row['Price Per Meter']) || 0, maintenancePercent: parseFloat(row['Maintenance Fees %']) || 0, projectSize: parseFloat(row['Project area']) || 0, deliveryDate: String(row['Delivery Date'] || '').trim(), finishingStatus: String(row['Finishing type'] || '').toLowerCase().includes('core') ? 'core_shell' : (String(row['Finishing type'] || '').toLowerCase().includes('full') ? 'full' : 'semi'), compoundLocationDetail: String(row['Location On Map'] || '').trim(), locationLink: String(row['Location On Map'] || '').includes('http') ? String(row['Location On Map'] || '').trim() : '', cashDiscount: 0, unitTypes: [], paymentPlans: [], ministerialDecrees: row['قرار وزاري'] ? [{id: uid(), decreeNumber: '', description: String(row['قرار وزاري']), date: ''}] : [] }; }
-                    
+                    if (!compoundsToUpload[compKey]) { compoundsToUpload[compKey] = { id: window.uid(), locationId: subLocId, projectType: 'residential', companyName: String(devName).trim(), projectName: String(projName).trim(), ownerName: '', consultant: String(row['Engineering Consult'] || row['Engineering Consultant'] || '').trim(), pricePerMeter: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMin: parseFloat(row['Price Per Meter']) || 0, pricePerMeterMax: parseFloat(row['Price Per Meter']) || 0, maintenancePercent: parseFloat(row['Maintenance Fees %']) || 0, projectSize: parseFloat(row['Project area']) || 0, deliveryDate: String(row['Delivery Date'] || '').trim(), finishingStatus: String(row['Finishing type'] || '').toLowerCase().includes('core') ? 'core_shell' : (String(row['Finishing type'] || '').toLowerCase().includes('full') ? 'full' : 'semi'), compoundLocationDetail: String(row['Location On Map'] || '').trim(), locationLink: String(row['Location On Map'] || '').includes('http') ? String(row['Location On Map'] || '').trim() : '', cashDiscount: 0, unitTypes: [], paymentPlans: [], ministerialDecrees: row['قرار وزاري'] ? [{id: window.uid(), decreeNumber: '', description: String(row['قرار وزاري']), date: ''}] : [] }; }
                     let area = parseFloat(row['BUA From']) || parseFloat(row['BUA To']) || parseFloat(row['Area']) || 0; 
                     let gardenArea = parseFloat(row['Garden Area']) || parseFloat(row['Garden']) || parseFloat(row['جاردن']) || 0;
                     let price = parseFloat(row['Price From']) || parseFloat(row['Price To']) || 0; 
                     let bedStr = String(row['No of Bedrooms'] || '').toLowerCase(); let unitTypeStr = String(row['Unit Type'] || '').toLowerCase(); let bType = 'استوديو'; let rm = parseFloat(row['No of Bedrooms'] || '') || ''; if(bedStr.includes('1')) bType = '1 غرفة نوم'; else if(bedStr.includes('2')) bType = '2 غرفة نوم'; else if(bedStr.includes('3')) bType = '3 غرف نوم'; else if(bedStr.includes('4')) bType = '4 غرف نوم'; else if(bedStr.includes('duplex') || unitTypeStr.includes('duplex')) bType = 'دوبلكس'; else if(bedStr.includes('penthouse') || unitTypeStr.includes('penthouse')) bType = 'بنتهاوس'; else if(bedStr.includes('villa') || unitTypeStr.includes('villa')) bType = 'فيلا'; else if(bedStr.includes('chalet') || unitTypeStr.includes('chalet')) bType = 'شاليه';
-                    if (area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: uid(), bedroomType: bType, rooms: rm, area: area, gardenArea: gardenArea, price: price, finishing: compoundsToUpload[compKey].finishingStatus }); }
-                    let planStr = String(row['Payment Plan'] || '').trim(); if (planStr) { if (!compoundsToUpload[compKey].paymentPlans.some(p => p.notes === planStr)) { compoundsToUpload[compKey].paymentPlans.push({ id: uid(), name: "خطة سداد", notes: planStr, discountPercent: parseFloat(row['Cash Discount']) || 0, downPaymentPercent: 0, years: 0, frequency: '12', customBullets: [] }); } }
+                    if (area > 0 || price > 0 || gardenArea > 0) { compoundsToUpload[compKey].unitTypes.push({ id: window.uid(), bedroomType: bType, rooms: rm, area: area, gardenArea: gardenArea, price: price, finishing: compoundsToUpload[compKey].finishingStatus }); }
+                    let planStr = String(row['Payment Plan'] || '').trim(); if (planStr) { if (!compoundsToUpload[compKey].paymentPlans.some(p => p.notes === planStr)) { compoundsToUpload[compKey].paymentPlans.push({ id: window.uid(), name: "خطة سداد", notes: planStr, discountPercent: parseFloat(row['Cash Discount']) || 0, downPaymentPercent: 0, years: 0, frequency: '12', customBullets: [] }); } }
                 });
             });
             const projectsArray = Object.values(compoundsToUpload);
