@@ -1,22 +1,22 @@
 // --- الدوال الأساسية ---
-window.uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); };
-window.showToast = function(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); };
-window.formatNum = function(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); };
-window.escapeHtml = function(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); };
-window.highlightText = function(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } };
-window.deliveryLabel = function(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; };
-window.formatInput = function(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } };
-window.getRawNum = function(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; };
-window.getSafeVal = function(id) { const el = document.getElementById(id); return el ? el.value : ''; };
-window.setSafeVal = function(id, val) { const el = document.getElementById(id); if (el) el.value = val; };
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function showToast(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
+function formatNum(n){ if(n === null || n === undefined || n === '') return ''; if(isNaN(n)) return n; return Number(n).toLocaleString('en-US'); }
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function highlightText(text, term) { const escaped = escapeHtml(text); if (!term) return escaped; const escapedTerm = escapeHtml(term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); try { return escaped.replace(new RegExp('(' + escapedTerm + ')', 'ig'), '<mark>$1</mark>'); } catch (e) { return escaped; } }
+function deliveryLabel(v){ const d = DELIVERY_TIMELINES.find(x=>x.value===v); return d ? d.label : '-'; }
+function formatInput(el) { let val = String(el.value).replace(/,/g, ''); if (val.trim() === '') return; if (/^-?\d+(\.\d+)?$/.test(val)) { el.value = Number(val).toLocaleString('en-US'); } }
+function getRawNum(val) { if(val === null || val === undefined) return null; let str = String(val).replace(/,/g, '').trim(); if(str === '') return null; if (/^-?\d+(\.\d+)?$/.test(str)) return parseFloat(str); return null; }
+function getSafeVal(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function setSafeVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 
-window.normalizeArabic = function(text) {
+function normalizeArabic(text) {
     if (!text) return '';
     return text.replace(/[أإآ]/g, 'ا')
                .replace(/ة/g, 'ه')
                .replace(/[يى]/g, 'ي')
                .toLowerCase();
-};
+}
 
 function populateDeliverySelects(){ 
     const opts = DELIVERY_TIMELINES.map(d=>`<option value="${d.value}">${d.label}</option>`).join(''); 
@@ -29,26 +29,24 @@ function setNavForApp(isAppView) { const links = document.getElementById('siteBa
 if (sessionStorage.getItem('isSystemOpen') === 'true') { document.getElementById('landingPageContainer').style.display = 'none'; document.getElementById('systemApp').style.display = 'flex'; setNavForApp(true); } else { document.getElementById('landingPageContainer').style.display = 'block'; document.getElementById('systemApp').style.display = 'none'; setNavForApp(false); }
 
 let currentLang = 'ar';
-window.toggleLanguage = function() { currentLang = currentLang === 'ar' ? 'en' : 'ar'; document.documentElement.lang = currentLang; document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); };
+function toggleLanguage() { currentLang = currentLang === 'ar' ? 'en' : 'ar'; document.documentElement.lang = currentLang; document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); }
 
-// 🚨 زراير الدخول متأمنة 100% 🚨
-window.openSystemLogin = function() { document.getElementById('paywallModal').style.display = 'flex'; };
-window.closeLoginModal = function() { document.getElementById('paywallModal').style.display = 'none'; };
-window.backToLanding = function() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'block'; setNavForApp(false); };
-window.handleAuthAction = function() { currentUser ? (auth.signOut(), sessionStorage.removeItem('isSystemOpen'), backToLanding()) : document.getElementById('paywallModal').style.display = 'flex'; };
+// 🚨 دوال فتح وقفل الدخول اللي اتمسحت بالغلط المرة اللي فاتت 🚨
+function openSystemLogin() { document.getElementById('paywallModal').style.display = 'flex'; }
+function closeLoginModal() { document.getElementById('paywallModal').style.display = 'none'; }
+function backToLanding() { document.getElementById('systemApp').style.display = 'none'; document.getElementById('landingPageContainer').style.display = 'block'; setNavForApp(false); }
+function handleAuthAction() { currentUser ? (auth.signOut(), sessionStorage.removeItem('isSystemOpen'), backToLanding()) : document.getElementById('paywallModal').style.display = 'flex'; }
 
-window.toggleTheme = function() { document.body.classList.toggle('light-mode'); localStorage.setItem('appTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark'); };
+function toggleTheme() { document.body.classList.toggle('light-mode'); localStorage.setItem('appTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark'); }
 if (localStorage.getItem('appTheme') === 'light') { document.body.classList.add('light-mode'); }
 
-// 🚨 حماية الفايربيس عشان ميضربش إيرور وقت الـ Save 🚨
+// 🚨 حماية الـ Firebase عشان ميعلقش لو عملت Save مرتين 🚨
 const firebaseConfig = { apiKey: "AIzaSyApvrK13v-5nIB7TzhrN-M4-1Y8PSEhKoE", authDomain: "broker-assistant-63277.firebaseapp.com", projectId: "broker-assistant-63277", storageBucket: "broker-assistant-63277.firebasestorage.app", messagingSenderId: "434808917289", appId: "1:434808917289:web:1012be2fa30cf80cfefb38" };
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
-
 const db = firebase.firestore();
 const auth = firebase.auth();
-
 let secondaryApp;
 if (!firebase.apps.some(app => app.name === "SecondaryApp")) {
     secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
@@ -56,14 +54,14 @@ if (!firebase.apps.some(app => app.name === "SecondaryApp")) {
     secondaryApp = firebase.app("SecondaryApp");
 }
 
-window.updateAllUnitsPrice = function() {
+function updateAllUnitsPrice() {
     tempUnits.forEach(u => updateUnitData(u.id, 'recalc', null));
-};
+}
 
 window.addEventListener('load', () => {
     populateDeliverySelects();
     if(localStorage.getItem('savedEmail')) { document.getElementById('loginEmail').value = localStorage.getItem('savedEmail'); document.getElementById('loginPassword').value = localStorage.getItem('savedPassword'); document.getElementById('rememberMe').checked = true; }
-    const pt = document.getElementById('fldProjectType'); if (pt) pt.addEventListener('change', window.onProjectTypeChange);
+    const pt = document.getElementById('fldProjectType'); if (pt) pt.addEventListener('change', onProjectTypeChange);
     const footerYearEl = document.getElementById('footerYear'); if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
 });
 
@@ -75,41 +73,41 @@ document.addEventListener('keydown', (e) => {
     document.querySelectorAll('.overlay.open').forEach(ov => { if (ov.id === 'formOverlay' || ov.id === 'typesOverlay') return; ov.classList.remove('open'); });
 });
 
-window.toggleDropdown = function(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); };
-window.closeAllDropdowns = function() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); };
+function toggleDropdown(id) { const wrapper = document.getElementById(id).parentElement; const isActive = wrapper.classList.contains('active'); closeAllDropdowns(); if (!isActive) wrapper.classList.add('active'); }
+function closeAllDropdowns() { document.querySelectorAll('.filter-dropdown-wrapper').forEach(el => el.classList.remove('active')); }
 document.addEventListener('click', function(event) { if (!event.target.closest('.filter-dropdown-wrapper') && !event.target.closest('.glass-search-container') && !event.target.closest('.filter-drawer')) { closeAllDropdowns(); } });
 
 let selectedBeds = [];
 let selectedDelivery = [];
 let selectedFinishing = [];
 
-window.selectPill = function(groupId, val) { 
+function selectPill(groupId, val) { 
     const el = event.target; el.classList.toggle('active'); 
     if (el.classList.contains('active')) { selectedBeds.push(val); } 
     else { selectedBeds = selectedBeds.filter(v => v !== val); } 
-};
-window.selectDelivery = function(val, el) {
+}
+function selectDelivery(val, el) {
     el.classList.toggle('active');
     if (el.classList.contains('active')) { selectedDelivery.push(val); }
     else { selectedDelivery = selectedDelivery.filter(v => v !== val); }
-};
-window.selectFinishing = function(val, el) {
+}
+function selectFinishing(val, el) {
     el.classList.toggle('active');
     if (el.classList.contains('active')) { selectedFinishing.push(val); }
     else { selectedFinishing = selectedFinishing.filter(v => v !== val); }
-};
-window.openFilterDrawer = function() {
+}
+function openFilterDrawer() {
     const ov = document.getElementById('filterDrawerOverlay');
     const dr = document.getElementById('filterDrawer');
     if(ov) ov.classList.add('open');
     if(dr) dr.classList.add('open');
-};
-window.closeFilterDrawer = function() {
+}
+function closeFilterDrawer() {
     const ov = document.getElementById('filterDrawerOverlay');
     const dr = document.getElementById('filterDrawer');
     if(ov) ov.classList.remove('open');
     if(dr) dr.classList.remove('open');
-};
+}
 
 let currentUser = null, isAdmin = false, isEditor = false;
 let mainLocations = [], compounds = [], activeProjectType = 'all';
@@ -129,14 +127,14 @@ let appSettings = {
 const UNIT_EN_NAMES = { 'استوديو': 'Studio', '1 غرفة نوم': '1 Bedroom', '2 غرفة نوم': '2 Bedrooms', '3 غرف نوم': '3 Bedrooms', '4 غرف نوم': '4 Bedrooms', '5 غرف نوم': '5 Bedrooms', 'دوبلكس': 'Duplex', 'بنتهاوس': 'Penthouse', 'تاون هاوس': 'Townhouse', 'توين هاوس': 'Twinhouse', 'فيلا': 'Villa', 'شاليه': 'Chalet', 'شقة': 'Apartment', 'تجاري': 'Commercial', 'إداري': 'Administrative', 'عيادة': 'Clinic', 'ترفيهي': 'Recreational' };
 const UNIT_ORDER = { 'Studio': 1, '1 Bedroom': 2, '2 Bedrooms': 3, '3 Bedrooms': 4, '4 Bedrooms': 5, '5 Bedrooms': 6, 'Apartment': 7, 'Duplex': 8, 'Penthouse': 9, 'Townhouse': 10, 'Twinhouse': 11, 'Villa': 12, 'Chalet': 13, 'Commercial': 20, 'Administrative': 21, 'Clinic': 22, 'Recreational': 23 };
 
-window.getUnitEnName = function(name) { return UNIT_EN_NAMES[name] || name || 'Other'; };
+function getUnitEnName(name) { return UNIT_EN_NAMES[name] || name || 'Other'; }
 
 const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إداري', hotel: 'شقق فندقية' };
 const FINISHING_TYPES = { core_shell: 'طوب أحمر', semi: 'نصف تشطيب', full: 'تشطيب كامل', mixed: 'متنوع' };
 const FREQ_LABEL = {12:'شهري', 4:'ربع سنوي', 2:'نصف سنوي', 1:'سنوي'};
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'} ];
 
-window.submitLogin = function() { 
+function submitLogin() { 
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim(); 
     const btn = document.getElementById('loginSubmitBtn');
@@ -152,7 +150,7 @@ window.submitLogin = function() {
         if (btn) btn.innerHTML = 'دخول';
         alert("بيانات الدخول غير صحيحة."); 
     }); 
-};
+}
 
 auth.onAuthStateChanged(async (user) => {
   if (user) {
@@ -188,13 +186,13 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-window.openUsersManager = function() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); };
-window.createNewSubscriber = async function() { const email = document.getElementById('newAccEmail').value.trim().toLowerCase(), duration = parseInt(document.getElementById('newAccDuration').value), role = document.getElementById('newAccRole').value; if(!email) { showToast('يرجى كتابة الإيميل!'); return; } const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100), expDate = new Date(); expDate.setDate(expDate.getDate() + duration); try { await secondaryApp.auth().createUserWithEmailAndPassword(email, password); await db.collection('users').doc(email).set({ role: role, expiryDate: expDate.toISOString().split('T')[0] }); await secondaryApp.auth().signOut(); document.getElementById('resEmail').textContent = email; document.getElementById('resPass').textContent = password; document.getElementById('resDate').textContent = expDate.toISOString().split('T')[0]; document.getElementById('newAccResult').style.display = 'block'; showToast('تم تسجيل الحساب بنجاح!'); } catch (error) { alert('حدث خطأ: ' + error.message); } };
+function openUsersManager() { document.getElementById('newAccEmail').value = ''; document.getElementById('newAccResult').style.display = 'none'; document.getElementById('usersOverlay').classList.add('open'); }
+async function createNewSubscriber() { const email = document.getElementById('newAccEmail').value.trim().toLowerCase(), duration = parseInt(document.getElementById('newAccDuration').value), role = document.getElementById('newAccRole').value; if(!email) { showToast('يرجى كتابة الإيميل!'); return; } const password = Math.random().toString(36).slice(-6) + Math.floor(Math.random()*100), expDate = new Date(); expDate.setDate(expDate.getDate() + duration); try { await secondaryApp.auth().createUserWithEmailAndPassword(email, password); await db.collection('users').doc(email).set({ role: role, expiryDate: expDate.toISOString().split('T')[0] }); await secondaryApp.auth().signOut(); document.getElementById('resEmail').textContent = email; document.getElementById('resPass').textContent = password; document.getElementById('resDate').textContent = expDate.toISOString().split('T')[0]; document.getElementById('newAccResult').style.display = 'block'; showToast('تم تسجيل الحساب بنجاح!'); } catch (error) { alert('حدث خطأ: ' + error.message); } }
 
-window.openTypesManager = function() { document.getElementById('resTypesInput').value = appSettings.resTypes.join(' ، '); document.getElementById('commTypesInput').value = appSettings.commTypes.join(' ، '); document.getElementById('typesOverlay').classList.add('open'); };
-window.saveCustomTypes = async function() { if(!isEditor) return; const r = document.getElementById('resTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); const c = document.getElementById('commTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); appSettings.resTypes = r.length ? r : appSettings.resTypes; appSettings.commTypes = c.length ? c : appSettings.commTypes; try { await db.collection('system').doc('settings').set({ resTypes: appSettings.resTypes, commTypes: appSettings.commTypes }, { merge: true }); closeModal('typesOverlay'); showToast('تم الحفظ 💾'); if(document.getElementById('formOverlay').classList.contains('open')) renderUnitRows(); } catch(e) { alert('خطأ في الحفظ!'); } };
+function openTypesManager() { document.getElementById('resTypesInput').value = appSettings.resTypes.join(' ، '); document.getElementById('commTypesInput').value = appSettings.commTypes.join(' ، '); document.getElementById('typesOverlay').classList.add('open'); }
+async function saveCustomTypes() { if(!isEditor) return; const r = document.getElementById('resTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); const c = document.getElementById('commTypesInput').value.split(/[,،\n]+/).map(s=>s.trim()).filter(Boolean); appSettings.resTypes = r.length ? r : appSettings.resTypes; appSettings.commTypes = c.length ? c : appSettings.commTypes; try { await db.collection('system').doc('settings').set({ resTypes: appSettings.resTypes, commTypes: appSettings.commTypes }, { merge: true }); closeModal('typesOverlay'); showToast('تم الحفظ 💾'); if(document.getElementById('formOverlay').classList.contains('open')) renderUnitRows(); } catch(e) { alert('خطأ في الحفظ!'); } }
 
-window.saveCompoundToCloud = async function() {
+async function saveCompoundToCloud() {
     if(!isEditor) return;
     
     const cName = getSafeVal('fldCompany').trim();
@@ -293,9 +291,9 @@ window.saveCompoundToCloud = async function() {
         const loadOv = document.getElementById('loadingOverlay');
         if(loadOv) loadOv.style.display = 'none';
     }
-};
+}
 
-window.deleteCurrentCompoundFromCloud = async function() {
+async function deleteCurrentCompoundFromCloud() {
     if(!isEditor || !viewingCompoundId) return;
     if(!confirm('هل أنت متأكد من حذف هذا المشروع نهائياً؟')) return;
     
@@ -312,7 +310,7 @@ window.deleteCurrentCompoundFromCloud = async function() {
         const loadOv = document.getElementById('loadingOverlay');
         if(loadOv) loadOv.style.display = 'none';
     }
-};
+}
 
 function isCompoundComplete(c) {
     try {
@@ -350,7 +348,7 @@ function renderAdminStats() {
     } catch(e) { console.error("Stats Error:", e); }
 }
 
-window.setCompletionFilter = function(filterType, btnElem) { completionFilter = filterType; document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); };
+function setCompletionFilter(filterType, btnElem) { completionFilter = filterType; document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active')); btnElem.classList.add('active'); renderGrid(); }
 
 function skeletonCardsHtml(count) {
     let card = `<div class="dossier skeleton-card" aria-hidden="true"><div class="skeleton-line" style="width:40%;height:0.625rem;margin-bottom:0.625rem;"></div><div class="skeleton-line" style="width:75%;height:1rem;margin-bottom:0.875rem;"></div><div class="skeleton-line" style="width:55%;height:0.5625rem;margin-bottom:0.5rem;"></div><div class="skeleton-line" style="width:45%;height:0.5625rem;margin-bottom:0.5rem;"></div><div class="skeleton-line" style="width:60%;height:0.5625rem;margin-bottom:0.875rem;"></div><div style="display:flex;gap:0.625rem;"><div class="skeleton-line" style="flex:1;height:2.125rem;"></div><div class="skeleton-line" style="flex:1;height:2.125rem;"></div></div></div>`;
@@ -447,41 +445,41 @@ function renderLocationTree(){
   } catch(e) { console.error("Render Location Error:", e); }
 }
 
-window.selectLocationNode = function(nodeId){ 
+function selectLocationNode(nodeId){ 
     if(nodeId === 'all') { activeLocationIds = []; } else {
         const index = activeLocationIds.indexOf(nodeId);
         if(index > -1) { activeLocationIds.splice(index, 1); } else { activeLocationIds.push(nodeId); }
     }
     renderLocationTree(); renderGrid(); 
-};
+}
 
-window.toggleMainLoc = function(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); };
+function toggleMainLoc(mainId, e){ e.stopPropagation(); openMainLocIds[mainId] = !openMainLocIds[mainId]; renderLocationTree(); }
 
-window.toggleMobileLoc = function() {
+function toggleMobileLoc() {
     const wrap = document.getElementById('locWrapperMobile'); const btn = document.getElementById('mobileLocToggleBtn');
     if(wrap.classList.contains('show')) { wrap.classList.remove('show'); btn.classList.remove('active'); btn.innerHTML = '📍 تصفية بالمناطق والمدن ▼'; } 
     else { wrap.classList.add('show'); btn.classList.add('active'); btn.innerHTML = '📍 إخفاء المناطق ▲'; }
-};
+}
 
-window.addMainLocation = async function(){ if(!isEditor) return; const input = document.getElementById('newMainLocInput'); if(!input.value.trim()) return; const newId = uid(); mainLocations.push({ id: newId, name: input.value.trim(), subLocations: [] }); openMainLocIds[newId] = true; input.value = ''; await saveMainLocationsToCloud(); };
-window.deleteMainLocation = async function(mainId){ if(!isEditor || !confirm('حذف المنطقة؟')) return; const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; mainLocations = mainLocations.filter(m => m.id !== mainId); const batch = db.batch(); compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== mainId && !subIds.includes(id)); await saveMainLocationsToCloud(); };
-window.addSubLocation = async function(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); };
-window.deleteSubLocation = async function(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); };
+async function addMainLocation(){ if(!isEditor) return; const input = document.getElementById('newMainLocInput'); if(!input.value.trim()) return; const newId = uid(); mainLocations.push({ id: newId, name: input.value.trim(), subLocations: [] }); openMainLocIds[newId] = true; input.value = ''; await saveMainLocationsToCloud(); }
+async function deleteMainLocation(mainId){ if(!isEditor || !confirm('حذف المنطقة؟')) return; const subIds = mainLocations.find(m => m.id === mainId)?.subLocations.map(s=>s.id) || []; mainLocations = mainLocations.filter(m => m.id !== mainId); const batch = db.batch(); compounds.filter(c => subIds.includes(c.locationId)).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== mainId && !subIds.includes(id)); await saveMainLocationsToCloud(); }
+async function addSubLocation(mainId){ if(!isEditor) return; const input = document.getElementById(`subInput_${mainId}`); if(!input || !input.value.trim()) return; mainLocations.find(m => m.id === mainId)?.subLocations.push({ id: uid(), name: input.value.trim() }); openMainLocIds[mainId] = true; await saveMainLocationsToCloud(); }
+async function deleteSubLocation(mainId, subId){ if(!isEditor || !confirm('حذف الفرع؟')) return; const m = mainLocations.find(m => m.id === mainId); if(m) m.subLocations = m.subLocations.filter(s => s.id !== subId); const batch = db.batch(); compounds.filter(c => c.locationId === subId).forEach(c => { batch.delete(db.collection('compounds').doc(c.id)); }); await batch.commit(); activeLocationIds = activeLocationIds.filter(id => id !== subId); await saveMainLocationsToCloud(); }
 
-window.selectProjectType = function(type, btnElem){ 
+function selectProjectType(type, btnElem){ 
     activeProjectType = type; 
     document.querySelectorAll('.glass-tab').forEach(b => b.classList.remove('active')); 
     if(btnElem) btnElem.classList.add('active'); 
     renderGrid(); 
-};
+}
 
 let searchDebounceTimer = null;
-window.handleSearchInput = function() {
+function handleSearchInput() {
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(applyFilters, 300);
-};
+}
 
-window.applyFilters = function(){ 
+function applyFilters(){ 
     const checkedTypes = Array.from(document.querySelectorAll('.prop-type-cb:checked')).map(cb => cb.value);
     
     filters = { 
@@ -497,9 +495,9 @@ window.applyFilters = function(){
         sortOrder: getSafeVal('fSortOrder') || 'default'
     }; 
     renderGrid(); 
-};
+}
 
-window.resetFilters = function(){ 
+function resetFilters(){ 
     setSafeVal('fSearchText', ''); 
     setSafeVal('fMinPrice', ''); 
     setSafeVal('fMaxPrice', ''); 
@@ -515,7 +513,7 @@ window.resetFilters = function(){
     
     clearTimeout(searchDebounceTimer);
     applyFilters(); 
-};
+}
 
 function findSubLocationName(subId){ 
     if(!Array.isArray(mainLocations)) return '-';
@@ -570,7 +568,7 @@ function generateDossierHTML(c) {
 
 function generateMasterDossierHTML(group) {
     let c = group[0]; 
-    return `<div class="dossier master-dossier" onclick="openPhasesModal('${escapeHtml(String(c.projectName\vert{}\vert{}'')).replace(/'/g, "\\'")}', '${escapeHtml(String(c.companyName||'')).replace(/'/g, "\\'")}')">
+    return `<div class="dossier master-dossier" onclick="openPhasesModal('${escapeHtml(String(c.projectName||'')).replace(/'/g, "\\'")}', '${escapeHtml(String(c.companyName||'')).replace(/'/g, "\\'")}')">
         <div class="master-badge">مراحل متعددة</div>
         <div class="dossier-company">${highlightText(c.companyName||'', filters.searchText)}</div>
         <div class="dossier-title">${highlightText(c.projectName||'بدون اسم', filters.searchText)}</div>
@@ -585,7 +583,7 @@ function generateMasterDossierHTML(group) {
     </div>`;
 }
 
-window.openPhasesModal = function(projName, compName) {
+function openPhasesModal(projName, compName) {
     try {
         let group = compounds.filter(c => String(c.projectName||'') === projName && String(c.companyName||'') === compName);
         document.getElementById('phasesTitle').textContent = `مراحل مشروع: ${projName}`;
@@ -600,7 +598,7 @@ window.openPhasesModal = function(projName, compName) {
         document.getElementById('phasesBody').innerHTML = html;
         document.getElementById('phasesOverlay').classList.add('open');
     } catch(e) { console.error("Phases Error:", e); }
-};
+}
 
 function renderGrid(){
   try {
@@ -849,7 +847,7 @@ function renderGrid(){
   } catch (error) { console.log("Grid Render Error:", error); }
 }
 
-window.openCompoundForm = function(existing){
+function openCompoundForm(existing){
   try {
       editingCompoundId = existing ? existing.id : null; 
       document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
@@ -968,9 +966,9 @@ window.openCompoundForm = function(existing){
   } catch (error) {
       console.error("Form Open Error:", error);
   }
-};
+}
 
-window.processMagicPaste = function() {
+function processMagicPaste() {
     const text = document.getElementById('magicPasteInput').value;
     if (!text.trim()) return showToast('برجاء لصق نص المشروع أولاً!');
     let cleanText = text.replace(/[\u200B-\u200D\uFEFF\u2060\u200E\u200F\u00A0]/g, ' ');
@@ -1033,7 +1031,18 @@ window.processMagicPaste = function() {
         }
     });
     renderUnitRows(); renderPlanRows(); document.getElementById('magicPasteInput').value = ''; showToast(`تم الاستخراج بنجاح 🚀`);
-};
+}
+
+function extractValueAfterKeyword(line, keywords) {
+    for (let k of keywords) {
+        let idx = line.toLowerCase().indexOf(k.toLowerCase());
+        if (idx !== -1) {
+            let val = line.substring(idx + k.length).replace(/[:\-=>]/g, '').trim();
+            if (val) return val.split(/\s{2,}/)[0]; 
+        }
+    }
+    return null;
+}
 
 window.openDetail = function(id){
     const ov = document.getElementById('detailOverlay');
@@ -1068,9 +1077,9 @@ window.openDetail = function(id){
     }
 };
 
-window.editCurrentCompound = function(){ 
+window.editCompoundById = function(id) {
     try {
-        const c = compounds.find(x=>x.id===viewingCompoundId); 
+        const c = compounds.find(x => x.id === id); 
         if(!c) return; 
         closeModal('detailOverlay'); 
         openCompoundForm(c); 
@@ -1096,13 +1105,12 @@ window.setDetailCategory = function(catKey) {
 
 window.setDetailUnit = function(unitId) { activeDetailUnitId = unitId; renderDetailModalContent(); };
 
+// 🚨 تصميم المودال الجديد اللي مالي الشاشة (عقار ماب ستايل) 🚨
 function renderDetailModalContent() {
   try {
       const c = compounds.find(x => x.id === viewingCompoundId); if (!c) return;
       
-      let modalTitle = c.projectName || '';
-      if(c.phaseName) modalTitle += ` - ${c.phaseName}`;
-      document.getElementById('detailTitle').textContent = modalTitle;
+      document.getElementById('detailTitle').textContent = c.projectName || '';
       
       let finishText = FINISHING_TYPES[c.finishingStatus] || '-'; let pText = '';
       let parkingText = '';
@@ -1227,6 +1235,7 @@ function renderDetailModalContent() {
               let planNameCol = `<b>${escapeHtml(p.name)}</b>${planMeterText}`;
               if (p.discountPercent > 0) planNameCol += `<br><small style="color:var(--danger); font-weight:bold; display:block; margin-top:0.25rem;">خصم ${p.discountPercent}%</small>`;
               
+              // 🚨 الأرقام هنا بقت أصغر 🚨
               let unitPriceCol = `<span class="num" style="font-size:0.85rem; font-weight:bold;">${formatNum(planBasePrice)} ج</span>`;
               if (p.discountPercent > 0) unitPriceCol = `<del style="color:var(--text-muted);font-size:0.7rem;" class="num">${formatNum(planBasePrice)}</del><br><span style="color:var(--success); font-weight:bold; font-size:0.85rem;" class="num">${formatNum(Math.round(r.netTotal))} ج</span>`;
 
@@ -1268,7 +1277,7 @@ function renderDetailModalContent() {
               <hr style="border-color:var(--border-color); margin:1.5rem 0;">
               
               <div style="display:flex; gap:0.5rem; width:100%;">
-                  <button class="btn btn-outline-light btn-pill w-100" onclick="editCurrentCompound()" style="display:${isEditor ? 'flex' : 'none'}; font-size:0.85rem; justify-content:center;">تعديل ⚙️</button>
+                  <button class="btn btn-outline-light btn-pill w-100" onclick="window.editCompoundById('${c.id}')" style="display:${isEditor ? 'flex' : 'none'}; font-size:0.85rem; justify-content:center;">تعديل ⚙️</button>
                   <button class="btn w-100 btn-pill" onclick="deleteCurrentCompoundFromCloud()" style="display:${isEditor ? 'flex' : 'none'}; background:var(--danger); color:#fff; border:none; font-size:0.85rem; justify-content:center;">حذف 🗑️</button>
               </div>
           </div>
