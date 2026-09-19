@@ -1,55 +1,3 @@
-// 🚨 دوال فتح شاشة الدخول (في أول الملف عشان تحمل فورا) 🚨
-window.openSystemLogin = function() { 
-    const modal = document.getElementById('paywallModal');
-    if(modal) { modal.style.display = 'flex'; }
-};
-window.closeLoginModal = function() { 
-    const modal = document.getElementById('paywallModal');
-    if(modal) modal.style.display = 'none'; 
-};
-window.handleAuthAction = function() { 
-    if (typeof currentUser !== 'undefined' && currentUser) { 
-        if(typeof auth !== 'undefined' && auth) auth.signOut(); 
-        sessionStorage.removeItem('isSystemOpen'); 
-        window.backToLanding(); 
-    } else { 
-        window.openSystemLogin(); 
-    } 
-};
-window.backToLanding = function() { 
-    const sys = document.getElementById('systemApp');
-    const land = document.getElementById('landingPageContainer');
-    if(sys) sys.style.display = 'none'; 
-    if(land) land.style.display = 'block'; 
-    window.setNavForApp(false); 
-};
-window.closeModal = function(id){ 
-    if (id === 'formOverlay') { if(!confirm('هل أنت متأكد من إغلاق النافذة؟ لن يتم حفظ التعديلات الأخيرة.')) return; }
-    const el = document.getElementById(id);
-    if(el) el.classList.remove('open'); 
-};
-
-// 🔥 حماية إضافية للزراير بتجبر الشاشة تفتح 🔥
-window.addEventListener('DOMContentLoaded', () => {
-    const loginBtn1 = document.getElementById('siteBarLoginBtn');
-    const loginBtn2 = document.getElementById('heroStartBtn');
-    const modal = document.getElementById('paywallModal');
-
-    if(loginBtn1) {
-        loginBtn1.addEventListener('click', function(e) {
-            e.preventDefault();
-            if(modal) modal.style.display = 'flex';
-        });
-    }
-
-    if(loginBtn2) {
-        loginBtn2.addEventListener('click', function(e) {
-            e.preventDefault();
-            if(modal) modal.style.display = 'flex';
-        });
-    }
-});
-
 // --- الدوال الأساسية للسيستم ---
 window.uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); };
 window.showToast = function(msg){ const t = document.getElementById('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); };
@@ -79,20 +27,6 @@ window.setNavForApp = function(isAppView) {
     if (loginBtn) loginBtn.classList.toggle('nav-app-hidden', isAppView); 
 };
 
-if (sessionStorage.getItem('isSystemOpen') === 'true') { 
-    const land = document.getElementById('landingPageContainer');
-    const sys = document.getElementById('systemApp');
-    if(land) land.style.display = 'none'; 
-    if(sys) sys.style.display = 'flex'; 
-    window.setNavForApp(true); 
-} else { 
-    const land = document.getElementById('landingPageContainer');
-    const sys = document.getElementById('systemApp');
-    if(land) land.style.display = 'block'; 
-    if(sys) sys.style.display = 'none'; 
-    window.setNavForApp(false); 
-}
-
 let currentLang = 'ar';
 window.toggleLanguage = function() { 
     currentLang = currentLang === 'ar' ? 'en' : 'ar'; 
@@ -107,6 +41,63 @@ window.toggleTheme = function() {
 };
 if (localStorage.getItem('appTheme') === 'light') { document.body.classList.add('light-mode'); }
 
+// --- دوال فتح وإغلاق الشاشات والتسجيل ---
+window.openSystemLogin = function() { 
+    const modal = document.getElementById('paywallModal');
+    if(modal) modal.style.display = 'flex'; 
+};
+window.closeLoginModal = function() { 
+    const modal = document.getElementById('paywallModal');
+    if(modal) modal.style.display = 'none'; 
+};
+window.backToLanding = function() { 
+    const sys = document.getElementById('systemApp');
+    const land = document.getElementById('landingPageContainer');
+    if(sys) sys.style.display = 'none'; 
+    if(land) land.style.display = 'block'; 
+    window.setNavForApp(false); 
+};
+window.handleAuthAction = function() { 
+    if (typeof currentUser !== 'undefined' && currentUser) { 
+        if(typeof auth !== 'undefined' && auth) auth.signOut(); 
+        sessionStorage.removeItem('isSystemOpen'); 
+        window.backToLanding(); 
+    } else { 
+        window.openSystemLogin(); 
+    } 
+};
+window.closeModal = function(id){ 
+    if (id === 'formOverlay') { if(!confirm('هل أنت متأكد من إغلاق النافذة؟ لن يتم حفظ التعديلات الأخيرة.')) return; }
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('open'); 
+};
+
+// 🔥 حماية إضافية للزراير 🔥
+window.addEventListener('DOMContentLoaded', () => {
+    const loginBtn1 = document.getElementById('siteBarLoginBtn');
+    const loginBtn2 = document.getElementById('heroStartBtn');
+    const modal = document.getElementById('paywallModal');
+
+    if(loginBtn1) {
+        loginBtn1.addEventListener('click', function(e) {
+            e.preventDefault();
+            if(modal) modal.style.display = 'flex';
+        });
+    }
+    if(loginBtn2) {
+        loginBtn2.addEventListener('click', function(e) {
+            e.preventDefault();
+            if(modal) modal.style.display = 'flex';
+        });
+    }
+    
+    // ربط الانتر بتسجيل الدخول
+    const loginEm = document.getElementById('loginEmail');
+    const loginPw = document.getElementById('loginPassword');
+    if(loginEm) loginEm.addEventListener('keydown', function(e) { if(e.key === 'Enter') window.submitLogin(); });
+    if(loginPw) loginPw.addEventListener('keydown', function(e) { if(e.key === 'Enter') window.submitLogin(); });
+});
+
 // --- Firebase Init ---
 let db, auth, secondaryApp;
 try {
@@ -116,7 +107,9 @@ try {
     auth = firebase.auth();
     if (!firebase.apps.some(app => app.name === "SecondaryApp")) { secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp"); } 
     else { secondaryApp = firebase.app("SecondaryApp"); }
-} catch (e) { console.error("Firebase init error:", e); }
+} catch (e) {
+    console.error("Firebase init error:", e);
+}
 
 // --- Globals ---
 let currentUser = null, isAdmin = false, isEditor = false;
@@ -138,66 +131,112 @@ const PROJECT_TYPES = { residential: 'سكني', commercial: 'تجاري / إد�
 const FINISHING_TYPES = { core_shell: 'طوب أحمر', semi: 'نصف تشطيب', full: 'تشطيب كامل', mixed: 'متنوع' };
 const DELIVERY_TIMELINES = [ {value:'immediate', label:'فوري'}, {value:'6m', label:'6 أشهر'}, {value:'1y', label:'سنة'}, {value:'1.5y', label:'سنة ونصف'}, {value:'2y', label:'سنتين'}, {value:'2.5y', label:'سنتين ونصف'}, {value:'3y', label:'3 سنوات'}, {value:'4y', label:'4 سنوات'} ];
 
-// --- Authentication ---
+// --- Authentication (تسجيل الدخول متأمن) ---
 window.submitLogin = async function() { 
     try {
-        if(!auth) throw new Error("Firebase not initialized");
+        console.log("1. تم الضغط على زر الدخول...");
+        if(!auth) throw new Error("Firebase Auth is missing!");
+
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value.trim(); 
         const btn = document.getElementById('loginSubmitBtn');
-        if(!email || !password) { alert("من فضلك أدخل الإيميل والباسورد"); return; } 
+        
+        if(!email || !password) { 
+            alert("من فضلك أدخل الإيميل والباسورد"); 
+            return; 
+        } 
+        
+        console.log("2. تغيير الزرار إلى جاري الدخول...");
         if (btn) btn.innerHTML = 'جاري الدخول... ⏳';
         
         const rem = document.getElementById('rememberMe');
         if (rem && rem.checked) {
-            localStorage.setItem('savedEmail', email); localStorage.setItem('savedPassword', password);
+            localStorage.setItem('savedEmail', email); 
+            localStorage.setItem('savedPassword', password);
         } else {
-            localStorage.removeItem('savedEmail'); localStorage.removeItem('savedPassword');
+            localStorage.removeItem('savedEmail'); 
+            localStorage.removeItem('savedPassword');
         }
+        
         sessionStorage.setItem('isSystemOpen', 'true'); 
+        
+        console.log("3. الاتصال بسيرفر فايربيس...");
         await auth.signInWithEmailAndPassword(email, password);
+        console.log("4. فايربيس قبل البيانات بنجاح!");
+
     } catch (err) {
+        console.error("Login Error:", err);
         sessionStorage.removeItem('isSystemOpen'); 
         const btn = document.getElementById('loginSubmitBtn');
         if (btn) btn.innerHTML = 'دخول';
-        alert("بيانات الدخول غير صحيحة."); 
-        console.error("Login Error:", err);
+        alert("بيانات الدخول غير صحيحة، أو يوجد مشكلة في الإنترنت."); 
     }
 };
 
 if (auth) {
     auth.onAuthStateChanged(async (user) => {
         try {
+            console.log("5. تفحص حالة المستخدم...");
             if (user) {
-                if (sessionStorage.getItem('isSystemOpen') !== 'true') { auth.signOut(); return; }
-                let userDoc; try { userDoc = await db.collection('users').doc(user.email.toLowerCase()).get(); } catch(e) {}
-                let role = 'viewer', expiryDate = '2024-01-01'; 
-                if (userDoc && userDoc.exists) { role = userDoc.data().role || 'viewer'; expiryDate = userDoc.data().expiryDate || '2024-01-01'; } 
-                else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') { role = 'admin'; expiryDate = '2099-12-31'; await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' }); } 
-                else { auth.signOut(); alert("هذا الحساب غير مسجل."); return; }
-                if (new Date() > new Date(expiryDate)) { auth.signOut(); alert("لقد انتهت فترة اشتراكك."); return; }
+                console.log("6. المستخدم موجود:", user.email);
+                if (sessionStorage.getItem('isSystemOpen') !== 'true') { 
+                    auth.signOut(); 
+                    return; 
+                }
                 
+                console.log("7. جلب صلاحيات المستخدم من قاعدة البيانات...");
+                let userDoc; 
+                try { userDoc = await db.collection('users').doc(user.email.toLowerCase()).get(); } catch(e) { console.error("خطأ في جلب الصلاحيات:", e); }
+                
+                let role = 'viewer', expiryDate = '2024-01-01'; 
+                if (userDoc && userDoc.exists) { 
+                    role = userDoc.data().role || 'viewer'; 
+                    expiryDate = userDoc.data().expiryDate || '2024-01-01'; 
+                } else if (user.email.toLowerCase() === 'jeanhany04@gmail.com') { 
+                    role = 'admin'; expiryDate = '2099-12-31'; 
+                    await db.collection('users').doc(user.email.toLowerCase()).set({ role: 'admin', expiryDate: '2099-12-31' }); 
+                } else { 
+                    auth.signOut(); alert("هذا الحساب غير مسجل."); 
+                    const btnLog = document.getElementById('loginSubmitBtn'); if(btnLog) btnLog.innerHTML = 'دخول';
+                    return; 
+                }
+                
+                if (new Date() > new Date(expiryDate)) { 
+                    auth.signOut(); alert("لقد انتهت فترة اشتراكك."); 
+                    const btnLog = document.getElementById('loginSubmitBtn'); if(btnLog) btnLog.innerHTML = 'دخول';
+                    return; 
+                }
+                
+                console.log("8. تجهيز واجهة النظام حسب الصلاحيات...");
                 currentUser = user; isAdmin = (role === 'admin'); isEditor = (role === 'admin' || role === 'editor');
+                
                 let uLabel = document.getElementById('userEmailLabel');
                 if(uLabel) uLabel.textContent = user.email.split('@')[0] + (isAdmin ? ' (المدير)' : (isEditor ? ' (محرر)' : ' (مشترك)'));
+                
                 let suAct = document.getElementById('superAdminActions'); if(suAct) suAct.style.display = isAdmin ? 'flex' : 'none'; 
                 let addLoc = document.getElementById('addMainLocWrap'); if(addLoc) addLoc.style.display = isEditor ? 'flex' : 'none'; 
                 let adAct = document.getElementById('adminActions'); if(adAct) adAct.style.display = isEditor ? 'flex' : 'none';
+                
                 let btnLog = document.getElementById('loginSubmitBtn'); if(btnLog) btnLog.innerHTML = 'دخول';
                 
+                console.log("9. مزامنة المشاريع والداتا من السحابة...");
                 await window.syncCloudData(); 
+                
+                console.log("10. إخفاء شاشة الدخول وعرض النظام!");
                 const pw = document.getElementById('paywallModal'), land = document.getElementById('landingPageContainer'), sys = document.getElementById('systemApp');
                 if(pw) pw.style.display = 'none'; 
                 if(land) land.style.display = 'none'; 
                 if(sys) sys.style.display = 'flex'; 
                 window.setNavForApp(true);
+                
             } else { 
+                console.log(">> لا يوجد مستخدم، العودة للرئيسية...");
                 currentUser = null; isAdmin = false; isEditor = false; sessionStorage.removeItem('isSystemOpen'); 
                 let uLabel = document.getElementById('userEmailLabel'); if(uLabel) uLabel.textContent = 'يرجى تسجيل الدخول'; 
                 window.backToLanding();
             }
         } catch (err) {
-            console.error("Auth Error:", err);
+            console.error("Critical Auth Error:", err);
             const btnLog = document.getElementById('loginSubmitBtn');
             if(btnLog) btnLog.innerHTML = 'دخول';
         }
@@ -995,9 +1034,9 @@ window.renderDecreeRows = function(){
     const wrap = document.getElementById('decreeRows'); if (!wrap) return;
     wrap.innerHTML = tempDecrees.map(d => `
         <div class="repeat-row">
-            <input type="text" placeholder="رقم القرار" value="${window.escapeHtml(d.decreeNumber \vert{}\vert{} '')}" style="flex:1; min-width:6.25rem;" onchange="window.updateDecreeData('${d.id}','decreeNumber',this.value)">
-            <input type="text" placeholder="الوصف" value="${window.escapeHtml(d.description \vert{}\vert{} '')}" style="flex:2; min-width:9.375rem;" onchange="window.updateDecreeData('${d.id}','description',this.value)">
-            <input type="text" placeholder="التاريخ" value="${window.escapeHtml(d.date \vert{}\vert{} '')}" style="flex:1; min-width:6.25rem;" onchange="window.updateDecreeData('${d.id}','date',this.value)">
+            <input type="text" placeholder="رقم القرار" value="${window.escapeHtml(d.decreeNumber || '')}" style="flex:1; min-width:6.25rem;" onchange="window.updateDecreeData('${d.id}','decreeNumber',this.value)">
+            <input type="text" placeholder="الوصف" value="${window.escapeHtml(d.description || '')}" style="flex:2; min-width:9.375rem;" onchange="window.updateDecreeData('${d.id}','description',this.value)">
+            <input type="text" placeholder="التاريخ" value="${window.escapeHtml(d.date || '')}" style="flex:1; min-width:6.25rem;" onchange="window.updateDecreeData('${d.id}','date',this.value)">
             <button type="button" class="row-del" onclick="window.removeDecreeRow('${d.id}')">✕</button>
         </div>
     `).join('') || `<div style="text-align:center; color:var(--text-muted); padding:0.9375rem; font-size:0.8125rem;">لا توجد قرارات وزارية مضافة.</div>`;
