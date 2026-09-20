@@ -308,6 +308,25 @@ window.renderLocationTree = function() {
     tree.innerHTML = html;
     const mobTree = document.getElementById('locWrapperMobile');
     if(mobTree) mobTree.innerHTML = html;
+    window.populateLocationSelect();
+};
+
+window.populateLocationSelect = function(){
+    const sel = document.getElementById('fldLocation');
+    if (!sel) return;
+    const currentVal = sel.value;
+    let opts = '<option value="">— اختر المنطقة —</option>';
+    (mainLocations || []).forEach(m => {
+        if (m.subLocations && m.subLocations.length > 0) {
+            opts += `<optgroup label="${window.escapeHtml(m.name)}">`;
+            m.subLocations.forEach(s => { opts += `<option value="${s.id}">${window.escapeHtml(s.name)}</option>`; });
+            opts += `</optgroup>`;
+        } else {
+            opts += `<option value="${m.id}">${window.escapeHtml(m.name)}</option>`;
+        }
+    });
+    sel.innerHTML = opts;
+    if (currentVal) sel.value = currentVal;
 };
 
 window.findSubLocationName = function(id) {
@@ -888,6 +907,7 @@ window.openCompoundForm = function(existing){
   try {
       editingCompoundId = existing ? existing.id : null; 
       document.getElementById('formTitle').textContent = existing ? 'تعديل المشروع' : 'إضافة مشروع جديد';
+      window.populateLocationSelect();
       let defaultLoc = '';
       if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => (m.subLocations || []).some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
       if(existing) window.setSafeVal('fldLocation', existing.locationId || ''); else window.setSafeVal('fldLocation', defaultLoc);
