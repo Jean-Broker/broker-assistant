@@ -154,8 +154,8 @@
                     <button class="glass-tab" onclick="window.selectProjectType('hotel', this)">فندقي</button>
                 </div>
                 <div class="glass-search-bar">
-                    <i class="search-icon">🔍</i>
                     <input type="text" id="fSearchText" placeholder="ابحث باسم المشروع، الشركة، أو المنطقة..." oninput="window.handleSearchInput()">
+                    <button class="btn-clear-search" id="btnClearSearch" style="display:none;" onclick="window.quickClearSearch()" title="مسح البحث">✕</button>
                     <button class="btn-filter-trigger" onclick="window.openFilterDrawer()">
                         <i class="filter-icon">⚙️</i> الفلاتر
                     </button>
@@ -288,10 +288,7 @@
                     <div class="form-field"><label style="color:var(--primary);">سابقة الأعمال للمطور (اختياري)</label><input type="text" id="fldPreviousWorks" placeholder="رابط سابقة الأعمال (Link)"></div>
                     
                     <div class="form-field"><label>اسم المشروع</label><input type="text" id="fldProject" placeholder="اسم المشروع"></div>
-                    <div class="form-field"><label style="color:var(--primary);">بروشور المشروع PDF (اختياري)</label><input type="text" id="fldProjectPDF" placeholder="رابط ملف الـ PDF"></div>
-                    
                     <div class="form-field"><label>اسم المرحلة (اختياري)</label><input type="text" id="fldPhaseName" placeholder="مثال: Phase 1"></div>
-                    <div class="form-field"><label style="color:#25D366; font-weight:800;">رقم واتساب المبيعات (اختياري)</label><input type="text" id="fldWhatsapp" placeholder="مثال: 201000000000"></div>
                     
                     <div class="form-field"><label>المالك</label><input type="text" id="fldOwner" placeholder="اسم المالك"></div>
                     <div class="form-field"><label>الاستشاري الهندسي</label><input type="text" id="fldConsultant" placeholder="اسم الاستشاري"></div>
@@ -315,7 +312,7 @@
                 <div class="form-grid res-field">
                     <div class="form-field"><label>أقل سعر للمتر</label><input type="text" id="fldPriceMeterMin" class="num" placeholder="من" oninput="window.formatInput(this); window.updatePriceMeterAvg();"></div>
                     <div class="form-field"><label>أعلى سعر للمتر</label><input type="text" id="fldPriceMeterMax" class="num" placeholder="إلى" oninput="window.formatInput(this); window.updatePriceMeterAvg();"></div>
-                    <div class="form-field full"><label style="color:var(--success);">متوسط سعر المتر الإجمالي (للحسابات)</label><input type="text" id="fldPriceMeter" class="num" placeholder="المتوسط" style="border:1px dashed var(--success);" oninput="window.formatInput(this); window.updateAllUnitsPrice();"></div>
+                    <div class="form-field full"><label>متوسط سعر المتر الإجمالي (للحسابات)</label><input type="text" id="fldPriceMeter" class="num" placeholder="المتوسط" style="background:var(--bg-main);" oninput="window.formatInput(this); window.updateAllUnitsPrice();"></div>
                 </div>
 
                 <div class="form-field full res-field" style="margin: 0.9375rem 0;">
@@ -373,6 +370,14 @@
                 <div class="section-label">القرارات الوزارية</div>
                 <div id="decreeRows"></div>
                 <button class="btn btn-outline-light btn-pill w-100" style="margin-top:0.625rem;" onclick="window.addDecreeRow()">+ إضافة قرار وزاري</button>
+
+                <div class="section-label">بيانات التواصل</div>
+                <div class="form-grid">
+                    <div class="form-field"><label>اسم المسؤول عن المشروع</label><input type="text" id="fldContactName" placeholder="اسم الشخص المسؤول"></div>
+                    <div class="form-field"><label style="color:#25D366; font-weight:800;">رقم واتساب المبيعات (اختياري)</label><input type="text" id="fldWhatsapp" placeholder="مثال: 201000000000" oninput="window.updateWhatsappPreview()"></div>
+                    <div class="form-field full" id="whatsappPreviewWrap" style="display:none;"><label>معاينة رابط واتساب</label><a id="whatsappPreviewLink" href="#" target="_blank" style="color:#25D366; font-weight:700; word-break:break-all;"></a></div>
+                    <div class="form-field full"><label>بروشور المشروع PDF (اختياري)</label><input type="text" id="fldProjectPDF" placeholder="رابط ملف الـ PDF"></div>
+                </div>
 
             </div>
             <div class="modal-footer">
