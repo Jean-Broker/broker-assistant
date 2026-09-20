@@ -31,8 +31,9 @@ let currentLang = 'ar';
 window.toggleLanguage = function() { 
     currentLang = currentLang === 'ar' ? 'en' : 'ar'; 
     document.documentElement.lang = currentLang; 
-    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; 
+    document.body.classList.toggle('lang-en', currentLang === 'en');
     document.querySelectorAll('[data-ar]').forEach(el => { el.innerHTML = el.getAttribute('data-' + currentLang); }); 
+    document.querySelectorAll('[data-ar-placeholder]').forEach(el => { el.placeholder = el.getAttribute('data-' + currentLang + '-placeholder'); }); 
 };
 
 window.toggleTheme = function() { 
@@ -420,10 +421,21 @@ window.applyFilters = function(){
     filters.downPaymentTarget = window.getRawNum(window.getSafeVal('fDownPayment'));
     filters.maxMonthlyInstallment = window.getRawNum(window.getSafeVal('fMonthlyInstallment'));
     filters.sortOrder = window.getSafeVal('fSortOrder');
+    const clearBtn = document.getElementById('btnClearSearch');
+    if (clearBtn) clearBtn.style.display = filters.searchText ? 'flex' : 'none';
+    window.renderGrid();
+};
+window.quickClearSearch = function(){
+    window.setSafeVal('fSearchText', '');
+    filters.searchText = '';
+    const clearBtn = document.getElementById('btnClearSearch');
+    if (clearBtn) clearBtn.style.display = 'none';
     window.renderGrid();
 };
 let searchDebounceTimer = null;
 window.handleSearchInput = function(){
+    const clearBtn = document.getElementById('btnClearSearch');
+    if (clearBtn) clearBtn.style.display = window.getSafeVal('fSearchText') ? 'flex' : 'none';
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => { window.applyFilters(); }, 300);
 };
@@ -513,7 +525,7 @@ window.saveCompoundToCloud = async function() {
     let pFullAvg = (pFullMin > 0 && pFullMax > 0) ? (pFullMin + pFullMax) / 2 : (pFullMin || pFullMax || 0);
 
     const compoundData = {
-        locationId: locId, projectType: window.getSafeVal('fldProjectType'), companyName: cName, projectName: pName, phaseName: window.getSafeVal('fldPhaseName').trim(), ownerName: window.getSafeVal('fldOwner').trim(), consultant: window.getSafeVal('fldConsultant').trim(), whatsapp: window.getSafeVal('fldWhatsapp').trim(), projectPDF: window.getSafeVal('fldProjectPDF').trim(), previousWorks: window.getSafeVal('fldPreviousWorks').trim(), projectSize: window.getRawNum(window.getSafeVal('fldProjectSize')), floors: window.getSafeVal('fldFloors').trim(), compoundLocationDetail: window.getSafeVal('fldLocationDetail').trim(), locationLink: window.getSafeVal('fldLocationLink').trim(), pricePerMeterMin: window.getRawNum(window.getSafeVal('fldPriceMeterMin')), pricePerMeterMax: window.getRawNum(window.getSafeVal('fldPriceMeterMax')), pricePerMeter: window.getRawNum(window.getSafeVal('fldPriceMeter')), isAdvancedPricing: (document.getElementById('advPricingWrap') && document.getElementById('advPricingWrap').style.display !== 'none'), priceCoreMin: pCoreMin, priceCoreMax: pCoreMax, priceCore: pCoreAvg, priceSemiMin: pSemiMin, priceSemiMax: pSemiMax, priceSemi: pSemiAvg, priceFullMin: pFullMin, priceFullMax: pFullMax, priceFull: pFullAvg,
+        locationId: locId, projectType: window.getSafeVal('fldProjectType'), companyName: cName, projectName: pName, phaseName: window.getSafeVal('fldPhaseName').trim(), ownerName: window.getSafeVal('fldOwner').trim(), consultant: window.getSafeVal('fldConsultant').trim(), contactName: window.getSafeVal('fldContactName').trim(), whatsapp: window.getSafeVal('fldWhatsapp').trim(), projectPDF: window.getSafeVal('fldProjectPDF').trim(), previousWorks: window.getSafeVal('fldPreviousWorks').trim(), projectSize: window.getRawNum(window.getSafeVal('fldProjectSize')), floors: window.getSafeVal('fldFloors').trim(), compoundLocationDetail: window.getSafeVal('fldLocationDetail').trim(), locationLink: window.getSafeVal('fldLocationLink').trim(), pricePerMeterMin: window.getRawNum(window.getSafeVal('fldPriceMeterMin')), pricePerMeterMax: window.getRawNum(window.getSafeVal('fldPriceMeterMax')), pricePerMeter: window.getRawNum(window.getSafeVal('fldPriceMeter')), isAdvancedPricing: (document.getElementById('advPricingWrap') && document.getElementById('advPricingWrap').style.display !== 'none'), priceCoreMin: pCoreMin, priceCoreMax: pCoreMax, priceCore: pCoreAvg, priceSemiMin: pSemiMin, priceSemiMax: pSemiMax, priceSemi: pSemiAvg, priceFullMin: pFullMin, priceFullMax: pFullMax, priceFull: pFullAvg,
         commercialPrices: { adminMin: window.getRawNum(window.getSafeVal('fldAdminMin')), adminMax: window.getRawNum(window.getSafeVal('fldAdminMax')), adminFinish: window.getSafeVal('fldAdminFinish') || 'core_shell', commMin: window.getRawNum(window.getSafeVal('fldCommMin')), commMax: window.getRawNum(window.getSafeVal('fldCommMax')), commFinish: window.getSafeVal('fldCommFinish') || 'core_shell', clinicMin: window.getRawNum(window.getSafeVal('fldClinicMin')), clinicMax: window.getRawNum(window.getSafeVal('fldClinicMax')), clinicFinish: window.getSafeVal('fldClinicFinish') || 'core_shell', recMin: window.getRawNum(window.getSafeVal('fldRecMin')), recMax: window.getRawNum(window.getSafeVal('fldRecMax')), recFinish: window.getSafeVal('fldRecFinish') || 'core_shell' },
         deliveryDate: window.getSafeVal('fldDeliveryDate'), finishingStatus: window.getSafeVal('fldFinishingStatus'), maintenanceValue: window.getRawNum(window.getSafeVal('fldMaintenanceValue')), maintenanceType: window.getSafeVal('fldMaintenanceType') || 'percent', parkingType: window.getSafeVal('fldParkingType') || 'extra', parkingFee: window.getRawNum(window.getSafeVal('fldParkingFee')), cashDiscount: window.getRawNum(window.getSafeVal('fldCashDiscount')), unitTypes: tempUnits, paymentPlans: tempPlans, ministerialDecrees: tempDecrees, timestamp: firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -880,11 +892,13 @@ window.openCompoundForm = function(existing){
       if (activeLocationIds.length === 1) { let isSub = mainLocations.some(m => (m.subLocations || []).some(s => s.id === activeLocationIds[0])); if (isSub) defaultLoc = activeLocationIds[0]; }
       if(existing) window.setSafeVal('fldLocation', existing.locationId || ''); else window.setSafeVal('fldLocation', defaultLoc);
       
-      ['fldCompany','fldProject','fldPhaseName','fldWhatsapp','fldProjectPDF','fldPreviousWorks','fldFloors','fldOwner','fldConsultant','fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg','fldPriceCore', 'fldPriceSemi', 'fldPriceFull','fldPriceCoreMin', 'fldPriceCoreMax', 'fldPriceCoreAvg','fldPriceSemiMin', 'fldPriceSemiMax', 'fldPriceSemiAvg','fldPriceFullMin', 'fldPriceFullMax', 'fldPriceFullAvg','fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax','fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { window.setSafeVal(id, ''); }); 
+      ['fldCompany','fldProject','fldPhaseName','fldContactName','fldWhatsapp','fldProjectPDF','fldPreviousWorks','fldFloors','fldOwner','fldConsultant','fldPriceMeter', 'fldPriceMeterMin', 'fldPriceMeterMax', 'fldPriceMeterAvg','fldPriceCore', 'fldPriceSemi', 'fldPriceFull','fldPriceCoreMin', 'fldPriceCoreMax', 'fldPriceCoreAvg','fldPriceSemiMin', 'fldPriceSemiMax', 'fldPriceSemiAvg','fldPriceFullMin', 'fldPriceFullMax', 'fldPriceFullAvg','fldAdminMin','fldAdminMax','fldCommMin','fldCommMax','fldClinicMin','fldClinicMax','fldRecMin','fldRecMax','fldParkingFee','fldProjectSize','fldDeliveryDate','fldLocationDetail','fldLocationLink','fldCashDiscount'].forEach(id => { window.setSafeVal(id, ''); }); 
       ['fldAdminFinish', 'fldCommFinish', 'fldClinicFinish', 'fldRecFinish'].forEach(id => { window.setSafeVal(id, 'core_shell'); });
+      const wpWrap = document.getElementById('whatsappPreviewWrap'); if (wpWrap) wpWrap.style.display = 'none';
     
       if (existing) {
-          window.setSafeVal('fldProjectType', existing.projectType || 'residential'); window.setSafeVal('fldCompany', existing.companyName || ''); window.setSafeVal('fldProject', existing.projectName || ''); window.setSafeVal('fldPhaseName', existing.phaseName || ''); window.setSafeVal('fldWhatsapp', existing.whatsapp || ''); window.setSafeVal('fldProjectPDF', existing.projectPDF || ''); window.setSafeVal('fldPreviousWorks', existing.previousWorks || ''); window.setSafeVal('fldFloors', existing.floors || ''); window.setSafeVal('fldOwner', existing.ownerName || ''); window.setSafeVal('fldConsultant', existing.consultant || ''); 
+          window.setSafeVal('fldProjectType', existing.projectType || 'residential'); window.setSafeVal('fldCompany', existing.companyName || ''); window.setSafeVal('fldProject', existing.projectName || ''); window.setSafeVal('fldPhaseName', existing.phaseName || ''); window.setSafeVal('fldContactName', existing.contactName || ''); window.setSafeVal('fldWhatsapp', existing.whatsapp || ''); window.setSafeVal('fldProjectPDF', existing.projectPDF || ''); window.setSafeVal('fldPreviousWorks', existing.previousWorks || ''); window.setSafeVal('fldFloors', existing.floors || ''); window.setSafeVal('fldOwner', existing.ownerName || ''); window.setSafeVal('fldConsultant', existing.consultant || ''); 
+          window.updateWhatsappPreview();
           window.setSafeVal('fldPriceMeterMin', existing.pricePerMeterMin ? window.formatNum(existing.pricePerMeterMin) : '');
           window.setSafeVal('fldPriceMeterMax', existing.pricePerMeterMax ? window.formatNum(existing.pricePerMeterMax) : '');
           if(existing.pricePerMeter) window.setSafeVal('fldPriceMeter', window.formatNum(existing.pricePerMeter));
@@ -913,6 +927,27 @@ window.openCompoundForm = function(existing){
       window.renderUnitRows(); window.renderPlanRows(); window.renderDecreeRows(); 
       const ov = document.getElementById('formOverlay'); if (ov) ov.classList.add('open');
   } catch (error) { console.error("Form Open Error:", error); }
+};
+
+window.updateWhatsappPreview = function(){
+    const wrap = document.getElementById('whatsappPreviewWrap');
+    const link = document.getElementById('whatsappPreviewLink');
+    if (!wrap || !link) return;
+    const digits = String(window.getSafeVal('fldWhatsapp') || '').replace(/[^0-9]/g, '');
+    if (digits) {
+        const url = `https://wa.me/${digits}`;
+        link.href = url;
+        link.textContent = url;
+        wrap.style.display = 'flex';
+    } else {
+        wrap.style.display = 'none';
+    }
+};
+
+window.updateAllUnitsPrice = function(){
+    if (typeof tempUnits !== 'undefined') {
+        tempUnits.forEach(u => window.updateUnitData(u.id, 'recalc', null));
+    }
 };
 
 window.updatePriceMeterAvg = function(){
@@ -1061,7 +1096,7 @@ window.renderCalcBulletsRows = function(){
             <input type="number" placeholder="%" class="num" style="width:5rem; flex-shrink:0; padding:0.5rem; border-radius:0.25rem; background:var(--item-bg); border:1px solid var(--border-color); color:var(--text-main);" value="${b.percent}" oninput="window.updateCalcBullet('${b.id}','percent',this.value)">
             <button class="btn btn-danger-style" style="flex-shrink:0; padding:0.5rem;" onclick="window.removeCalcBulletRow('${b.id}')">✕</button>
         </div>
-        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:0.9375rem; display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears\vert{}\vert{}[]).includes(yr)?'selected':''}" onclick="window.toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
+        ${b.type==='annual'?`<div class="years-pills" style="margin-bottom:0.9375rem; display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; width:100%;">${[1,2,3,4,5,6,7].map(yr=>`<div class="year-pill ${(b.selectedYears||[]).includes(yr)?'selected':''}" onclick="window.toggleCalcYearSelection('${b.id}',${yr})">${yr}</div>`).join('')}</div>`:''}
     `).join(''); 
 };
 
@@ -1313,6 +1348,7 @@ window.renderDetailModalContent = function() {
                <div id="miniCalcResult"></div>`;
                
       let whatsappNum = c.whatsapp ? String(c.whatsapp).replace(/[^0-9]/g, '') : '';
+      let contactNameHtml = c.contactName ? `<div style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">المسؤول: <b style="color:var(--text-main);">${window.escapeHtml(c.contactName)}</b></div>` : '';
       let whatsappBtn = whatsappNum ? `<a href="https://wa.me/${whatsappNum}" target="_blank" class="btn w-100 btn-pill" style="margin-bottom:0.625rem; background:#25D366; color:#fff; font-size:1rem; text-decoration:none;"><b style="font-family:Cairo;">تواصل واتساب | WhatsApp</b></a>` : '';
       let pdfBtn = c.projectPDF ? `<a href="${window.escapeHtml(c.projectPDF)}" target="_blank" class="btn btn-outline-light w-100 btn-pill" style="margin-bottom:0.625rem; font-size:0.85rem; text-decoration:none;"><b>بروشور المشروع | PDF Brochure</b></a>` : '';
       let worksBtn = c.previousWorks ? `<a href="${window.escapeHtml(c.previousWorks)}" target="_blank" class="btn btn-outline-light w-100 btn-pill" style="margin-bottom:0.625rem; font-size:0.85rem; text-decoration:none;"><b>سابقة الأعمال | Previous Works</b></a>` : '';
@@ -1320,6 +1356,7 @@ window.renderDetailModalContent = function() {
       let sideActions = `
           <div class="action-card" style="background:var(--item-bg); padding:1.5rem; border-radius:1rem; border:1px solid var(--border-color); position:sticky; top:0; z-index:10; width:100%;">
               <h4 style="margin-bottom:1rem; color:var(--text-main); font-weight:800; font-size:1.1rem; text-align:center;">تواصل للحجز والتفاصيل<br><span style="color:var(--text-muted); font-size:0.8rem;">Contact & Reserve</span></h4>
+              ${contactNameHtml}
               ${whatsappBtn}
               ${pdfBtn}
               ${worksBtn}
